@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
@@ -64,16 +65,15 @@ namespace Ev.ServiceBus
             _logger.LogInformation(
                 $"New message received from {Receiver.ClientType} '{Receiver.Name}' : {message.Label}");
 
-            using (var scope = Provider.CreateScope())
-            {
-                var messageHandler =
-                    (IMessageHandler) scope.ServiceProvider.GetRequiredService(_receiverOptions.MessageHandlerType);
-                var context = new MessageContext(
-                    message,
-                    Receiver,
-                    cancellationToken);
-                await messageHandler.HandleMessageAsync(context);
-            }
+            using var traceLogger = new MsgTraceLogger(_logger, $"Message from {Receiver.ClientType}: {Receiver.Name}: {message.MessageId}.");
+            using var scope = Provider.CreateScope();
+            var messageHandler =
+                (IMessageHandler) scope.ServiceProvider.GetRequiredService(_receiverOptions.MessageHandlerType);
+            var context = new MessageContext(
+                message,
+                Receiver,
+                cancellationToken);
+            await messageHandler.HandleMessageAsync(context);
         }
 
         /// <summary>
@@ -98,6 +98,28 @@ namespace Ev.ServiceBus
             var userDefinedExceptionHandler =
                 (IExceptionHandler) Provider.GetService(_receiverOptions.ExceptionHandlerType);
             await userDefinedExceptionHandler.HandleExceptionAsync(exceptionEvent);
+        }
+    }
+
+    internal class MsgTraceLogger : IDisposable
+    {
+        private readonly ILogger<ReceiverWrapper> _logger;
+        private readonly string _msg;
+        private readonly Stopwatch _sw;
+
+        public MsgTraceLogger(ILogger<ReceiverWrapper> logger, string msg)
+        {
+            _logger = logger;
+            _msg = msg;
+            _sw = new Stopwatch();
+            _sw.Start();
+        }
+
+        public void Dispose()
+        {
+            var executionTime = _sw.ElapsedMilliseconds;
+            _sw.Stop();
+            _logger.LogInformation($"{_msg}: executed in: {executionTime} milliseconds.");
         }
     }
 }

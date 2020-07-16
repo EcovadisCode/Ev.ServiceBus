@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 1.4.1 - 2020-07-14
+- added log for message processing time
+
 ## 1.4.0 - 2020-05-27
 - removed closing behavior when an exception occurs.
 
