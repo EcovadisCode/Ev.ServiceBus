@@ -19,8 +19,7 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 The above example is the minimum to register for sending messages.
-You need to add names (`TopicName` or `QueueName`), the connection string to the service bus you created in the Azure
-and the class implementing the `IMessageHandler` interface.
+You need to add names (`TopicName` or `QueueName`), the connection string to the service bus you created in the Azure.
 
 ### Sending messages
 
