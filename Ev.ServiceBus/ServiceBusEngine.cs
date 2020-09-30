@@ -74,9 +74,9 @@ namespace Ev.ServiceBus
         {
             _logger.LogInformation("Stopping azure service bus clients");
 
-            await Task.WhenAll(_registry.GetAllQueues().Select(CloseQueueAsync).ToArray());
-            await Task.WhenAll(_registry.GetAllTopics().Select(CloseTopicAsync).ToArray());
-            await Task.WhenAll(_registry.GetAllSubscriptions().Select(CloseSubscriptionAsync).ToArray());
+            await Task.WhenAll(_registry.GetAllQueues().Select(CloseQueueAsync).ToArray()).ConfigureAwait(false);
+            await Task.WhenAll(_registry.GetAllTopics().Select(CloseTopicAsync).ToArray()).ConfigureAwait(false);
+            await Task.WhenAll(_registry.GetAllSubscriptions().Select(CloseSubscriptionAsync).ToArray()).ConfigureAwait(false);
         }
 
         private async Task CloseQueueAsync(QueueWrapper queue)
@@ -88,7 +88,7 @@ namespace Ev.ServiceBus
 
             try
             {
-                await queue.QueueClient.CloseAsync();
+                await queue.QueueClient.CloseAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -105,7 +105,7 @@ namespace Ev.ServiceBus
 
             try
             {
-                await topic.TopicClient.CloseAsync();
+                await topic.TopicClient.CloseAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -122,7 +122,7 @@ namespace Ev.ServiceBus
 
             try
             {
-                await subscription.SubscriptionClient.CloseAsync();
+                await subscription.SubscriptionClient.CloseAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {

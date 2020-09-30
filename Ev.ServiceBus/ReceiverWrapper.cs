@@ -73,7 +73,7 @@ namespace Ev.ServiceBus
                 message,
                 Receiver,
                 cancellationToken);
-            await messageHandler.HandleMessageAsync(context);
+            await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -90,14 +90,14 @@ namespace Ev.ServiceBus
                 + $"Message : {exceptionEvent.Exception.Message}\n"
                 + $"Context:\n{json}");
 
-            await _onExceptionReceivedHandler(exceptionEvent);
+            await _onExceptionReceivedHandler(exceptionEvent).ConfigureAwait(false);
         }
 
         private async Task CallDefinedExceptionHandler(ExceptionReceivedEventArgs exceptionEvent)
         {
             var userDefinedExceptionHandler =
                 (IExceptionHandler) Provider.GetService(_receiverOptions.ExceptionHandlerType);
-            await userDefinedExceptionHandler.HandleExceptionAsync(exceptionEvent);
+            await userDefinedExceptionHandler.HandleExceptionAsync(exceptionEvent).ConfigureAwait(false);
         }
     }
 
