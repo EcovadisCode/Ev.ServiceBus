@@ -27,7 +27,7 @@ namespace Ev.ServiceBus
         {
             var engine = _serviceProvider.GetRequiredService<ServiceBusEngine>();
 
-            await engine.StopAll();
+            await engine.StopAll().ConfigureAwait(false);
         }
     }
 }

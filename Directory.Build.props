@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <PropertyGroup Label="Version settings">
-    <Version>1.4.1</Version>
+    <Version>1.4.2</Version>
   </PropertyGroup>
 
   <ItemGroup Label="UnitTest project references" Condition="'$(IsUnitTestProject)' == 'true'">

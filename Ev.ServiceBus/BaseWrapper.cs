@@ -51,7 +51,7 @@ namespace Ev.ServiceBus
         {
             if (_entity != null)
             {
-                await _entity.CloseAsync();
+                await _entity.CloseAsync().ConfigureAwait(false);
             }
             Sender = new UnavailableSender(Name);
         }
