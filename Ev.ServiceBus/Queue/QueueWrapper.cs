@@ -14,26 +14,21 @@ namespace Ev.ServiceBus
             : base(
                 options,
                 parentOptions,
-                provider,
-                options.QueueName)
+                provider)
         {
             _options = options;
         }
 
-        internal IQueueClient QueueClient { get; private set; }
+        internal IQueueClient? QueueClient { get; private set; }
 
-        protected override (IMessageSender, MessageReceiver, IClientEntity) CreateClient()
+        protected override (IMessageSender, MessageReceiver?) CreateClient(ConnectionSettings settings)
         {
-            if (ParentOptions.Enabled == false)
-            {
-                return (new DeactivatedSender(Name, ClientType.Queue), null, null);
-            }
-            var factory = Provider.GetService<IQueueClientFactory>();
-            QueueClient = factory.Create(_options);
-            var sender = new MessageSender(QueueClient, Name, ClientType.Queue);
-            var receiver = new MessageReceiver(QueueClient, Name, ClientType.Queue);
+            var factory = Provider.GetService<IClientFactory>();
+            QueueClient = (IQueueClient) factory.Create(_options, settings);
+            var sender = new MessageSender(QueueClient, _options.EntityPath, _options.ClientType);
+            var receiver = new MessageReceiver(QueueClient, _options.EntityPath, _options.ClientType);
             RegisterMessageHandler(_options, receiver);
-            return (sender, receiver, QueueClient);
+            return (sender, receiver);
         }
     }
 }

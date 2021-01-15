@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace Ev.ServiceBus.Abstractions.Exceptions
+namespace Ev.ServiceBus.Abstractions
 {
+    [Serializable]
     public class MessageSenderUnavailableException : Exception
     {
         public MessageSenderUnavailableException(string name)

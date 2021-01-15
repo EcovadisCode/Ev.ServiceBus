@@ -8,16 +8,15 @@ The registration process is very simple:
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.ConfigureServiceBus(options =>
-    {
-        options.RegisterSubscription("TopicName", "SubscriptionName")
-            .WithConnectionString(serviceBusConnectionString)
-            .WithCustomMessageHandler<SubscriptionHandler>(/*options*/);
+    services.AddServiceBus(settings => {
+        settings.WithConnection(serviceBusConnectionString);
+    });
 
-        options.RegisterQueue("QueueName")
-            .WithConnectionString(serviceBusConnectionString)
-            .WithCustomMessageHandler<QueueHandler>(/*options*/);
-    }); 
+    options.RegisterSubscription("TopicName", "SubscriptionName")
+        .WithCustomMessageHandler<SubscriptionHandler>(/*options*/);
+
+    options.RegisterQueue("QueueName")
+        .WithCustomMessageHandler<QueueHandler>(/*options*/);
 }
 ```
 The above example is the minimum to register for receiving messages.
@@ -61,19 +60,6 @@ public class QueueMessageErrorHandler : IExceptionHandler
 }
 ```
 About the `ExceptionReceivedEventArgs` you can read [here](https://docs.microsoft.com/en-us/dotnet/api/microsoft.servicebus.messaging.exceptionreceivedeventargs?view=azure-dotnet).
-
-### Connection information
-In the first example there is a connection string used. It is possible to pass the connection information in two different ways.
-
-By passing the [ServiceBusConnection](https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.servicebus.servicebusconnection.-ctor) object directly:
-```csharp
-.WithConnection(new ServiceBusConnection(/*constructor parameters*/))
-```
-
-By using [a connection string builder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.servicebus.servicebusconnectionstringbuilder.-ctor):
-```csharp
-.WithConnectionStringBuilder(new ServiceBusConnectionStringBuilder(/*constructor parameters*/))
-```
 
 ### Read More
 Official Microsoft tutorials:

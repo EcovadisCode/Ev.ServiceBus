@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.Exceptions;
 
 namespace Ev.ServiceBus
 {
@@ -39,17 +38,17 @@ namespace Ev.ServiceBus
 
         internal void Register(QueueWrapper queue)
         {
-            _queues.Add(queue.Name, queue);
+            _queues.Add(queue.Options.EntityPath, queue);
         }
 
         internal void Register(SubscriptionWrapper subscription)
         {
-            _subscriptions.Add(subscription.Name, subscription);
+            _subscriptions.Add(subscription.Options.EntityPath, subscription);
         }
 
         internal void Register(TopicWrapper topic)
         {
-            _topics.Add(topic.Name, topic);
+            _topics.Add(topic.Options.EntityPath, topic);
         }
 
         internal IList<QueueWrapper> GetAllQueues()

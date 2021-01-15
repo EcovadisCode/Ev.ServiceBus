@@ -5,21 +5,13 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.UnitTests.Helpers
 {
-    public class FakeQueueClientFactory : IQueueClientFactory
+    public class FakeClientFactory : IClientFactory
     {
         private readonly List<QueueClientMock> _registeredClients;
 
-        public FakeQueueClientFactory()
+        public FakeClientFactory()
         {
             _registeredClients = new List<QueueClientMock>();
-        }
-
-        public IQueueClient Create(QueueOptions options)
-        {
-            var clientMock = new QueueClientMock(options.QueueName);
-
-            _registeredClients.Add(clientMock);
-            return clientMock.QueueClient;
         }
 
         public QueueClientMock GetAssociatedMock(string name)
@@ -30,6 +22,14 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         public QueueClientMock[] GetAllRegisteredQueueClients()
         {
             return _registeredClients.ToArray();
+        }
+
+        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        {
+            var clientMock = new QueueClientMock(options.EntityPath);
+
+            _registeredClients.Add(clientMock);
+            return clientMock.QueueClient;
         }
     }
 
@@ -42,17 +42,17 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             _registeredClients = new List<TopicClientMock>();
         }
 
-        public ITopicClient Create(TopicOptions options)
-        {
-            var clientMock = new TopicClientMock(options.TopicName);
-
-            _registeredClients.Add(clientMock);
-            return clientMock.Client;
-        }
-
         public TopicClientMock[] GetAllRegisteredTopicClients()
         {
             return _registeredClients.ToArray();
+        }
+
+        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        {
+            var clientMock = new TopicClientMock(options.EntityPath);
+
+            _registeredClients.Add(clientMock);
+            return clientMock.Client;
         }
     }
 
@@ -65,17 +65,17 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             _registeredClients = new List<SubscriptionClientMock>();
         }
 
-        public ISubscriptionClient Create(SubscriptionOptions options)
-        {
-            var clientMock = new SubscriptionClientMock(options.SubscriptionName);
-
-            _registeredClients.Add(clientMock);
-            return clientMock.Client;
-        }
-
         public SubscriptionClientMock[] GetAllRegisteredSubscriptionClients()
         {
             return _registeredClients.ToArray();
+        }
+
+        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        {
+            var clientMock = new SubscriptionClientMock(((SubscriptionOptions)options).SubscriptionName);
+
+            _registeredClients.Add(clientMock);
+            return clientMock.Client;
         }
     }
 }

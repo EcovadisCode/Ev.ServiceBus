@@ -14,23 +14,19 @@ namespace Ev.ServiceBus
             TopicOptions options,
             ServiceBusOptions parentOptions,
             IServiceProvider provider)
-            : base(parentOptions, provider, options.TopicName)
+            : base(options, parentOptions, provider)
         {
             _options = options;
         }
 
-        internal ITopicClient TopicClient { get; private set; }
+        internal ITopicClient? TopicClient { get; private set; }
 
-        protected override (IMessageSender, MessageReceiver, IClientEntity) CreateClient()
+        protected override (IMessageSender, MessageReceiver?) CreateClient(ConnectionSettings settings)
         {
-            if (ParentOptions.Enabled == false)
-            {
-                return (new DeactivatedSender(Name, ClientType.Topic), null, null);
-            }
             var factory = Provider.GetService<ITopicClientFactory>();
-            TopicClient = factory.Create(_options);
-            var sender = new MessageSender(TopicClient, Name, ClientType.Topic);
-            return (sender, null, TopicClient);
+            TopicClient = (ITopicClient) factory.Create(_options, settings);
+            var sender = new MessageSender(TopicClient, _options.EntityPath, _options.ClientType);
+            return (sender, null);
         }
     }
 }

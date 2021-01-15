@@ -10,14 +10,16 @@ namespace Ev.ServiceBus.UnitTests.Helpers
     {
         private Action<IServiceCollection> _additionalServices;
         private Action<IServiceCollection> _overrideFactory;
+        private Action<ServiceBusSettings> _defaultSettings;
 
         public ServiceBusComposer()
         {
-            _additionalServices = s => { };
+            _additionalServices = _ => { };
             _overrideFactory = s => s.OverrideClientFactories();
+            _defaultSettings = _ => { };
         }
 
-        public ServiceBusComposer OverrideQueueClientFactory(IQueueClientFactory factory)
+        public ServiceBusComposer OverrideQueueClientFactory(IClientFactory factory)
         {
             _overrideFactory = s => s.OverrideQueueClientFactory(factory);
             return this;
@@ -29,12 +31,18 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             return this;
         }
 
+        public ServiceBusComposer WithDefaultSettings(Action<ServiceBusSettings> defaultSettings)
+        {
+            _defaultSettings = defaultSettings;
+            return this;
+        }
+
         public async Task<IServiceProvider> ComposeAndSimulateStartup()
         {
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus();
+            services.AddServiceBus(_defaultSettings);
 
             _overrideFactory(services);
             _additionalServices(services);

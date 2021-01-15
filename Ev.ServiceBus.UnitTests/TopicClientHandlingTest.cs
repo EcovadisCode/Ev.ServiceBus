@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -18,12 +19,9 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.ConfigureServiceBus(options =>
-                {
-                    options.RegisterTopic("testtopic1").WithConnectionString("testConnectionString1");
-                    options.RegisterTopic("testtopic2").WithConnectionString("testConnectionString2");
-                    options.RegisterTopic("testtopic3").WithConnectionString("testConnectionString3");
-                });
+                services.RegisterServiceBusTopic("testtopic1").WithConnection("testConnectionString1");
+                services.RegisterServiceBusTopic("testtopic2").WithConnection("testConnectionString2");
+                services.RegisterServiceBusTopic("testtopic3").WithConnection("testConnectionString3");
             });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -51,12 +49,9 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.ConfigureServiceBus(options =>
-                {
-                    options.RegisterTopic("testtopic1").WithConnectionString("testConnectionString1");
-                    options.RegisterTopic("testtopic2").WithConnectionString("testConnectionString2");
-                    options.RegisterTopic("testtopic3").WithConnectionString("testConnectionString3");
-                });
+                services.RegisterServiceBusTopic("testtopic1").WithConnection("testConnectionString1");
+                services.RegisterServiceBusTopic("testtopic2").WithConnection("testConnectionString2");
+                services.RegisterServiceBusTopic("testtopic3").WithConnection("testConnectionString3");
             });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -75,5 +70,54 @@ namespace Ev.ServiceBus.UnitTests
                 clientMock.Mock.Verify(o => o.CloseAsync(), Times.Once);
             }
         }
+
+        [Fact]
+        public async Task DontCallCloseWhenTheTopicClientIsAlreadyClosing()
+        {
+            var composer = new ServiceBusComposer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusTopic("testtopic1").WithConnection("testConnectionString1");
+                services.RegisterServiceBusTopic("testtopic2").WithConnection("testConnectionString2");
+                services.RegisterServiceBusTopic("testtopic3").WithConnection("testConnectionString3");
+            });
+
+            var provider = await composer.ComposeAndSimulateStartup();
+
+            var factory = provider.GetRequiredService<FakeTopicClientFactory>();
+            var clientMocks = factory.GetAllRegisteredTopicClients();
+
+            foreach (var clientMock in clientMocks)
+            {
+                clientMock.Mock.SetupGet(o => o.IsClosedOrClosing).Returns(true);
+                clientMock.Mock.Setup(o => o.CloseAsync()).Returns(Task.CompletedTask).Verifiable();
+            }
+
+            await provider.SimulateStopHost(token: new CancellationToken());
+
+            foreach (var clientMock in clientMocks)
+            {
+                clientMock.Mock.Verify(o => o.CloseAsync(), Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task ThrowsExceptionWhenAQueueSenderIsNotFound()
+        {
+            var composer = new ServiceBusComposer();
+
+            var provider = await composer.ComposeAndSimulateStartup();
+
+            var registry = provider.GetService<IServiceBusRegistry>();
+
+            var ex = Assert.Throws<TopicSenderNotFoundException>(
+                () =>
+                {
+                    registry.GetTopicSender("notARegisteredTopicName");
+                });
+            ex.TopicName.Should().Be("notARegisteredTopicName");
+        }
+
     }
 }

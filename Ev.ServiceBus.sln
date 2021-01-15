@@ -19,6 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{15791C07-7
 		docs\ReceiveMessages.md = docs\ReceiveMessages.md
 		docs\SendMessages.md = docs\SendMessages.md
 		docs\SetUp.md = docs\SetUp.md
+		docs\AdvancedScenarios.md = docs\AdvancedScenarios.md
 	EndProjectSection
 EndProject
 Global

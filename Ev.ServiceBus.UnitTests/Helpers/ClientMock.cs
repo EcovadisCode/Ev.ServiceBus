@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 using Moq;
 

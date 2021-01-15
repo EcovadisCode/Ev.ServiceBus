@@ -37,7 +37,7 @@ namespace Ev.ServiceBus.Abstractions
         ///     Abandoning a message will increase the delivery count on the message.
         ///     This operation can only be performed on messages that were received by this receiver.
         /// </remarks>
-        Task AbandonAsync(string lockToken, IDictionary<string, object> propertiesToModify = null);
+        Task AbandonAsync(string lockToken, IDictionary<string, object>? propertiesToModify = null);
 
         /// <summary>Moves a message to the deadletter sub-topic.</summary>
         /// <param name="lockToken">The lock token of the corresponding message to deadletter.</param>
@@ -53,7 +53,7 @@ namespace Ev.ServiceBus.Abstractions
         ///     help with this.
         ///     This operation can only be performed on messages that were received by this receiver.
         /// </remarks>
-        Task DeadLetterAsync(string lockToken, IDictionary<string, object> propertiesToModify = null);
+        Task DeadLetterAsync(string lockToken, IDictionary<string, object>? propertiesToModify = null);
 
         /// <summary>Moves a message to the deadletter sub-topic.</summary>
         /// <param name="lockToken">The lock token of the corresponding message to deadletter.</param>
@@ -70,6 +70,6 @@ namespace Ev.ServiceBus.Abstractions
         ///     help with this.
         ///     This operation can only be performed on messages that were received by this receiver.
         /// </remarks>
-        Task DeadLetterAsync(string lockToken, string deadLetterReason, string deadLetterErrorDescription = null);
+        Task DeadLetterAsync(string lockToken, string deadLetterReason, string? deadLetterErrorDescription = null);
     }
 }

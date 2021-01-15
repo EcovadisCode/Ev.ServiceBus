@@ -6,19 +6,30 @@ namespace Ev.ServiceBus
 {
     public class QueueClientFactory : IQueueClientFactory
     {
-        public IQueueClient Create(QueueOptions options)
+        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
         {
-            if (options.Connection != null)
+            if (connectionSettings.Connection != null)
             {
-                return new QueueClient(options.Connection, options.QueueName, options.ReceiveMode, options.RetryPolicy);
+                return new QueueClient(
+                    connectionSettings.Connection,
+                    options.EntityPath,
+                    connectionSettings.ReceiveMode,
+                    connectionSettings.RetryPolicy);
             }
 
-            if (options.ConnectionStringBuilder != null)
+            if (connectionSettings.ConnectionStringBuilder != null)
             {
-                return new QueueClient(options.ConnectionStringBuilder, options.ReceiveMode, options.RetryPolicy);
+                return new QueueClient(
+                    connectionSettings.ConnectionStringBuilder,
+                    connectionSettings.ReceiveMode,
+                    connectionSettings.RetryPolicy);
             }
 
-            return new QueueClient(options.ConnectionString, options.QueueName, options.ReceiveMode, options.RetryPolicy);
+            return new QueueClient(
+                connectionSettings.ConnectionString,
+                options.EntityPath,
+                connectionSettings.ReceiveMode,
+                connectionSettings.RetryPolicy);
         }
     }
 }

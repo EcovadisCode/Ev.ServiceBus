@@ -3,6 +3,7 @@
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions
 {
+    [Serializable]
     public class DuplicateSubscriptionRegistrationException : Exception
     {
         public DuplicateSubscriptionRegistrationException(string topicName, string subscriptionName)

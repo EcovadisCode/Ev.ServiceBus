@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.Exceptions;
 using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus
 {
     public class UnavailableSender : IMessageSender
     {
-        public UnavailableSender(string name)
+        public UnavailableSender(string name, ClientType clientType)
         {
             Name = name;
+            ClientType = clientType;
         }
 
         public string Name { get; }

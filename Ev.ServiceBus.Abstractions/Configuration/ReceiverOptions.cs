@@ -6,12 +6,10 @@ namespace Ev.ServiceBus.Abstractions
 {
     public abstract class ReceiverOptions : ClientOptions, IMessageReceiverOptions
     {
-        protected ReceiverOptions(string entityPath) : base(entityPath)
-        {
-        }
+        protected ReceiverOptions(string entityPath, ClientType clientType) : base(entityPath, clientType) { }
 
-        public Type MessageHandlerType { get; internal set; }
-        public Action<MessageHandlerOptions> MessageHandlerConfig { get; internal set; }
-        public Type ExceptionHandlerType { get; internal set; }
+        public Type? MessageHandlerType { get; internal set; }
+        public Action<MessageHandlerOptions>? MessageHandlerConfig { get; internal set; }
+        public Type? ExceptionHandlerType { get; internal set; }
     }
 }

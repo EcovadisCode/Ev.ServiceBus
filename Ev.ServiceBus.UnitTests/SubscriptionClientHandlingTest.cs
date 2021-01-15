@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
+﻿using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
@@ -23,12 +19,9 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.ConfigureServiceBus(options =>
-                {
-                    options.RegisterSubscription("testtopic1", "testsub1").WithConnectionString("testConnectionString1");
-                    options.RegisterSubscription("testtopic2", "testsub1").WithConnectionString("testConnectionString2");
-                    options.RegisterSubscription("testtopic3", "testsub1").WithConnectionString("testConnectionString3");
-                });
+                services.RegisterServiceBusSubscription("testtopic1", "testsub1").WithConnection("testConnectionString1");
+                services.RegisterServiceBusSubscription("testtopic2", "testsub1").WithConnection("testConnectionString2");
+                services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithConnection("testConnectionString3");
             });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -56,12 +49,9 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.ConfigureServiceBus(options =>
-                {
-                    options.RegisterSubscription("testtopic1", "testsub1").WithConnectionString("testConnectionString1");
-                    options.RegisterSubscription("testtopic2", "testsub1").WithConnectionString("testConnectionString2");
-                    options.RegisterSubscription("testtopic3", "testsub1").WithConnectionString("testConnectionString3");
-                });
+                services.RegisterServiceBusSubscription("testtopic1", "testsub1").WithConnection("testConnectionString1");
+                services.RegisterServiceBusSubscription("testtopic2", "testsub1").WithConnection("testConnectionString2");
+                services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithConnection("testConnectionString3");
             });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -82,23 +72,52 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
+        public async Task DontCallCloseWhenTheSubscriptionClientIsAlreadyClosing()
+        {
+            var composer = new ServiceBusComposer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusSubscription("testtopic1", "testsub1").WithConnection("testConnectionString1");
+                services.RegisterServiceBusSubscription("testtopic2", "testsub1").WithConnection("testConnectionString2");
+                services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithConnection("testConnectionString3");
+            });
+
+            var provider = await composer.ComposeAndSimulateStartup();
+
+            var factory = provider.GetRequiredService<FakeSubscriptionClientFactory>();
+            var clientMocks = factory.GetAllRegisteredSubscriptionClients();
+
+            foreach (var clientMock in clientMocks)
+            {
+                clientMock.Mock.SetupGet(o => o.IsClosedOrClosing).Returns(true);
+                clientMock.Mock.Setup(o => o.CloseAsync()).Returns(Task.CompletedTask).Verifiable();
+            }
+
+            await provider.SimulateStopHost(token: new CancellationToken());
+
+            foreach (var clientMock in clientMocks)
+            {
+                clientMock.Mock.Verify(o => o.CloseAsync(), Times.Never);
+            }
+        }
+
+        [Fact]
         public async Task CustomMessageHandlerCanReceiveMessages()
         {
             var composer = new ServiceBusComposer();
 
-            var fakeMessageHandler = new FakeMessageHandler();
+            var mock = new Mock<IMessageHandler>();
+            mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.AddSingleton(fakeMessageHandler);
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options
-                                .RegisterSubscription("testTopic", "testSub")
-                                .WithConnectionString("connectionStringTest")
-                                .WithCustomMessageHandler<FakeMessageHandler>();
-                        });
+                    services.AddSingleton(mock);
+                    services.RegisterServiceBusSubscription("testTopic", "testSub")
+                        .WithConnection("connectionStringTest")
+                        .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -109,12 +128,13 @@ namespace Ev.ServiceBus.UnitTests
             var sentToken = new CancellationToken();
             await clientMock.TriggerMessageReception(sentMessage, sentToken);
 
-            fakeMessageHandler.Mock
+            mock
                 .Verify(
                     o => o.HandleMessageAsync(
                         It.Is<MessageContext>(
                             context => context.Message == sentMessage
                                        && context.Receiver.Name == "testTopic/Subscriptions/testSub"
+                                       && context.Receiver.ClientType == ClientType.Subscription
                                        && context.Token == sentToken)),
                     Times.Once);
         }
@@ -125,18 +145,21 @@ namespace Ev.ServiceBus.UnitTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus(true, false);
-            services.OverrideClientFactories();
-            var fakeMessageHandler = new FakeMessageHandler();
-            services.AddSingleton(fakeMessageHandler);
-            services.ConfigureServiceBus(
-                options =>
+            services.AddServiceBus(
+                settings =>
                 {
-                    options
-                        .RegisterSubscription("testTopic", "testSub")
-                        .WithConnectionString("connectionStringTest")
-                        .WithCustomMessageHandler<FakeMessageHandler>();
+                    settings.Enabled = true;
+                    settings.ReceiveMessages = false;
                 });
+            services.OverrideClientFactories();
+            var mock = new Mock<IMessageHandler>();
+            mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+            services.AddSingleton(mock);
+            services.RegisterServiceBusSubscription("testTopic", "testSub")
+                .WithConnection("connectionStringTest")
+                .WithCustomMessageHandler<FakeMessageHandler>();
 
             var provider = services.BuildServiceProvider();
             await provider.SimulateStartHost(token: new CancellationToken());
@@ -147,12 +170,13 @@ namespace Ev.ServiceBus.UnitTests
             var sentToken = new CancellationToken();
             await clientMock.TriggerMessageReception(sentMessage, sentToken);
 
-            fakeMessageHandler.Mock
+            mock
                 .Verify(
                     o => o.HandleMessageAsync(
                         It.Is<MessageContext>(
                             context => context.Message == sentMessage
                                        && context.Receiver.Name == "testQueue"
+                                       && context.Receiver.ClientType == ClientType.Subscription
                                        && context.Token == sentToken)),
                     Times.Never);
         }

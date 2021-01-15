@@ -6,8 +6,8 @@ namespace Ev.ServiceBus.Abstractions
 {
     public interface IMessageReceiverOptions : IClientOptions
     {
-        Type MessageHandlerType { get; }
-        Action<MessageHandlerOptions> MessageHandlerConfig { get; }
-        Type ExceptionHandlerType { get; }
+        Type? MessageHandlerType { get; }
+        Action<MessageHandlerOptions>? MessageHandlerConfig { get; }
+        Type? ExceptionHandlerType { get; }
     }
 }

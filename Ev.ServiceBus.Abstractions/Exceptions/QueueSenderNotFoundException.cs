@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace Ev.ServiceBus.Abstractions.Exceptions
+namespace Ev.ServiceBus.Abstractions
 {
+    [Serializable]
     public class QueueSenderNotFoundException : Exception
     {
         public QueueSenderNotFoundException(string queueName)

@@ -6,19 +6,33 @@ namespace Ev.ServiceBus
 {
     public class SubscriptionClientFactory : ISubscriptionClientFactory
     {
-        public ISubscriptionClient Create(SubscriptionOptions options)
+        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
         {
-            if (options.Connection != null)
+            if (connectionSettings.Connection != null)
             {
-                return new SubscriptionClient(options.Connection, options.TopicName, options.SubscriptionName, options.ReceiveMode, options.RetryPolicy);
+                return new SubscriptionClient(
+                    connectionSettings.Connection,
+                    options.EntityPath,
+                    ((SubscriptionOptions) options).SubscriptionName,
+                    connectionSettings.ReceiveMode,
+                    connectionSettings.RetryPolicy);
             }
 
-            if (options.ConnectionStringBuilder != null)
+            if (connectionSettings.ConnectionStringBuilder != null)
             {
-                return new SubscriptionClient(options.ConnectionStringBuilder, options.SubscriptionName, options.ReceiveMode, options.RetryPolicy);
+                return new SubscriptionClient(
+                    connectionSettings.ConnectionStringBuilder,
+                    ((SubscriptionOptions) options).SubscriptionName,
+                    connectionSettings.ReceiveMode,
+                    connectionSettings.RetryPolicy);
             }
 
-            return new SubscriptionClient(options.ConnectionString, options.TopicName, options.SubscriptionName, options.ReceiveMode, options.RetryPolicy);
+            return new SubscriptionClient(
+                connectionSettings.ConnectionString,
+                options.EntityPath,
+                ((SubscriptionOptions) options).SubscriptionName,
+                connectionSettings.ReceiveMode,
+                connectionSettings.RetryPolicy);
         }
     }
 }

@@ -12,85 +12,94 @@ namespace Ev.ServiceBus.UnitTests
 {
     public class ReceiverTest
     {
-        private async Task<QueueClientMock> RegisterHandlerAndComposeServiceBus(Func<MessageContext, Task> callback)
+        private async Task<(QueueClientMock clientMock, Mock<IMessageHandler> messageHandlerMock)> RegisterHandlerAndComposeServiceBus(Action<MessageContext> callback)
         {
             var composer = new ServiceBusComposer();
+            var mock = new Mock<IMessageHandler>();
+            mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
+                .Returns(Task.CompletedTask)
+                .Callback(callback)
+                .Verifiable();
 
-            composer.WithAdditionalServices(services =>
-            {
-                services.AddSingleton(new FakeMessageHandler(callback));
-
-                services.ConfigureServiceBus(options =>
+            composer.WithAdditionalServices(
+                services =>
                 {
-                    options.RegisterQueue("testQueue")
-                        .WithConnectionString("testConnectionString")
-                       .WithCustomMessageHandler<FakeMessageHandler>();
+                    services.AddSingleton(mock);
+
+                    services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("testConnectionString")
+                        .WithCustomMessageHandler<FakeMessageHandler>();
                 });
-            });
 
             var provider = await composer.ComposeAndSimulateStartup();
 
-            return provider.GetQueueClientMock("testQueue");
+            return (provider.GetQueueClientMock("testQueue"), mock);
         }
 
         [Fact]
         public async Task CallsAbandonAsync()
         {
-            var clientMock = await RegisterHandlerAndComposeServiceBus(MessageHandler);
+            var mocks = await RegisterHandlerAndComposeServiceBus(MessageHandler);
 
-            await clientMock.TriggerMessageReception(message: new Message(), token: new CancellationToken());
+            await mocks.clientMock.TriggerMessageReception(new Message(), new CancellationToken());
 
-            async Task MessageHandler(MessageContext context)
+            void MessageHandler(MessageContext context)
             {
-                await context.Receiver.AbandonAsync("lockTokenTest");
+                context.Receiver.AbandonAsync("lockTokenTest").ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
-            clientMock.Mock.Verify(o => o.AbandonAsync("lockTokenTest", null), Times.Once);
+            mocks.clientMock.Mock.Verify(o => o.AbandonAsync("lockTokenTest", null), Times.Once);
+            mocks.messageHandlerMock.VerifyAll();
         }
 
         [Fact]
         public async Task CallsCompleteAsync()
         {
-            var clientMock = await RegisterHandlerAndComposeServiceBus(MessageHandler);
+            var mocks = await RegisterHandlerAndComposeServiceBus(MessageHandler);
 
-            await clientMock.TriggerMessageReception(message: new Message(), token: new CancellationToken());
+            await mocks.clientMock.TriggerMessageReception(new Message(), new CancellationToken());
 
-            async Task MessageHandler(MessageContext context)
+            void MessageHandler(MessageContext context)
             {
-                await context.Receiver.CompleteAsync("lockTokenTest");
+                context.Receiver.CompleteAsync("lockTokenTest").ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
-            clientMock.Mock.Verify(o => o.CompleteAsync("lockTokenTest"), Times.Once);
+            mocks.clientMock.Mock.Verify(o => o.CompleteAsync("lockTokenTest"), Times.Once);
+            mocks.messageHandlerMock.VerifyAll();
         }
 
         [Fact]
         public async Task CallsDeadLetterAsync()
         {
-            var clientMock = await RegisterHandlerAndComposeServiceBus(MessageHandler);
+            var mocks = await RegisterHandlerAndComposeServiceBus(MessageHandler);
 
-            await clientMock.TriggerMessageReception(message: new Message(), token: new CancellationToken());
+            await mocks.clientMock.TriggerMessageReception(new Message(), new CancellationToken());
 
-            async Task MessageHandler(MessageContext context)
+            void MessageHandler(MessageContext context)
             {
-                await context.Receiver.DeadLetterAsync("lockTokenTest");
+                context.Receiver.DeadLetterAsync("lockTokenTest").ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
-            clientMock.Mock.Verify(o => o.DeadLetterAsync("lockTokenTest", null), Times.Once);
+            mocks.clientMock.Mock.Verify(o => o.DeadLetterAsync("lockTokenTest", null), Times.Once);
+            mocks.messageHandlerMock.VerifyAll();
         }
 
         [Fact]
         public async Task CallsDeadLetterAsyncWithReason()
         {
-            var clientMock = await RegisterHandlerAndComposeServiceBus(MessageHandler);
+            var mocks = await RegisterHandlerAndComposeServiceBus(MessageHandler);
 
-            await clientMock.TriggerMessageReception(message: new Message(), token: new CancellationToken());
+            await mocks.clientMock.TriggerMessageReception(new Message(), new CancellationToken());
 
-            async Task MessageHandler(MessageContext context)
+            void MessageHandler(MessageContext context)
             {
-                await context.Receiver.DeadLetterAsync("lockTokenTest", "testReason", "testDescription");
+                context.Receiver.DeadLetterAsync("lockTokenTest", "testReason", "testDescription").ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
-            clientMock.Mock.Verify(o => o.DeadLetterAsync("lockTokenTest", "testReason", "testDescription"), Times.Once);
+            mocks.clientMock.Mock.Verify(
+                o => o.DeadLetterAsync("lockTokenTest", "testReason", "testDescription"),
+                Times.Once);
+            mocks.messageHandlerMock.VerifyAll();
         }
     }
 }

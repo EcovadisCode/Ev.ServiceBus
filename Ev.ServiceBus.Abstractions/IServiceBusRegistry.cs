@@ -1,6 +1,4 @@
-﻿using Ev.ServiceBus.Abstractions.Exceptions;
-
-namespace Ev.ServiceBus.Abstractions
+﻿namespace Ev.ServiceBus.Abstractions
 {
     public interface IServiceBusRegistry
     {

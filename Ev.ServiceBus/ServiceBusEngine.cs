@@ -28,7 +28,7 @@ namespace Ev.ServiceBus
 
         public void StartAll()
         {
-            _logger.LogInformation("Starting azure service bus clients");
+            _logger.LogInformation("[Ev.ServiceBus] Starting azure service bus clients");
 
             foreach (var queueOptions in _options.Value.Queues)
             {
@@ -72,7 +72,7 @@ namespace Ev.ServiceBus
 
         public async Task StopAll()
         {
-            _logger.LogInformation("Stopping azure service bus clients");
+            _logger.LogInformation("[Ev.ServiceBus] Stopping azure service bus clients");
 
             await Task.WhenAll(_registry.GetAllQueues().Select(CloseQueueAsync).ToArray()).ConfigureAwait(false);
             await Task.WhenAll(_registry.GetAllTopics().Select(CloseTopicAsync).ToArray()).ConfigureAwait(false);
@@ -81,7 +81,7 @@ namespace Ev.ServiceBus
 
         private async Task CloseQueueAsync(QueueWrapper queue)
         {
-            if (queue.QueueClient.IsClosedOrClosing)
+            if (queue.QueueClient!.IsClosedOrClosing)
             {
                 return;
             }
@@ -92,13 +92,13 @@ namespace Ev.ServiceBus
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Closing of QueueClient {queue.Name} failed");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of QueueClient {queue.Options.EntityPath} failed");
             }
         }
 
         private async Task CloseTopicAsync(TopicWrapper topic)
         {
-            if (topic.TopicClient.IsClosedOrClosing)
+            if (topic.TopicClient!.IsClosedOrClosing)
             {
                 return;
             }
@@ -109,13 +109,13 @@ namespace Ev.ServiceBus
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Closing of topic Client {topic.Name} failed");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of topic Client {topic.Options.EntityPath} failed");
             }
         }
 
         private async Task CloseSubscriptionAsync(SubscriptionWrapper subscription)
         {
-            if (subscription.SubscriptionClient.IsClosedOrClosing)
+            if (subscription.SubscriptionClient!.IsClosedOrClosing)
             {
                 return;
             }
@@ -126,7 +126,7 @@ namespace Ev.ServiceBus
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Closing of subscription Client {subscription.Name} failed");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of subscription Client {subscription.Options.EntityPath} failed");
             }
         }
     }

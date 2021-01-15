@@ -8,13 +8,13 @@ namespace Ev.ServiceBus.UnitTests.Helpers
     {
         public static IServiceCollection OverrideClientFactories(this IServiceCollection services)
         {
-            services.AddSingleton<FakeQueueClientFactory>();
+            services.AddSingleton<FakeClientFactory>();
             services.AddSingleton<FakeTopicClientFactory>();
             services.AddSingleton<FakeSubscriptionClientFactory>();
             services.Replace(
                 new ServiceDescriptor(
-                    typeof(IQueueClientFactory),
-                    provider => provider.GetRequiredService<FakeQueueClientFactory>(),
+                    typeof(IClientFactory),
+                    provider => provider.GetRequiredService<FakeClientFactory>(),
                     ServiceLifetime.Singleton));
             services.Replace(
                 new ServiceDescriptor(
@@ -31,9 +31,9 @@ namespace Ev.ServiceBus.UnitTests.Helpers
 
         public static IServiceCollection OverrideQueueClientFactory(
             this IServiceCollection services,
-            IQueueClientFactory instance)
+            IClientFactory instance)
         {
-            services.Replace(new ServiceDescriptor(typeof(IQueueClientFactory), instance));
+            services.Replace(new ServiceDescriptor(typeof(IClientFactory), instance));
             return services;
         }
 

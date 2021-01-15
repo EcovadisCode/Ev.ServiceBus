@@ -8,18 +8,17 @@ The registration process is very simple:
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.ConfigureServiceBus(options =>
-    {
-        options.RegisterTopic("TopicName")
-            .WithConnectionString(serviceBusConnectionString);
-
-        options.RegisterQueue("QueueName")
-            .WithConnectionString(serviceBusConnectionString);
-    }); 
+    services.AddServiceBus(settings => {
+        settings.WithConnection(serviceBusConnectionString);
+    });
+    
+    services.RegisterServiceBusQueue("QueueName");
+    
+    services.RegisterServiceBusTopic("TopicName");
 }
 ```
 The above example is the minimum to register for sending messages.
-You need to add names (`TopicName` or `QueueName`), the connection string to the service bus you created in the Azure.
+The provided names (`TopicName` or `QueueName`) must be the names of resources present on your [Azure Service Bus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview#namespaces)
 
 ### Sending messages
 
@@ -36,9 +35,6 @@ queue.CancelScheduledMessageAsync(sequence); // cancel it
 
 // for the topic it looks the same
 ```
-
-### Connection information
-It is the same as for [Receiving Messages](ReceiveMessages.md)
 
 ### Read More
 Official Microsoft tutorials:

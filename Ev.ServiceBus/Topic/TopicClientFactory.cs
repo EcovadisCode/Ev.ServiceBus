@@ -6,19 +6,27 @@ namespace Ev.ServiceBus
 {
     public class TopicClientFactory : ITopicClientFactory
     {
-        public ITopicClient Create(TopicOptions options)
+        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
         {
-            if (options.Connection != null)
+            if (connectionSettings.Connection != null)
             {
-                return new TopicClient(options.Connection, options.TopicName, options.RetryPolicy);
+                return new TopicClient(
+                    connectionSettings.Connection,
+                    options.EntityPath,
+                    connectionSettings.RetryPolicy);
             }
 
-            if (options.ConnectionStringBuilder != null)
+            if (connectionSettings.ConnectionStringBuilder != null)
             {
-                return new TopicClient(options.ConnectionStringBuilder, options.RetryPolicy);
+                return new TopicClient(
+                    connectionSettings.ConnectionStringBuilder,
+                    connectionSettings.RetryPolicy);
             }
 
-            return new TopicClient(options.ConnectionString, options.TopicName, options.RetryPolicy);
+            return new TopicClient(
+                connectionSettings.ConnectionString,
+                options.EntityPath,
+                connectionSettings.RetryPolicy);
         }
     }
 }

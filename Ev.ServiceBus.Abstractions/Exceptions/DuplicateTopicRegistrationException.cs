@@ -3,6 +3,7 @@
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions
 {
+    [Serializable]
     public class DuplicateTopicRegistrationException : Exception
     {
         public DuplicateTopicRegistrationException(string topicName)

@@ -17,25 +17,20 @@ namespace Ev.ServiceBus
             : base(
                 options,
                 parentOptions,
-                provider,
-                EntityNameHelper.FormatSubscriptionPath(options.TopicName, options.SubscriptionName))
+                provider)
         {
             _options = options;
         }
 
-        internal ISubscriptionClient SubscriptionClient { get; private set; }
+        internal ISubscriptionClient? SubscriptionClient { get; private set; }
 
-        protected override (IMessageSender, MessageReceiver, IClientEntity) CreateClient()
+        protected override (IMessageSender, MessageReceiver?) CreateClient(ConnectionSettings settings)
         {
-            if (ParentOptions.Enabled == false)
-            {
-                return (null, null, null);
-            }
             var factory = Provider.GetService<ISubscriptionClientFactory>();
-            SubscriptionClient = factory.Create(_options);
-            var receiver = new MessageReceiver(SubscriptionClient, Name, ClientType.Subscription);
+            SubscriptionClient = (ISubscriptionClient) factory.Create(_options, settings);
+            var receiver = new MessageReceiver(SubscriptionClient, _options.EntityPath, _options.ClientType);
             RegisterMessageHandler(_options, receiver);
-            return (null, receiver, SubscriptionClient);
+            return (new DeactivatedSender(_options.EntityPath, _options.ClientType), receiver);
         }
     }
 }

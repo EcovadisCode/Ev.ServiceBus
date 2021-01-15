@@ -1,10 +1,9 @@
-﻿using Microsoft.Azure.ServiceBus;
+﻿
 
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions
 {
-    public interface ISubscriptionClientFactory
+    public interface ISubscriptionClientFactory : IClientFactory
     {
-        ISubscriptionClient Create(SubscriptionOptions options);
     }
 }

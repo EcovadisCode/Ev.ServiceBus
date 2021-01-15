@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.Exceptions;
 using Ev.ServiceBus.UnitTests.Helpers;
-using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Xunit;
 
@@ -23,12 +22,8 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue");
-                            options.RegisterQueue("testQueue");
-                        });
+                    services.RegisterServiceBusQueue("testQueue");
+                    services.RegisterServiceBusQueue("testQueue");
                 });
 
             await Assert.ThrowsAnyAsync<DuplicateQueueRegistrationException>(
@@ -43,13 +38,9 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue").WithConnectionString("testConnectionString");
-                            options.RegisterQueue("testQueue2").WithConnectionString("testConnectionString2");
-                            options.RegisterQueue("testQueue3").WithConnectionString("testConnectionString3");
-                        });
+                    services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
+                    services.RegisterServiceBusQueue("testQueue2").WithConnection("testConnectionString2");
+                    services.RegisterServiceBusQueue("testQueue3").WithConnection("testConnectionString3");
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -68,10 +59,13 @@ namespace Ev.ServiceBus.UnitTests
 
             var serviceBusConnection = new ServiceBusConnection(
                 "Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
-            var factory = new Mock<IQueueClientFactory>();
+            var factory = new Mock<IClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<QueueOptions>(opts => opts.Connection == serviceBusConnection)))
-                .Returns((QueueOptions o) => new QueueClientMock("testQueue").QueueClient)
+                .Setup(
+                    o => o.Create(
+                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<ConnectionSettings>(conn => conn.Connection == serviceBusConnection)))
+                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -79,11 +73,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideQueueClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue").WithConnection(serviceBusConnection);
-                        });
+                    services.RegisterServiceBusQueue("testQueue").WithConnection(serviceBusConnection);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -99,10 +89,13 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var factory = new Mock<IQueueClientFactory>();
+            var factory = new Mock<IClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<QueueOptions>(opts => opts.ConnectionString == "testConnectionString")))
-                .Returns((QueueOptions o) => new QueueClientMock("testQueue").QueueClient)
+                .Setup(
+                    o => o.Create(
+                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionString")))
+                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -110,11 +103,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideQueueClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue").WithConnectionString("testConnectionString");
-                        });
+                    services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -131,11 +120,13 @@ namespace Ev.ServiceBus.UnitTests
             var composer = new ServiceBusComposer();
 
             var connectionStringBuilder = new ServiceBusConnectionStringBuilder();
-            var factory = new Mock<IQueueClientFactory>();
+            var factory = new Mock<IClientFactory>();
             factory
                 .Setup(
-                    o => o.Create(It.Is<QueueOptions>(opts => opts.ConnectionStringBuilder == connectionStringBuilder)))
-                .Returns((QueueOptions o) => new QueueClientMock("testQueue").QueueClient)
+                    o => o.Create(
+                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<ConnectionSettings>(conn => conn.ConnectionStringBuilder == connectionStringBuilder)))
+                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -143,11 +134,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideQueueClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue").WithConnectionStringBuilder(connectionStringBuilder);
-                        });
+                    services.RegisterServiceBusQueue("testQueue").WithConnection(connectionStringBuilder);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -163,10 +150,13 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var factory = new Mock<IQueueClientFactory>();
+            var factory = new Mock<IClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<QueueOptions>(opts => opts.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
-                .Returns((QueueOptions o) => new QueueClientMock("testQueue").QueueClient)
+                .Setup(
+                    o => o.Create(
+                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<ConnectionSettings>(conn => conn.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
+                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -174,13 +164,8 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideQueueClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue")
-                                .WithConnectionString("testConnectionString")
-                                .WithReceiveMode(ReceiveMode.ReceiveAndDelete);
-                        });
+                    services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("testConnectionString", ReceiveMode.ReceiveAndDelete);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -197,10 +182,13 @@ namespace Ev.ServiceBus.UnitTests
             var composer = new ServiceBusComposer();
 
             var retryPolicy = new NoRetry();
-            var factory = new Mock<IQueueClientFactory>();
+            var factory = new Mock<IClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<QueueOptions>(opts => opts.RetryPolicy == retryPolicy)))
-                .Returns((QueueOptions o) => new QueueClientMock("testQueue").QueueClient)
+                .Setup(
+                    o => o.Create(
+                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<ConnectionSettings>(conn => conn.RetryPolicy == retryPolicy)))
+                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -208,13 +196,8 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideQueueClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue")
-                                .WithConnectionString("testConnectionString")
-                                .WithRetryPolicy(retryPolicy);
-                        });
+                    services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("testConnectionString", ReceiveMode.PeekLock, retryPolicy);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -229,15 +212,11 @@ namespace Ev.ServiceBus.UnitTests
         public async Task FailsSilentlyWhenAnErrorOccursBuildingAQueueClient()
         {
             var composer = new ServiceBusComposer();
-            composer.OverrideQueueClientFactory(new FailingQueueClientFactory());
+            composer.OverrideQueueClientFactory(new FailingClientFactory());
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterQueue("testQueue").WithConnectionString("testConnectionString");
-                        });
+                    services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -257,28 +236,115 @@ namespace Ev.ServiceBus.UnitTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus(false);
-            services.ConfigureServiceBus(
-                options =>
+            services.AddServiceBus(
+                settings =>
                 {
-                    options.RegisterQueue("testQueue").WithConnectionString("testConnectionString");
+                    settings.Enabled = false;
                 });
+            services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
 
             var provider = services.BuildServiceProvider();
-            await provider.SimulateStartHost(token: new CancellationToken());
+            await provider.SimulateStartHost(new CancellationToken());
             var composer = new ServiceBusComposer();
-            composer.OverrideQueueClientFactory(new FailingQueueClientFactory());
+            composer.OverrideQueueClientFactory(new FailingClientFactory());
 
             var registry = provider.GetService<ServiceBusRegistry>();
             await registry.GetQueueSender("testQueue").SendAsync(new Message());
         }
 
-        public class FailingQueueClientFactory : IQueueClientFactory
+        [Fact]
+        public async Task FailsSilentlyWhenRegisteringQueueWithNoConnectionAndNoDefaultConnection()
         {
-            public IQueueClient Create(QueueOptions options)
-            {
-                throw new Exception();
-            }
+            var composer = new ServiceBusComposer();
+
+            var logger = new Mock<ILogger<BaseWrapper>>();
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.AddSingleton(logger.Object);
+                    services.RegisterServiceBusQueue("testQueue");
+                });
+
+            var provider = await composer.ComposeAndSimulateStartup();
+
+            var registry = provider.GetService<IServiceBusRegistry>();
+            await Assert.ThrowsAsync<MessageSenderUnavailableException>(
+                async () =>
+                {
+                    await registry.GetQueueSender("testQueue").SendAsync(new Message());
+                });
+            logger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<FormattedLogValues>(),
+                    It.IsAny<MissingConnectionException>(),
+                    It.IsAny<Func<object, Exception, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
+        {
+            var composer = new ServiceBusComposer();
+            var factory = new Mock<IClientFactory>();
+            factory
+                .Setup(
+                    o => o.Create(
+                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionStringFromDefault")))
+                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
+                .Verifiable();
+            composer.WithDefaultSettings(
+                settings =>
+                {
+                    settings.WithConnection("testConnectionStringFromDefault");
+                });
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.OverrideQueueClientFactory(factory.Object);
+                    services.RegisterServiceBusQueue("testQueue");
+                });
+
+            var provider = await composer.ComposeAndSimulateStartup();
+
+            var registry = provider.GetService<IServiceBusRegistry>();
+
+            factory.VerifyAll();
+            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
+        }
+
+        [Fact]
+        public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
+        {
+            var composer = new ServiceBusComposer();
+            var factory = new Mock<IClientFactory>();
+            factory
+                .Setup(
+                    o => o.Create(
+                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "concreteTestConnectionString")))
+                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
+                .Verifiable();
+            composer.WithDefaultSettings(
+                settings =>
+                {
+                    settings.WithConnection("testConnectionStringFromDefault");
+                });
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.OverrideQueueClientFactory(factory.Object);
+                    services.RegisterServiceBusQueue("testQueue").WithConnection("concreteTestConnectionString");
+                });
+
+            var provider = await composer.ComposeAndSimulateStartup();
+
+            var registry = provider.GetService<IServiceBusRegistry>();
+
+            factory.VerifyAll();
+            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
         }
     }
 }

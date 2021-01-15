@@ -15,14 +15,13 @@ namespace Ev.ServiceBus
         private readonly ILogger<ReceiverWrapper> _logger;
         private readonly IMessageReceiverOptions _receiverOptions;
 
-        private Func<ExceptionReceivedEventArgs, Task> _onExceptionReceivedHandler;
+        private Func<ExceptionReceivedEventArgs, Task>? _onExceptionReceivedHandler;
 
         protected ReceiverWrapper(
             IMessageReceiverOptions receiverOptions,
             ServiceBusOptions parentOptions,
-            IServiceProvider provider,
-            string name)
-            : base(parentOptions, provider, name)
+            IServiceProvider provider)
+            : base(receiverOptions, parentOptions, provider)
         {
             _receiverOptions = receiverOptions;
             _logger = Provider.GetRequiredService<ILogger<ReceiverWrapper>>();
@@ -30,7 +29,7 @@ namespace Ev.ServiceBus
 
         protected void RegisterMessageHandler(IMessageReceiverOptions receiverOptions, MessageReceiver receiver)
         {
-            if (ParentOptions.ReceiveMessages == false)
+            if (ParentOptions.Settings.ReceiveMessages == false)
             {
                 return;
             }
@@ -63,9 +62,9 @@ namespace Ev.ServiceBus
         private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
         {
             _logger.LogInformation(
-                $"New message received from {Receiver.ClientType} '{Receiver.Name}' : {message.Label}");
+                $"[Ev.ServiceBus] New message received from {Receiver!.ClientType} '{Receiver.Name}' : {message.Label}");
 
-            using var traceLogger = new MsgTraceLogger(_logger, $"Message from {Receiver.ClientType}: {Receiver.Name}: {message.MessageId}.");
+            using var traceLogger = new MsgTraceLogger(_logger, $"[Ev.ServiceBus] Message from {Receiver.ClientType}: {Receiver.Name}: {message.MessageId}.");
             using var scope = Provider.CreateScope();
             var messageHandler =
                 (IMessageHandler) scope.ServiceProvider.GetRequiredService(_receiverOptions.MessageHandlerType);
@@ -86,18 +85,18 @@ namespace Ev.ServiceBus
             var json = JsonConvert.SerializeObject(exceptionEvent.ExceptionReceivedContext, Formatting.Indented);
             _logger.LogError(
                 exceptionEvent.Exception,
-                $"Exception occured during message treatment of {Receiver.ClientType} '{Receiver.Name}'.\n"
+                $"[Ev.ServiceBus] Exception occured during message treatment of {Receiver!.ClientType} '{Receiver.Name}'.\n"
                 + $"Message : {exceptionEvent.Exception.Message}\n"
                 + $"Context:\n{json}");
 
-            await _onExceptionReceivedHandler(exceptionEvent).ConfigureAwait(false);
+            await _onExceptionReceivedHandler!(exceptionEvent).ConfigureAwait(false);
         }
 
         private async Task CallDefinedExceptionHandler(ExceptionReceivedEventArgs exceptionEvent)
         {
             var userDefinedExceptionHandler =
-                (IExceptionHandler) Provider.GetService(_receiverOptions.ExceptionHandlerType);
-            await userDefinedExceptionHandler.HandleExceptionAsync(exceptionEvent).ConfigureAwait(false);
+                (IExceptionHandler) Provider.GetService(_receiverOptions.ExceptionHandlerType!)!;
+            await userDefinedExceptionHandler!.HandleExceptionAsync(exceptionEvent).ConfigureAwait(false);
         }
     }
 

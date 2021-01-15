@@ -6,6 +6,8 @@ using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Xunit;
 
@@ -20,15 +22,10 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.ConfigureServiceBus(options =>
-                {
-                    options
-                        .RegisterSubscription("testTopic", "testsubscription001")
-                        .WithConnectionString("testConnectionString");
-                    options
-                        .RegisterSubscription("testTopic", "testsubscription001")
-                        .WithConnectionString("testConnectionString");
-                });
+                services.RegisterServiceBusSubscription("testTopic", "testsubscription001")
+                    .WithConnection("testConnectionString");
+                services.RegisterServiceBusSubscription("testTopic", "testsubscription001")
+                    .WithConnection("testConnectionString");
             });
 
             await Assert.ThrowsAnyAsync<DuplicateSubscriptionRegistrationException>(async () => await composer.ComposeAndSimulateStartup());
@@ -39,22 +36,20 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var fakeMessageHandler = new FakeMessageHandler();
+            var mock = new Mock<IMessageHandler>();
+            mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
 
             composer.WithAdditionalServices(services =>
             {
-                services.AddSingleton(fakeMessageHandler);
-                services.ConfigureServiceBus(options =>
-                {
-                    options
-                        .RegisterSubscription("testTopic", "testsubscription001")
-                        .WithConnectionString("testConnectionString")
-                        .WithCustomMessageHandler<FakeMessageHandler>();
-                    options
-                        .RegisterSubscription("testTopic", "testsubscription002")
-                        .WithConnectionString("testConnectionString")
-                        .WithCustomMessageHandler<FakeMessageHandler>();
-                });
+                services.AddSingleton(mock);
+                services.RegisterServiceBusSubscription("testTopic", "testsubscription001")
+                    .WithConnection("testConnectionString")
+                    .WithCustomMessageHandler<FakeMessageHandler>();
+                services.RegisterServiceBusSubscription("testTopic", "testsubscription002")
+                    .WithConnection("testConnectionString")
+                    .WithCustomMessageHandler<FakeMessageHandler>();
             });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -67,13 +62,13 @@ namespace Ev.ServiceBus.UnitTests
                 await client.TriggerMessageReception(message, CancellationToken.None);
             }
 
-            fakeMessageHandler.Mock.Verify(
+            mock.Verify(
                 o => o.HandleMessageAsync(
                     It.Is<MessageContext>(
                         context => context.Message == message
                                    && context.Receiver.Name == "testTopic/Subscriptions/testsubscription001")),
                 Times.Once);
-            fakeMessageHandler.Mock.Verify(
+            mock.Verify(
                 o => o.HandleMessageAsync(
                     It.Is<MessageContext>(
                         context => context.Message == message
@@ -84,24 +79,24 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterSubscriptionWithoutRegisteringTopic()
         {
-            Task OnMessageReceived(MessageContext context)
-            {
-                Assert.Equal("testTopic/Subscriptions/testsubscription001", context.Receiver.Name);
-                return Task.CompletedTask;
-            }
-
             var composer = new ServiceBusComposer();
+
+            var mock = new Mock<IMessageHandler>();
+            mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
+                .Callback(
+                    (MessageContext context) =>
+                    {
+                        Assert.Equal("testTopic/Subscriptions/testsubscription001", context.Receiver.Name);
+                    })
+                .Returns(Task.CompletedTask)
+                .Verifiable();
 
             composer.WithAdditionalServices(services =>
             {
-                services.ConfigureServiceBus(options =>
-                {
-                    options
-                        .RegisterSubscription("testTopic", "testsubscription001")
-                        .WithConnectionString("testConnectionString")
-                        .WithCustomMessageHandler<FakeMessageHandler>();
-                });
-                services.AddSingleton(new FakeMessageHandler(OnMessageReceived));
+                services.RegisterServiceBusSubscription("testTopic", "testsubscription001")
+                    .WithConnection("testConnectionString")
+                    .WithCustomMessageHandler<FakeMessageHandler>();
+                services.AddSingleton(mock);
             });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -109,6 +104,7 @@ namespace Ev.ServiceBus.UnitTests
             var factory = provider.GetRequiredService<FakeSubscriptionClientFactory>();
             var client = factory.GetAllRegisteredSubscriptionClients().First();
             await client.TriggerMessageReception(new Message(), CancellationToken.None);
+            mock.VerifyAll();
         }
 
         [Fact]
@@ -120,8 +116,8 @@ namespace Ev.ServiceBus.UnitTests
                 "Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
             var factory = new Mock<ISubscriptionClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<SubscriptionOptions>(opts => opts.Connection == serviceBusConnection)))
-                .Returns((SubscriptionOptions o) => new SubscriptionClientMock("testSubscription").Client)
+                .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.Connection == serviceBusConnection)))
+                .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -129,11 +125,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideSubscriptionClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterSubscription("testTopic", "testSubscription").WithConnection(serviceBusConnection);
-                        });
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription").WithConnection(serviceBusConnection);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -150,8 +142,8 @@ namespace Ev.ServiceBus.UnitTests
 
             var factory = new Mock<ISubscriptionClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<SubscriptionOptions>(opts => opts.ConnectionString == "testConnectionString")))
-                .Returns((SubscriptionOptions o) => new SubscriptionClientMock("testSubscription").Client)
+                .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionString")))
+                .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -159,11 +151,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideSubscriptionClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterSubscription("testTopic", "testSubscription").WithConnectionString("testConnectionString");
-                        });
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription").WithConnection("testConnectionString");
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -182,8 +170,8 @@ namespace Ev.ServiceBus.UnitTests
             var factory = new Mock<ISubscriptionClientFactory>();
             factory
                 .Setup(
-                    o => o.Create(It.Is<SubscriptionOptions>(opts => opts.ConnectionStringBuilder == connectionStringBuilder)))
-                .Returns((SubscriptionOptions o) => new SubscriptionClientMock("testSubscription").Client)
+                    o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.ConnectionStringBuilder == connectionStringBuilder)))
+                .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -191,11 +179,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideSubscriptionClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterSubscription("testTopic", "testSubscription").WithConnectionStringBuilder(connectionStringBuilder);
-                        });
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription").WithConnection(connectionStringBuilder);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -212,8 +196,8 @@ namespace Ev.ServiceBus.UnitTests
 
             var factory = new Mock<ISubscriptionClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<SubscriptionOptions>(opts => opts.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
-                .Returns((SubscriptionOptions o) => new SubscriptionClientMock("testSubscription").Client)
+                .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
+                .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -221,13 +205,8 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideSubscriptionClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterSubscription("testTopic", "testSubscription")
-                                .WithConnectionString("testConnectionString")
-                                .WithReceiveMode(ReceiveMode.ReceiveAndDelete);
-                        });
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription")
+                        .WithConnection("testConnectionString", ReceiveMode.ReceiveAndDelete);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -245,8 +224,8 @@ namespace Ev.ServiceBus.UnitTests
             var retryPolicy = new NoRetry();
             var factory = new Mock<ISubscriptionClientFactory>();
             factory
-                .Setup(o => o.Create(It.Is<SubscriptionOptions>(opts => opts.RetryPolicy == retryPolicy)))
-                .Returns((SubscriptionOptions o) => new SubscriptionClientMock("testSubscription").Client)
+                .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.RetryPolicy == retryPolicy)))
+                .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
                 .Verifiable();
 
             composer.WithAdditionalServices(
@@ -254,18 +233,97 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     services.OverrideSubscriptionClientFactory(factory.Object);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options.RegisterSubscription("testTopic", "testSubscription")
-                                .WithConnectionString("testConnectionString")
-                                .WithRetryPolicy(retryPolicy);
-                        });
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription")
+                        .WithConnection("testConnectionString", ReceiveMode.PeekLock, retryPolicy);
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
 
             var registry = provider.GetService<IServiceBusRegistry>();
+
+            factory.VerifyAll();
+        }
+
+        [Fact]
+        public async Task FailsSilentlyWhenRegisteringQueueWithNoConnectionAndNoDefaultConnection()
+        {
+            var composer = new ServiceBusComposer();
+
+            var logger = new Mock<ILogger<BaseWrapper>>();
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.AddSingleton(logger.Object);
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription");
+                });
+
+            await composer.ComposeAndSimulateStartup();
+
+            logger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<FormattedLogValues>(),
+                    It.IsAny<MissingConnectionException>(),
+                    It.IsAny<Func<object, Exception, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
+        {
+            var composer = new ServiceBusComposer();
+            var factory = new Mock<ISubscriptionClientFactory>();
+            factory
+                .Setup(
+                    o => o.Create(
+                        It.Is<SubscriptionOptions>(opts => opts.EntityPath == "testTopic/Subscriptions/testSubscription"),
+                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionStringFromDefault")))
+                .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testTopic/Subscriptions/testSubscription").Client)
+                .Verifiable();
+            composer.WithDefaultSettings(
+                settings =>
+                {
+                    settings.WithConnection("testConnectionStringFromDefault");
+                });
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription");
+                });
+
+            await composer.ComposeAndSimulateStartup();
+
+            factory.VerifyAll();
+        }
+
+        [Fact]
+        public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
+        {
+            var composer = new ServiceBusComposer();
+            var factory = new Mock<ISubscriptionClientFactory>();
+            factory
+                .Setup(
+                    o => o.Create(
+                        It.Is<SubscriptionOptions>(opts => opts.EntityPath == "testTopic/Subscriptions/testSubscription"),
+                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "concreteTestConnectionString")))
+                .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testTopic/Subscriptions/testSubscription").Client)
+                .Verifiable();
+            composer.WithDefaultSettings(
+                settings =>
+                {
+                    settings.WithConnection("testConnectionStringFromDefault");
+                });
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription")
+                        .WithConnection("concreteTestConnectionString");
+                });
+
+            var provider = await composer.ComposeAndSimulateStartup();
 
             factory.VerifyAll();
         }

@@ -4,6 +4,7 @@ namespace Ev.ServiceBus.Abstractions
     public interface IClientOptions
     {
         string EntityPath { get; }
-        string ConnectionString { get; }
+        ClientType ClientType { get; }
+        public ConnectionSettings? ConnectionSettings { get; }
     }
 }

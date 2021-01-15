@@ -26,16 +26,10 @@ namespace Ev.ServiceBus.UnitTests
                     services.AddSingleton<SingletonObject>();
                     services.AddScoped<ScopedObject>();
                     services.AddTransient<TransientObject>();
-                    services.AddTransient<InstanceCounterMessageHandler>();
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options
-                                .RegisterQueue("testQueue")
-                                .WithConnectionString("connectionStringTest")
-                                .WithCustomMessageHandler<InstanceCounterMessageHandler>();
-                        });
+                    services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("connectionStringTest")
+                        .WithCustomMessageHandler<InstanceCounterMessageHandler>();
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -63,22 +57,19 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
+            var mock = new Mock<IMessageHandler>();
+
             var fakeExceptionHandler = new FakeExceptionHandler();
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.AddSingleton<FakeMessageHandler>();
+                    services.AddSingleton(mock);
                     services.AddSingleton(fakeExceptionHandler);
 
-                    services.ConfigureServiceBus(
-                        options =>
-                        {
-                            options
-                                .RegisterQueue("testQueue")
-                                .WithConnectionString("connectionStringTest")
-                                .WithCustomMessageHandler<FakeMessageHandler>()
-                                .WithCustomExceptionHandler<FakeExceptionHandler>();
-                        });
+                    services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("connectionStringTest")
+                        .WithCustomMessageHandler<FakeMessageHandler>()
+                        .WithCustomExceptionHandler<FakeExceptionHandler>();
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();
@@ -91,6 +82,31 @@ namespace Ev.ServiceBus.UnitTests
             fakeExceptionHandler.Mock.Verify(
                 o => o.HandleExceptionAsync(sentArgs),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task WontFailWhenNoCustomExceptionHandlerIsSetAndExceptionOccurs()
+        {
+            var composer = new ServiceBusComposer();
+
+            var mock = new Mock<IMessageHandler>();
+
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.AddSingleton(mock);
+
+                    services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("connectionStringTest")
+                        .WithCustomMessageHandler<FakeMessageHandler>();
+                });
+
+            var provider = await composer.ComposeAndSimulateStartup();
+
+            var clientMock = provider.GetQueueClientMock("testQueue");
+
+            var sentArgs = new ExceptionReceivedEventArgs(new Exception(), "", "", "", "");
+            await clientMock.TriggerExceptionOccured(sentArgs);
         }
 
         private class TransientObject

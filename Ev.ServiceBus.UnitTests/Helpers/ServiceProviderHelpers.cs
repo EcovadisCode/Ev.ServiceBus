@@ -33,7 +33,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
 
         public static QueueClientMock GetQueueClientMock(this IServiceProvider provider, string queueName)
         {
-            var factory = provider.GetRequiredService<FakeQueueClientFactory>();
+            var factory = provider.GetRequiredService<FakeClientFactory>();
             return factory.GetAssociatedMock(queueName);
         }
 

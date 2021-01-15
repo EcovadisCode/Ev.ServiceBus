@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -11,49 +9,53 @@ namespace Ev.ServiceBus
     {
         protected readonly ServiceBusOptions ParentOptions;
         protected readonly IServiceProvider Provider;
-        internal MessageReceiver Receiver;
+        internal MessageReceiver? Receiver;
         internal IMessageSender Sender;
 
         private readonly ILogger<BaseWrapper> _logger;
-        private IClientEntity _entity;
-
         protected BaseWrapper(
+            IClientOptions options,
             ServiceBusOptions parentOptions,
-            IServiceProvider provider,
-            string name)
+            IServiceProvider provider)
         {
-            Name = name;
+            Options = options;
             ParentOptions = parentOptions;
             Provider = provider;
             _logger = Provider.GetRequiredService<ILogger<BaseWrapper>>();
-            Sender = new UnavailableSender(Name);
+            Sender = new UnavailableSender(Options.EntityPath, options.ClientType);
         }
 
-        public string Name { get; }
+        internal IClientOptions Options { get; }
 
-        protected abstract (IMessageSender, MessageReceiver, IClientEntity) CreateClient();
+        protected abstract (IMessageSender, MessageReceiver?) CreateClient(ConnectionSettings settings);
 
         public void Initialize()
         {
-            _logger.LogInformation($"Initialization of client '{Name}': Start.");
+            _logger.LogInformation($"[Ev.ServiceBus] Initialization of client '{Options.EntityPath}': Start.");
+            if (ParentOptions.Settings.Enabled == false)
+            {
+                if (Options.ClientType != ClientType.Subscription)
+                {
+                    Sender = new DeactivatedSender(Options.EntityPath, Options.ClientType);
+                }
+                Receiver = null;
+                _logger.LogInformation($"[Ev.ServiceBus] Initialization of client '{Options.EntityPath}': Client deactivated through configuration.");
+                return;
+            }
             try
             {
-                (Sender, Receiver, _entity) = CreateClient();
-                _logger.LogInformation($"Initialization of client '{Name}': Success.");
+                var resolver = Options.ConnectionSettings ?? ParentOptions.Settings.ConnectionSettings;
+                if (resolver == null)
+                {
+                    throw new MissingConnectionException(Options, ClientType.Topic);
+                }
+                (Sender, Receiver) = CreateClient(resolver);
+                _logger.LogInformation($"[Ev.ServiceBus] Initialization of client '{Options.EntityPath}': Success.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Initialization of client '{Name}': Failed.");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Initialization of client '{Options.EntityPath}': Failed.");
             }
-        }
-
-        protected async Task Close()
-        {
-            if (_entity != null)
-            {
-                await _entity.CloseAsync().ConfigureAwait(false);
-            }
-            Sender = new UnavailableSender(Name);
         }
     }
 }
