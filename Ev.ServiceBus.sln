@@ -28,7 +28,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C4692485
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Examples.AspNetCoreWeb", "samples\Ev.ServiceBus.Examples.AspNetCoreWeb\Ev.ServiceBus.Examples.AspNetCoreWeb.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.AspNetCoreWeb", "samples\Ev.ServiceBus.Samples.AspNetCoreWeb\Ev.ServiceBus.Samples.AspNetCoreWeb.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
