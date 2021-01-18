@@ -35,9 +35,10 @@ namespace Ev.ServiceBus.Examples.AspNetCoreWeb.Controllers
             .ToArray();
 
             var queue = _serviceBusRegistry.GetQueueSender(QueuesNames.MyQueue);
-            var mf = new MessageFactory();
 
-            await queue.SendAsync(mf.Serialize(forecasts));
+            var message = MessageParser.SerializeMessage(forecasts);
+
+            await queue.SendAsync(message);
         }
     }
 }

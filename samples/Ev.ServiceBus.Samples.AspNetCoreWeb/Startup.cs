@@ -26,9 +26,11 @@ namespace Ev.ServiceBus.Examples.AspNetCoreWeb
                 {
                     settings.WithConnection(""); // Provide a connection string here!
                 });
+
             services.RegisterServiceBusQueue(QueuesNames.MyQueue)
                 .WithCustomMessageHandler<WeatherMessageHandler>()
                 .WithCustomExceptionHandler<WeatherExceptionHandler>();
+
             services.AddTransient<WeatherExceptionHandler>();
         }
 

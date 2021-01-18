@@ -10,7 +10,7 @@ namespace Ev.ServiceBus.Examples.AspNetCoreWeb
         {
             var message = context.Message;
 
-            var results = message.DeserializeBody<WeatherForecast[]>();
+            var results = MessageParser.DeserializeMessage<WeatherForecast[]>(message);
 
             if (results.Length == 0)
                 throw new ArgumentException("Forecast should not be empty!");
