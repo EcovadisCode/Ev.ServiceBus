@@ -59,12 +59,16 @@ namespace Ev.ServiceBus.UnitTests
 
             var mock = new Mock<IMessageHandler>();
 
-            var fakeExceptionHandler = new FakeExceptionHandler();
+            var exceptionMock = new Mock<IExceptionHandler>();
+            exceptionMock.Setup(o => o.HandleExceptionAsync(It.IsAny<ExceptionReceivedEventArgs>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
             composer.WithAdditionalServices(
                 services =>
                 {
                     services.AddSingleton(mock);
-                    services.AddSingleton(fakeExceptionHandler);
+                    services.AddSingleton(exceptionMock);
 
                     services.RegisterServiceBusQueue("testQueue")
                         .WithConnection("connectionStringTest")
@@ -79,7 +83,7 @@ namespace Ev.ServiceBus.UnitTests
             var sentArgs = new ExceptionReceivedEventArgs(new Exception(), "", "", "", "");
             await clientMock.TriggerExceptionOccured(sentArgs);
 
-            fakeExceptionHandler.Mock.Verify(
+            exceptionMock.Verify(
                 o => o.HandleExceptionAsync(sentArgs),
                 Times.Once);
         }

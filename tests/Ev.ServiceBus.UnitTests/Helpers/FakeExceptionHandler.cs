@@ -7,20 +7,16 @@ namespace Ev.ServiceBus.UnitTests.Helpers
 {
     public class FakeExceptionHandler : IExceptionHandler
     {
-        public FakeExceptionHandler()
-        {
-            Mock = new Mock<IExceptionHandler>();
-            Mock.Setup(o => o.HandleExceptionAsync(
-                    It.IsAny<ExceptionReceivedEventArgs>()))
-                .Returns(Task.CompletedTask)
-                .Verifiable();
-        }
+        private readonly Mock<IExceptionHandler> _mock;
 
-        public Mock<IExceptionHandler> Mock { get; }
+        public FakeExceptionHandler(Mock<IExceptionHandler> mock)
+        {
+            _mock = mock;
+        }
 
         public Task HandleExceptionAsync(ExceptionReceivedEventArgs args)
         {
-            return Mock.Object.HandleExceptionAsync(args);
+            return _mock.Object.HandleExceptionAsync(args);
         }
     }
 }

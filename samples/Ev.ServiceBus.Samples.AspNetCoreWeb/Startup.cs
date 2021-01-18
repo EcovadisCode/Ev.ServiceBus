@@ -30,8 +30,6 @@ namespace Ev.ServiceBus.Examples.AspNetCoreWeb
             services.RegisterServiceBusQueue(QueuesNames.MyQueue)
                 .WithCustomMessageHandler<WeatherMessageHandler>()
                 .WithCustomExceptionHandler<WeatherExceptionHandler>();
-
-            services.AddTransient<WeatherExceptionHandler>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
