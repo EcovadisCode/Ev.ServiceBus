@@ -1,10 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus", "Ev.ServiceBus\Ev.ServiceBus.csproj", "{4C7DEB15-4C1B-4534-AE17-94E8515EB7EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus", "src\Ev.ServiceBus\Ev.ServiceBus.csproj", "{4C7DEB15-4C1B-4534-AE17-94E8515EB7EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Abstractions", "Ev.ServiceBus.Abstractions\Ev.ServiceBus.Abstractions.csproj", "{16F31B37-5CEA-420E-81FA-D04CA421F0E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Abstractions", "src\Ev.ServiceBus.Abstractions\Ev.ServiceBus.Abstractions.csproj", "{16F31B37-5CEA-420E-81FA-D04CA421F0E0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.UnitTests", "Ev.ServiceBus.UnitTests\Ev.ServiceBus.UnitTests.csproj", "{24F5D12F-F45F-4C1E-B8F6-A92205F3063D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.UnitTests", "tests\Ev.ServiceBus.UnitTests\Ev.ServiceBus.UnitTests.csproj", "{24F5D12F-F45F-4C1E-B8F6-A92205F3063D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution items", "{61CAB7C6-2637-4F75-82F2-348AE7878671}"
 	ProjectSection(SolutionItems) = preProject
@@ -21,6 +21,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{15791C07-7
 		docs\SetUp.md = docs\SetUp.md
 		docs\AdvancedScenarios.md = docs\AdvancedScenarios.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8EC286EB-A71F-4431-ACA4-E92C79975817}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C4692485-7C68-42B7-A35E-601EBFCE3725}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Examples.AspNetCoreWeb", "samples\Ev.ServiceBus.Examples.AspNetCoreWeb\Ev.ServiceBus.Examples.AspNetCoreWeb.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,5 +48,15 @@ Global
 		{24F5D12F-F45F-4C1E-B8F6-A92205F3063D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24F5D12F-F45F-4C1E-B8F6-A92205F3063D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24F5D12F-F45F-4C1E-B8F6-A92205F3063D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4C7DEB15-4C1B-4534-AE17-94E8515EB7EC} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
+		{16F31B37-5CEA-420E-81FA-D04CA421F0E0} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
+		{24F5D12F-F45F-4C1E-B8F6-A92205F3063D} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
+		{B5847D1C-1135-4D4F-9A57-472D5D9B0505} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
 	EndGlobalSection
 EndGlobal

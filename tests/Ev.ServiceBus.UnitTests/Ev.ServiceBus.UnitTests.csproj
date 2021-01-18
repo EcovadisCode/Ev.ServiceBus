@@ -15,8 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ev.ServiceBus.Abstractions\Ev.ServiceBus.Abstractions.csproj" />
-    <ProjectReference Include="..\Ev.ServiceBus\Ev.ServiceBus.csproj" />
+    <ProjectReference Include="..\..\src\Ev.ServiceBus.Abstractions\Ev.ServiceBus.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Ev.ServiceBus\Ev.ServiceBus.csproj" />
   </ItemGroup>
 
 </Project>

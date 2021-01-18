@@ -21,15 +21,14 @@ namespace Ev.ServiceBus.Examples.AspNetCoreWeb
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddServiceBus();
-            services.ConfigureServiceBus(options =>
-            {
-                options.RegisterQueue(QueuesNames.MyQueue)
-                    .WithConnectionString("") // Provide a connection string here!
-                    .WithCustomMessageHandler<WeatherMessageHandler>()
-                    .WithCustomExceptionHandler<WeatherExceptionHandler>();
-            });
-            services.AddTransient<WeatherMessageHandler>();
+            services.AddServiceBus(
+                settings =>
+                {
+                    settings.WithConnection(""); // Provide a connection string here!
+                });
+            services.RegisterServiceBusQueue(QueuesNames.MyQueue)
+                .WithCustomMessageHandler<WeatherMessageHandler>()
+                .WithCustomExceptionHandler<WeatherExceptionHandler>();
             services.AddTransient<WeatherExceptionHandler>();
         }
 
