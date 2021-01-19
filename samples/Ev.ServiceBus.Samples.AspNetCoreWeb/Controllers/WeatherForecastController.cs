@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Examples.AspNetCoreWeb.ServiceBus;
+using Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Ev.ServiceBus.Examples.AspNetCoreWeb.Controllers
+namespace Ev.ServiceBus.Samples.AspNetCoreWeb.Controllers
 {
     [ApiController]
     [Route("[controller]/[action]")]
@@ -34,11 +34,12 @@ namespace Ev.ServiceBus.Examples.AspNetCoreWeb.Controllers
             })
             .ToArray();
 
-            var queue = _serviceBusRegistry.GetQueueSender(QueuesNames.MyQueue);
+            var queue = _serviceBusRegistry.GetQueueSender(ServiceBusResources.MyQueue);
+            await queue.SendAsync(MessageParser.SerializeMessage(forecasts));
 
-            var message = MessageParser.SerializeMessage(forecasts);
-
-            await queue.SendAsync(message);
+            var topic = _serviceBusRegistry.GetTopicSender(ServiceBusResources.MyTopic);
+            var messages = forecasts.Select(MessageParser.SerializeMessage).ToList();
+            await topic.SendAsync(messages);
         }
     }
 }

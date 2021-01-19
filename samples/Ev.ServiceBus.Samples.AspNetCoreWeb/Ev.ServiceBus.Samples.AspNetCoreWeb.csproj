@@ -4,7 +4,6 @@
     <TargetFramework>net5.0</TargetFramework>
     <SonarQubeExclude>true</SonarQubeExclude>
     <Nullable>enable</Nullable>
-    <RootNamespace>Ev.ServiceBus.Examples.AspNetCoreWeb</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

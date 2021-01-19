@@ -1,10 +1,10 @@
-﻿using Ev.ServiceBus.Abstractions;
+﻿using System;
+using System.Threading.Tasks;
+using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
-namespace Ev.ServiceBus.Examples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
 {
     public class WeatherExceptionHandler : IExceptionHandler
     {

@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Microsoft.Azure.ServiceBus;
 
-namespace Ev.ServiceBus.Examples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
 {
     public static class MessageParser
     {

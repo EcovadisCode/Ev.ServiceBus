@@ -1,6 +1,6 @@
 using System;
 
-namespace Ev.ServiceBus.Examples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.AspNetCoreWeb
 {
     [Serializable]
     public class WeatherForecast

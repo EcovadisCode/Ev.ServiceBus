@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Ev.ServiceBus.Examples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.AspNetCoreWeb
 {
     public class Program
     {

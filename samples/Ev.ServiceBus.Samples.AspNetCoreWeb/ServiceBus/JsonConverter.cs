@@ -1,9 +1,8 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace Ev.ServiceBus.Examples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
 {
     public static class JsonConverter
     {
