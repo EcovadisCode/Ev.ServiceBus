@@ -30,6 +30,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AACD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.AspNetCoreWeb", "samples\Ev.ServiceBus.Samples.AspNetCoreWeb\Ev.ServiceBus.Samples.AspNetCoreWeb.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{CCDE7DC7-6FBB-4595-9FBB-CA663DFC9F39}"
+ProjectSection(SolutionItems) = preProject
+	.github\workflows\publish-nugets-Ev-ServiceBus.yml = .github\workflows\publish-nugets-Ev-ServiceBus.yml
+	.github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml = .github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml
+	.github\workflows\dotnet-core-5-0.yml = .github\workflows\dotnet-core-5-0.yml
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,5 +65,6 @@ Global
 		{16F31B37-5CEA-420E-81FA-D04CA421F0E0} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
 		{24F5D12F-F45F-4C1E-B8F6-A92205F3063D} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
+		{CCDE7DC7-6FBB-4595-9FBB-CA663DFC9F39} = {61CAB7C6-2637-4F75-82F2-348AE7878671}
 	EndGlobalSection
 EndGlobal
