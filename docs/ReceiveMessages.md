@@ -12,10 +12,10 @@ public void ConfigureServices(IServiceCollection services)
         settings.WithConnection(serviceBusConnectionString);
     });
 
-    options.RegisterSubscription("TopicName", "SubscriptionName")
+    options.RegisterServiceBusSubscription("TopicName", "SubscriptionName")
         .WithCustomMessageHandler<SubscriptionHandler>(/*options*/);
 
-    options.RegisterQueue("QueueName")
+    options.RegisterServiceBusQueue("QueueName")
         .WithCustomMessageHandler<QueueHandler>(/*options*/);
 }
 ```
@@ -44,7 +44,7 @@ To read more about the `Message` class [check here](https://docs.microsoft.com/e
 ### Handling exceptions
 To handle exceptions you need to register it first:
 ```csharp
-options.RegisterQueue("QueueName")
+options.RegisterServiceBusQueue("QueueName")
        .WithCustomExceptionHandler<ExceptionHandler>();
 
 ```

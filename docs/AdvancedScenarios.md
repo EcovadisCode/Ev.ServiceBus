@@ -36,7 +36,7 @@ public void ConfigureServices(IServiceCollection services)
         settings.WithConnection(serviceBusConnectionString);
     });
 
-    options.RegisterQueue("QueueName")
+    options.RegisterServiceBusQueue("QueueName")
         .WithConnection(anotherServiceBusConnectionString);
 }
 ```

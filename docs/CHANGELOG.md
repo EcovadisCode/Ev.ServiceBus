@@ -108,16 +108,16 @@ Examples:
 ```csharp
 services.ConfigureServiceBus(options =>
 {
-    options.RegisterQueue("MyQueue")
+    options.RegisterServiceBusQueue("MyQueue")
         .WithConnection(new ServiceBusConnection(""))
         .WithReceiveMode(ReceiveMode.PeekLock)
         .WithRetryPolicy(RetryPolicy.NoRetry);
 
-    options.RegisterTopic("MyTopic")
+    options.RegisterServiceBusTopic("MyTopic")
         .WithConnectionStringBuilder(new ServiceBusConnectionStringBuilder())
         .WithRetryPolicy(RetryPolicy.NoRetry);
 
-    options.RegisterSubscription("MyTopic", "MySubscription")
+    options.RegisterServiceBusSubscription("MyTopic", "MySubscription")
         .WithConnectionString("")
         .WithReceiveMode(ReceiveMode.ReceiveAndDelete)
         .WithRetryPolicy(RetryPolicy.NoRetry);
