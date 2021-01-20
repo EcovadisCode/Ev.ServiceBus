@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ev.ServiceBus.UnitTests.Helpers
@@ -19,9 +20,10 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             _defaultSettings = _ => { };
         }
 
-        public ServiceBusComposer OverrideQueueClientFactory(IClientFactory factory)
+        public ServiceBusComposer OverrideClientFactory<TOptions, TClient>(IClientFactory<TOptions, TClient> factory)
+            where TOptions : ClientOptions where TClient : IClientEntity
         {
-            _overrideFactory = s => s.OverrideQueueClientFactory(factory);
+            _overrideFactory = s => s.OverrideClientFactory(factory);
             return this;
         }
 

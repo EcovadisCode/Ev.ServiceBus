@@ -59,7 +59,7 @@ namespace Ev.ServiceBus.UnitTests
 
             var serviceBusConnection = new ServiceBusConnection(
                 "Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
-            var factory = new Mock<IClientFactory>();
+            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -71,7 +71,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideQueueClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusQueue("testQueue").WithConnection(serviceBusConnection);
                 });
@@ -89,7 +89,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var factory = new Mock<IClientFactory>();
+            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -101,7 +101,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideQueueClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
                 });
@@ -120,7 +120,7 @@ namespace Ev.ServiceBus.UnitTests
             var composer = new ServiceBusComposer();
 
             var connectionStringBuilder = new ServiceBusConnectionStringBuilder();
-            var factory = new Mock<IClientFactory>();
+            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -132,7 +132,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideQueueClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusQueue("testQueue").WithConnection(connectionStringBuilder);
                 });
@@ -150,7 +150,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var factory = new Mock<IClientFactory>();
+            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -162,7 +162,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideQueueClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusQueue("testQueue")
                         .WithConnection("testConnectionString", ReceiveMode.ReceiveAndDelete);
@@ -182,7 +182,7 @@ namespace Ev.ServiceBus.UnitTests
             var composer = new ServiceBusComposer();
 
             var retryPolicy = new NoRetry();
-            var factory = new Mock<IClientFactory>();
+            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -194,7 +194,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideQueueClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusQueue("testQueue")
                         .WithConnection("testConnectionString", ReceiveMode.PeekLock, retryPolicy);
@@ -212,7 +212,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task FailsSilentlyWhenAnErrorOccursBuildingAQueueClient()
         {
             var composer = new ServiceBusComposer();
-            composer.OverrideQueueClientFactory(new FailingClientFactory());
+            composer.OverrideClientFactory(new FailingClientFactory<QueueOptions, IQueueClient>());
             composer.WithAdditionalServices(
                 services =>
                 {
@@ -246,7 +246,7 @@ namespace Ev.ServiceBus.UnitTests
             var provider = services.BuildServiceProvider();
             await provider.SimulateStartHost(new CancellationToken());
             var composer = new ServiceBusComposer();
-            composer.OverrideQueueClientFactory(new FailingClientFactory());
+            composer.OverrideClientFactory(new FailingClientFactory<QueueOptions, IQueueClient>());
 
             var registry = provider.GetService<ServiceBusRegistry>();
             await registry.GetQueueSender("testQueue").SendAsync(new Message());
@@ -287,7 +287,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
         {
             var composer = new ServiceBusComposer();
-            var factory = new Mock<IClientFactory>();
+            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -303,7 +303,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideQueueClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
                     services.RegisterServiceBusQueue("testQueue");
                 });
 
@@ -319,7 +319,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
         {
             var composer = new ServiceBusComposer();
-            var factory = new Mock<IClientFactory>();
+            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -335,7 +335,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideQueueClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
                     services.RegisterServiceBusQueue("testQueue").WithConnection("concreteTestConnectionString");
                 });
 

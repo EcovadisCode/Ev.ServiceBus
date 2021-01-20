@@ -18,5 +18,8 @@
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.1.1" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Factories" />
+  </ItemGroup>
 
 </Project>

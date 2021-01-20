@@ -26,8 +26,8 @@ namespace Ev.ServiceBus
 
         protected override (IMessageSender, MessageReceiver?) CreateClient(ConnectionSettings settings)
         {
-            var factory = Provider.GetService<ISubscriptionClientFactory>();
-            SubscriptionClient = (ISubscriptionClient) factory.Create(_options, settings);
+            var factory = Provider.GetService<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
+            SubscriptionClient = factory.Create(_options, settings);
             var receiver = new MessageReceiver(SubscriptionClient, _options.EntityPath, _options.ClientType);
             RegisterMessageHandler(_options, receiver);
             return (new DeactivatedSender(_options.EntityPath, _options.ClientType), receiver);

@@ -114,7 +114,7 @@ namespace Ev.ServiceBus.UnitTests
 
             var serviceBusConnection = new ServiceBusConnection(
                 "Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
-            var factory = new Mock<ISubscriptionClientFactory>();
+            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.Connection == serviceBusConnection)))
                 .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
@@ -123,7 +123,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription").WithConnection(serviceBusConnection);
                 });
@@ -140,7 +140,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var factory = new Mock<ISubscriptionClientFactory>();
+            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionString")))
                 .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
@@ -149,7 +149,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription").WithConnection("testConnectionString");
                 });
@@ -167,7 +167,7 @@ namespace Ev.ServiceBus.UnitTests
             var composer = new ServiceBusComposer();
 
             var connectionStringBuilder = new ServiceBusConnectionStringBuilder();
-            var factory = new Mock<ISubscriptionClientFactory>();
+            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(
                     o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.ConnectionStringBuilder == connectionStringBuilder)))
@@ -177,7 +177,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription").WithConnection(connectionStringBuilder);
                 });
@@ -194,7 +194,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var factory = new Mock<ISubscriptionClientFactory>();
+            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
                 .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
@@ -203,7 +203,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription")
                         .WithConnection("testConnectionString", ReceiveMode.ReceiveAndDelete);
@@ -222,7 +222,7 @@ namespace Ev.ServiceBus.UnitTests
             var composer = new ServiceBusComposer();
 
             var retryPolicy = new NoRetry();
-            var factory = new Mock<ISubscriptionClientFactory>();
+            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(o => o.Create(It.IsAny<SubscriptionOptions>(), It.Is<ConnectionSettings>(conn => conn.RetryPolicy == retryPolicy)))
                 .Returns((SubscriptionOptions o, ConnectionSettings p) => new SubscriptionClientMock("testSubscription").Client)
@@ -231,7 +231,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
 
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription")
                         .WithConnection("testConnectionString", ReceiveMode.PeekLock, retryPolicy);
@@ -273,7 +273,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
         {
             var composer = new ServiceBusComposer();
-            var factory = new Mock<ISubscriptionClientFactory>();
+            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -289,7 +289,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription");
                 });
 
@@ -302,7 +302,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
         {
             var composer = new ServiceBusComposer();
-            var factory = new Mock<ISubscriptionClientFactory>();
+            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(
                     o => o.Create(
@@ -318,7 +318,7 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.OverrideSubscriptionClientFactory(factory.Object);
+                    services.OverrideClientFactory(factory.Object);
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription")
                         .WithConnection("concreteTestConnectionString");
                 });

@@ -4,31 +4,28 @@ using Microsoft.Azure.ServiceBus;
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus
 {
-    public class QueueClientFactory : IQueueClientFactory
+    public class TopicClientFactory : IClientFactory<TopicOptions, TopicClient>
     {
-        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        public TopicClient Create(TopicOptions options, ConnectionSettings connectionSettings)
         {
             if (connectionSettings.Connection != null)
             {
-                return new QueueClient(
+                return new TopicClient(
                     connectionSettings.Connection,
                     options.EntityPath,
-                    connectionSettings.ReceiveMode,
                     connectionSettings.RetryPolicy);
             }
 
             if (connectionSettings.ConnectionStringBuilder != null)
             {
-                return new QueueClient(
+                return new TopicClient(
                     connectionSettings.ConnectionStringBuilder,
-                    connectionSettings.ReceiveMode,
                     connectionSettings.RetryPolicy);
             }
 
-            return new QueueClient(
+            return new TopicClient(
                 connectionSettings.ConnectionString,
                 options.EntityPath,
-                connectionSettings.ReceiveMode,
                 connectionSettings.RetryPolicy);
         }
     }

@@ -5,7 +5,7 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.UnitTests.Helpers
 {
-    public class FakeClientFactory : IClientFactory
+    public class FakeClientFactory : IClientFactory<QueueOptions, IQueueClient>
     {
         private readonly List<QueueClientMock> _registeredClients;
 
@@ -24,7 +24,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             return _registeredClients.ToArray();
         }
 
-        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        public IQueueClient Create(QueueOptions options, ConnectionSettings connectionSettings)
         {
             var clientMock = new QueueClientMock(options.EntityPath);
 
@@ -33,7 +33,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         }
     }
 
-    public class FakeTopicClientFactory : ITopicClientFactory
+    public class FakeTopicClientFactory : IClientFactory<TopicOptions, ITopicClient>
     {
         private readonly List<TopicClientMock> _registeredClients;
 
@@ -47,7 +47,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             return _registeredClients.ToArray();
         }
 
-        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        public ITopicClient Create(TopicOptions options, ConnectionSettings connectionSettings)
         {
             var clientMock = new TopicClientMock(options.EntityPath);
 
@@ -56,7 +56,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         }
     }
 
-    public class FakeSubscriptionClientFactory : ISubscriptionClientFactory
+    public class FakeSubscriptionClientFactory : IClientFactory<SubscriptionOptions, ISubscriptionClient>
     {
         private readonly List<SubscriptionClientMock> _registeredClients;
 
@@ -70,7 +70,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             return _registeredClients.ToArray();
         }
 
-        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        public ISubscriptionClient Create(SubscriptionOptions options, ConnectionSettings connectionSettings)
         {
             var clientMock = new SubscriptionClientMock(((SubscriptionOptions)options).SubscriptionName);
 

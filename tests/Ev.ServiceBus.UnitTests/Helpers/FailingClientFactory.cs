@@ -4,9 +4,11 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.UnitTests
 {
-    public class FailingClientFactory : IClientFactory
+    public class FailingClientFactory<TOptions, TClient> : IClientFactory<TOptions, TClient>
+        where TClient : IClientEntity
+        where TOptions : ClientOptions
     {
-        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        public TClient Create(TOptions options, ConnectionSettings connectionSettings)
         {
             throw new Exception();
         }

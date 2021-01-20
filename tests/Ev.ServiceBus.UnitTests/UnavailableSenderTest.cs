@@ -16,7 +16,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            composer.OverrideQueueClientFactory(new FailingClientFactory());
+            composer.OverrideClientFactory(new FailingClientFactory<QueueOptions, IQueueClient>());
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusQueue("testQueue")

@@ -23,8 +23,8 @@ namespace Ev.ServiceBus
 
         protected override (IMessageSender, MessageReceiver?) CreateClient(ConnectionSettings settings)
         {
-            var factory = Provider.GetService<IClientFactory>();
-            QueueClient = (IQueueClient) factory.Create(_options, settings);
+            var factory = Provider.GetService<IClientFactory<QueueOptions, IQueueClient>>();
+            QueueClient = factory.Create(_options, settings);
             var sender = new MessageSender(QueueClient, _options.EntityPath, _options.ClientType);
             var receiver = new MessageReceiver(QueueClient, _options.EntityPath, _options.ClientType);
             RegisterMessageHandler(_options, receiver);

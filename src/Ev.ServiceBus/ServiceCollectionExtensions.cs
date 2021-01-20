@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Ev.ServiceBus.Abstractions;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -42,9 +43,9 @@ namespace Ev.ServiceBus
             }
             services.TryAddSingleton<ServiceBusEngine>();
 
-            services.TryAddSingleton<IClientFactory, QueueClientFactory>();
-            services.TryAddSingleton<ITopicClientFactory, TopicClientFactory>();
-            services.TryAddSingleton<ISubscriptionClientFactory, SubscriptionClientFactory>();
+            services.TryAddSingleton<IClientFactory<QueueOptions, IQueueClient>, QueueClientFactory>();
+            services.TryAddSingleton<IClientFactory<TopicOptions, ITopicClient>, TopicClientFactory>();
+            services.TryAddSingleton<IClientFactory<SubscriptionOptions, ISubscriptionClient>, SubscriptionClientFactory>();
 
             if (services.Any(o => o.ImplementationType == typeof(ServiceBusHost)) == false)
             {

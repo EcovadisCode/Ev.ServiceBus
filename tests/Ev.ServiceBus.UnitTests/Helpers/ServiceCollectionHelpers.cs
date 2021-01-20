@@ -1,4 +1,5 @@
 ﻿using Ev.ServiceBus.Abstractions;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -13,43 +14,28 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             services.AddSingleton<FakeSubscriptionClientFactory>();
             services.Replace(
                 new ServiceDescriptor(
-                    typeof(IClientFactory),
+                    typeof(IClientFactory<QueueOptions, IQueueClient>),
                     provider => provider.GetRequiredService<FakeClientFactory>(),
                     ServiceLifetime.Singleton));
             services.Replace(
                 new ServiceDescriptor(
-                    typeof(ITopicClientFactory),
+                    typeof(IClientFactory<TopicOptions, ITopicClient>),
                     provider => provider.GetRequiredService<FakeTopicClientFactory>(),
                     ServiceLifetime.Singleton));
             services.Replace(
                 new ServiceDescriptor(
-                    typeof(ISubscriptionClientFactory),
+                    typeof(IClientFactory<SubscriptionOptions, ISubscriptionClient>),
                     provider => provider.GetRequiredService<FakeSubscriptionClientFactory>(),
                     ServiceLifetime.Singleton));
             return services;
         }
 
-        public static IServiceCollection OverrideQueueClientFactory(
+        public static IServiceCollection OverrideClientFactory<TOptions, TClient>(
             this IServiceCollection services,
-            IClientFactory instance)
+            IClientFactory<TOptions, TClient> instance)
+            where TOptions : ClientOptions where TClient : IClientEntity
         {
-            services.Replace(new ServiceDescriptor(typeof(IClientFactory), instance));
-            return services;
-        }
-
-        public static IServiceCollection OverrideSubscriptionClientFactory(
-            this IServiceCollection services,
-            ISubscriptionClientFactory instance)
-        {
-            services.Replace(new ServiceDescriptor(typeof(ISubscriptionClientFactory), instance));
-            return services;
-        }
-
-        public static IServiceCollection OverrideTopicClientFactory(
-            this IServiceCollection services,
-            ITopicClientFactory instance)
-        {
-            services.Replace(new ServiceDescriptor(typeof(ITopicClientFactory), instance));
+            services.Replace(new ServiceDescriptor(typeof(IClientFactory<TOptions, TClient>), instance));
             return services;
         }
     }

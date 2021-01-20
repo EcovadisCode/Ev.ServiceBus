@@ -4,16 +4,16 @@ using Microsoft.Azure.ServiceBus;
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus
 {
-    public class SubscriptionClientFactory : ISubscriptionClientFactory
+    public class SubscriptionClientFactory : IClientFactory<SubscriptionOptions, SubscriptionClient>
     {
-        public IClientEntity Create(ClientOptions options, ConnectionSettings connectionSettings)
+        public SubscriptionClient Create(SubscriptionOptions options, ConnectionSettings connectionSettings)
         {
             if (connectionSettings.Connection != null)
             {
                 return new SubscriptionClient(
                     connectionSettings.Connection,
                     options.EntityPath,
-                    ((SubscriptionOptions) options).SubscriptionName,
+                    options.SubscriptionName,
                     connectionSettings.ReceiveMode,
                     connectionSettings.RetryPolicy);
             }
@@ -22,7 +22,7 @@ namespace Ev.ServiceBus
             {
                 return new SubscriptionClient(
                     connectionSettings.ConnectionStringBuilder,
-                    ((SubscriptionOptions) options).SubscriptionName,
+                    options.SubscriptionName,
                     connectionSettings.ReceiveMode,
                     connectionSettings.RetryPolicy);
             }
@@ -30,7 +30,7 @@ namespace Ev.ServiceBus
             return new SubscriptionClient(
                 connectionSettings.ConnectionString,
                 options.EntityPath,
-                ((SubscriptionOptions) options).SubscriptionName,
+                options.SubscriptionName,
                 connectionSettings.ReceiveMode,
                 connectionSettings.RetryPolicy);
         }
