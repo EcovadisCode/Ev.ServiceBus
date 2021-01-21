@@ -10,6 +10,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 2.0.0 - 2021-01-07
+- The method `services.ConfigureServiceBus()` has been replaced:
+  ```csharp
+      // this method has been removed
+      public static IServiceCollection ConfigureServiceBus(this IServiceCollection services, Action<ServiceBusOptions> config);
+      
+      // and replaced by these
+      public static QueueOptions RegisterServiceBusQueue(this IServiceCollection services, string queueName);
+      public static TopicOptions RegisterServiceBusTopic(this IServiceCollection services, string topicName);
+      public static SubscriptionOptions RegisterServiceBusSubscription(this IServiceCollection services, string topicName, string subscriptionName);
+  ```
+- The methods used to set connection settings on a registration have also been replaced : 
+  ```csharp
+  // these methods have been remmoved
+  public static TOptions WithConnectionString<TOptions>(this TOptions options, string connectionString) where TOptions : ClientOptions;
+  public static TOptions WithConnection<TOptions>(this TOptions options, ServiceBusConnection connection);
+  public static TOptions WithConnectionStringBuilder<TOptions>(this TOptions options, ServiceBusConnectionStringBuilder connectionStringBuilder) where TOptions : ClientOptions;
+  public static TOptions WithReceiveMode<TOptions>(this TOptions options, ReceiveMode receiveMode);
+  public static TOptions WithRetryPolicy<TOptions>(this TOptions options, RetryPolicy retryPolicy);
+  
+  // and replaces by these
+  public static TOptions WithConnection<TOptions>(this TOptions options, string connectionString, ReceiveMode receiveMode = ReceiveMode.PeekLock, RetryPolicy? retryPolicy = null) where TOptions : ClientOptions;
+  public static TOptions WithConnection<TOptions>(this TOptions options, ServiceBusConnection connection, ReceiveMode receiveMode = ReceiveMode.PeekLock, RetryPolicy? retryPolicy = null) where TOptions : ClientOptions;
+  public static TOptions WithConnection<TOptions>(this TOptions options, ServiceBusConnectionStringBuilder connectionStringBuilder, ReceiveMode receiveMode = ReceiveMode.PeekLock, RetryPolicy? retryPolicy = null) where TOptions : ClientOptions;
+  ```
+- Refactored the `services.AddServiceBus()` to be more extensible :
+  ```csharp
+  // old method
+  public static IServiceCollection AddServiceBus(this IServiceCollection services, bool enabled = true, bool receiveMessages = true);
+  // new method
+  public static IServiceCollection AddServiceBus(this IServiceCollection services, Action<ServiceBusSettings> config);
+  ```
+- Added the ability to set default connection settings : 
+  ```
+  services.AddServiceBus(settings => {
+    settings.WithConnection(connectionString);
+  });
+  ```
+- All log messages are now prefixed with "[Ev.ServiceBus]"
+- Microsoft.Azure.ServiceBus NuGet package has been updated to v5.1.0
+- The method `.WithCustomMessageHandler()` now registers the handler into the IOC container (before you needed to register it yourself)
+
 ## 1.4.2 - 2020-09-30
 - Added `.ConfigureAwait(false)` to async calls.
 
@@ -66,16 +108,16 @@ Examples:
 ```csharp
 services.ConfigureServiceBus(options =>
 {
-    options.RegisterQueue("MyQueue")
+    options.RegisterServiceBusQueue("MyQueue")
         .WithConnection(new ServiceBusConnection(""))
         .WithReceiveMode(ReceiveMode.PeekLock)
         .WithRetryPolicy(RetryPolicy.NoRetry);
 
-    options.RegisterTopic("MyTopic")
+    options.RegisterServiceBusTopic("MyTopic")
         .WithConnectionStringBuilder(new ServiceBusConnectionStringBuilder())
         .WithRetryPolicy(RetryPolicy.NoRetry);
 
-    options.RegisterSubscription("MyTopic", "MySubscription")
+    options.RegisterServiceBusSubscription("MyTopic", "MySubscription")
         .WithConnectionString("")
         .WithReceiveMode(ReceiveMode.ReceiveAndDelete)
         .WithRetryPolicy(RetryPolicy.NoRetry);
