@@ -16,7 +16,7 @@ jobs:
         uses: brandedoutcast/publish-nuget@v2.5.4
         with:
           # Filepath of the project to be packaged, relative to root of repository
-          PROJECT_FILE_PATH: Ev.ServiceBus/Ev.ServiceBus.csproj
+          PROJECT_FILE_PATH: src/Ev.ServiceBus/Ev.ServiceBus.csproj
           
           # NuGet package id, used for version detection & defaults to project name
           PACKAGE_NAME: Ev.ServiceBus
