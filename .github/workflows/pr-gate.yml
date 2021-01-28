@@ -1,10 +1,8 @@
-name: .NET Core
+name: PR Gate
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, release/* ]
     types: [opened, synchronize, reopened]
 
 jobs:
