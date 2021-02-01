@@ -19,3 +19,4 @@ Primary features :
 * [How to send messages](./docs/SendMessages.md)
 * [How to receive messages](./docs/ReceiveMessages.md)
 * [Advanced scenarios](./docs/AdvancedScenarios.md)
+* [Integration event handling](./docs/Ev.ServiceBus.IntegrationEvents.md)
