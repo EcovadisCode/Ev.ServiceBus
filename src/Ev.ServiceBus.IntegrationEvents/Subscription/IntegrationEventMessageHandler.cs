@@ -11,10 +11,10 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
     public class IntegrationEventMessageHandler : IMessageHandler
     {
         private readonly MethodInfo _callHandlerInfo;
-        private readonly IServiceProvider _provider;
-        private readonly ServiceBusEventSubscriptionRegistry _registry;
         private readonly ILogger<IntegrationEventMessageHandler> _logger;
         private readonly IMessageBodyParser _messageBodyParser;
+        private readonly IServiceProvider _provider;
+        private readonly ServiceBusEventSubscriptionRegistry _registry;
 
         public IntegrationEventMessageHandler(
             IServiceProvider provider,
@@ -26,7 +26,8 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
             _registry = registry;
             _logger = logger;
             _messageBodyParser = messageBodyParser;
-            _callHandlerInfo = GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
+            _callHandlerInfo =
+                GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
         }
 
         public async Task HandleMessageAsync(MessageContext context)
@@ -37,50 +38,49 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
                 throw new MessageIsMissingEventTypeIdException(context);
             }
 
-            var eventSubscriptions = _registry.GetRegistrations(
+            var eventSubscription = _registry.GetRegistration(
                 eventTypeId,
                 context.Receiver.Name,
                 context.Receiver.ClientType);
 
-            var hasFailed = false;
-            foreach (var eventSubscription in eventSubscriptions)
+            if (eventSubscription == null)
             {
-                if (context.Token.IsCancellationRequested)
-                {
-                    _logger.LogInformation($"[Ev.ServiceBus.IntegrationEvents] Stopping the execution because cancellation was requested.");
-                    return;
-                }
-                var @event = _messageBodyParser.DeSerializeBody(context.Message.Body, eventSubscription.EventType);
-                var methodInfo = _callHandlerInfo.MakeGenericMethod(eventSubscription.EventType);
-                try
-                {
-                    _logger.LogDebug($"[Ev.ServiceBus.IntegrationEvents] Executing {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} handler.");
-                    await ((Task) methodInfo.Invoke(this, new[] { eventSubscription, @event, context.Token })!).ConfigureAwait(false);
-                    _logger.LogDebug($"[Ev.ServiceBus.IntegrationEvents] Execution of  {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} handler successful.");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"[Ev.ServiceBus.IntegrationEvents] Handler {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} failed.\n"
-                                         + $"Receiver : {context.Receiver.ClientType} | {context.Receiver.Name}\n");
-                    hasFailed = true;
-                }
+                return;
             }
 
-            if (hasFailed)
+            if (context.Token.IsCancellationRequested)
             {
-                _logger.LogWarning($"[Ev.ServiceBus.IntegrationEvents] Abandoning the message since at least one handler has failed.");
-                await context.Receiver.AbandonAsync(context.Message.SystemProperties.LockToken).ConfigureAwait(false);
+                _logger.LogInformation(
+                    "[Ev.ServiceBus.IntegrationEvents] Stopping the execution because cancellation was requested");
+                return;
             }
-            else
+
+            var @event = _messageBodyParser.DeSerializeBody(context.Message.Body, eventSubscription.EventType);
+            var methodInfo = _callHandlerInfo.MakeGenericMethod(eventSubscription.EventType);
+            try
             {
-                await context.Receiver.CompleteAsync(context.Message.SystemProperties.LockToken).ConfigureAwait(false);
+                _logger.LogDebug(
+                    $"[Ev.ServiceBus.IntegrationEvents] Executing {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} handler");
+                await ((Task) methodInfo.Invoke(this, new[] { eventSubscription, @event, context.Token })!).ConfigureAwait(false);
+                _logger.LogDebug(
+                    $"[Ev.ServiceBus.IntegrationEvents] Execution of  {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} handler successful");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    $"[Ev.ServiceBus.IntegrationEvents] Handler {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} failed.\n"
+                    + $"Receiver : {context.Receiver.ClientType} | {context.Receiver.Name}\n");
             }
         }
 
-        private async Task CallHandler<TIntegrationEvent>(EventSubscriptionRegistration eventSubscriptionRegistration, TIntegrationEvent @event, CancellationToken token)
+        private async Task CallHandler<TIntegrationEvent>(
+            EventSubscriptionRegistration eventSubscriptionRegistration,
+            TIntegrationEvent @event,
+            CancellationToken token)
         {
             var handler = (IIntegrationEventHandler<TIntegrationEvent>) _provider.GetRequiredService(
-                    eventSubscriptionRegistration.HandlerType);
+                eventSubscriptionRegistration.HandlerType);
 
             await handler.Handle(@event, token).ConfigureAwait(false);
         }

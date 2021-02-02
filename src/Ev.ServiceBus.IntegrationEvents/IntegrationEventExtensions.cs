@@ -35,7 +35,7 @@ namespace Ev.ServiceBus.IntegrationEvents
             options.WithCustomMessageHandler<IntegrationEventMessageHandler>(
                 config =>
                 {
-                    config.AutoComplete = false;
+                    config.AutoComplete = true;
                     config.MaxConcurrentCalls = maxConcurrentCalls;
                     if (maxAutoRenewDuration != default)
                     {
