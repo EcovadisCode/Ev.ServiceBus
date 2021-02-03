@@ -51,21 +51,21 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                     services.RegisterIntegrationEventSubscription<SubscribedEvent, SubscribedEventHandler>(
                         builder =>
                         {
-                            builder.EventTypeId = "MyEvent";
+                            builder.CustomizeEventTypeId("MyEvent");
                             builder.ReceiveFromSubscription("testTopic", "testSubscription");
                         });
 
                     services.RegisterIntegrationEventSubscription<SubscribedEvent, FailingEventHandler>(
                         builder =>
                         {
-                            builder.EventTypeId = "MyEvent";
+                            builder.CustomizeEventTypeId("MyEvent");
                             builder.ReceiveFromSubscription("testTopic", "SubscriptionWithFailingHandler");
                         });
 
                     services.RegisterIntegrationEventSubscription<NoiseEvent, NoiseHandler>(
                         builder =>
                         {
-                            builder.EventTypeId = "MyEvent2";
+                            builder.CustomizeEventTypeId("MyEvent2");
                             builder.ReceiveFromSubscription("testTopic2", "testSubscription3");
                         });
 
@@ -123,7 +123,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                     services.RegisterIntegrationEventSubscription<NoiseEvent, NoiseHandler>(
                         builder =>
                         {
-                            builder.EventTypeId = "MyEvent";
+                            builder.CustomizeEventTypeId("MyEvent");
                             builder.ReceiveFromSubscription("testTopic", "testSubscription");
                         });
 
@@ -193,7 +193,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                     services.RegisterIntegrationEventSubscription<SubscribedEvent, CancellingHandler>(
                         builder =>
                         {
-                            builder.EventTypeId = "MyEvent";
+                            builder.CustomizeEventTypeId("MyEvent");
                             builder.ReceiveFromSubscription("testTopic", "testSubscription");
                         });
 

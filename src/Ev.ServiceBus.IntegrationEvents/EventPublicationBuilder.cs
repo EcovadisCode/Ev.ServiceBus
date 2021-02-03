@@ -18,9 +18,20 @@ namespace Ev.ServiceBus.IntegrationEvents
         {
             _senders = new List<Sender>();
             _outgoingCustomizers = new List<Action<Message, object>>();
+            EventTypeId = typeof(TIntegrationEvent).Name;
         }
 
-        public string? EventTypeId { get; set; }
+        public string EventTypeId { get; private set; }
+
+        public EventPublicationBuilder<TIntegrationEvent> CustomizeEventTypeId(string eventTypeId)
+        {
+            if (eventTypeId == null)
+            {
+                throw new ArgumentNullException(nameof(eventTypeId));
+            }
+            EventTypeId = eventTypeId;
+            return this;
+        }
 
         public EventPublicationBuilder<TIntegrationEvent> SendToQueue(string queueName)
         {
@@ -67,11 +78,6 @@ namespace Ev.ServiceBus.IntegrationEvents
 
         internal void Build(IServiceCollection services)
         {
-            if (string.IsNullOrEmpty(EventTypeId))
-            {
-                throw new EventTypeIdMustBeSetException();
-            }
-
             foreach (var sender in _senders)
             {
                 var publication = sender.Build(services);
