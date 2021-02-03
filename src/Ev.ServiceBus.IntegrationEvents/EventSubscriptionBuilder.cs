@@ -10,11 +10,11 @@ namespace Ev.ServiceBus.IntegrationEvents
     public class EventSubscriptionBuilder<TIntegrationEvent, THandler>
         where THandler : class, IIntegrationEventHandler<TIntegrationEvent>
     {
-        private readonly List<Receiver> _receivers;
+        private readonly List<ServiceBusReceiver> _receivers;
 
         public EventSubscriptionBuilder()
         {
-            _receivers = new List<Receiver>();
+            _receivers = new List<ServiceBusReceiver>();
         }
 
         public string? EventTypeId { get; set; }
@@ -64,41 +64,30 @@ namespace Ev.ServiceBus.IntegrationEvents
             }
         }
 
-        private abstract class Receiver
+        private class ServiceBusReceiver
         {
-            protected readonly EventSubscriptionBuilder<TIntegrationEvent, THandler> Parent;
-
-            protected Receiver(EventSubscriptionBuilder<TIntegrationEvent, THandler> parent)
-            {
-                Parent = parent;
-            }
-
-            public abstract EventSubscriptionRegistration Build(IServiceCollection services);
-        }
-
-        private class ServiceBusReceiver : Receiver
-        {
+            private readonly EventSubscriptionBuilder<TIntegrationEvent, THandler> _parent;
             private readonly string _receiverName;
             private readonly ClientType _receiverType;
 
             public ServiceBusReceiver(
                 EventSubscriptionBuilder<TIntegrationEvent, THandler> parent,
                 string receiverName,
-                ClientType receiverType) : base(parent)
+                ClientType receiverType)
             {
+                _parent = parent;
                 _receiverName = receiverName;
                 _receiverType = receiverType;
             }
 
-            public override EventSubscriptionRegistration Build(IServiceCollection services)
+            public EventSubscriptionRegistration Build(IServiceCollection services)
             {
-                var registration = new ServiceBusEventSubscriptionRegistration(
-                    Parent.EventTypeId!,
+                var registration = new EventSubscriptionRegistration(
+                    _parent.EventTypeId!,
                     typeof(TIntegrationEvent),
                     typeof(THandler),
                     _receiverType,
                     _receiverName);
-                services.AddSingleton(registration);
                 return registration;
             }
         }

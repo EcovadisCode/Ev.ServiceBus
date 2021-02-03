@@ -107,26 +107,52 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             Assert.Equal(typeof(SubscribedEventHandler), @event.HandlerType);
         }
 
-        [Fact]
-        public void CompleteIsCalledWhenHandlerIsSuccessful()
-        {
-            var client = _composer.SubscriptionFactory.GetAllRegisteredClients()
-                .First(o => o.ClientName == "testSubscription");
-            client.Mock.Verify(o => o.CompleteAsync(It.IsAny<string>()), Times.Once);
-            client.Mock.Verify(
-                o => o.AbandonAsync(It.IsAny<string>(), It.IsAny<IDictionary<string, object>>()),
-                Times.Never);
-        }
 
         [Fact]
-        public void AbandonIsCalledWhenHandlerIsFailing()
+        public async Task ThrowsWhenReceivedMessageHasNoEventTypeId()
         {
-            var client = _composer.SubscriptionFactory.GetAllRegisteredClients()
-                .First(o => o.ClientName == "SubscriptionWithFailingHandler");
-            client.Mock.Verify(o => o.CompleteAsync(It.IsAny<string>()), Times.Never);
-            client.Mock.Verify(
-                o => o.AbandonAsync(It.IsAny<string>(), It.IsAny<IDictionary<string, object>>()),
-                Times.Once);
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription")
+                        .WithConnection("testconnectionstring")
+                        .ToIntegrationEventHandling();
+
+                    services.RegisterIntegrationEventSubscription<NoiseEvent, NoiseHandler>(
+                        builder =>
+                        {
+                            builder.EventTypeId = "MyEvent";
+                            builder.ReceiveFromSubscription("testTopic", "testSubscription");
+                        });
+
+                    services.AddSingleton(_eventStore);
+                });
+
+            await composer.Compose();
+            var clients = composer
+                .SubscriptionFactory
+                .GetAllRegisteredClients();
+            var client = clients.First(o => o.ClientName == "testSubscription");
+
+            var message = new Message()
+            {
+                UserProperties = { {"wrongProperty", "wrongValue"} }
+            };
+
+            // Necessary to simulate the reception of the message
+            var propertyInfo = message.SystemProperties.GetType().GetProperty("SequenceNumber");
+            if (propertyInfo != null && propertyInfo.CanWrite)
+            {
+                propertyInfo.SetValue(message.SystemProperties, 1, null);
+            }
+
+            var exception = await Assert.ThrowsAsync<MessageIsMissingEventTypeIdException>(async () =>
+            {
+                await client.TriggerMessageReception(message, CancellationToken.None);
+            });
+            exception.Message.Should().NotBeNull();
         }
 
         [Fact]

@@ -191,6 +191,22 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             Assert.NotNull(message?.Label);
         }
 
+        [Fact]
+        public async Task PublishDoesntAcceptNulls()
+        {
+            var composer = new Composer();
+            await composer.Compose();
+            using (var scope = _composer.Provider.CreateScope())
+            {
+                var eventPublisher = scope.ServiceProvider.GetService<IIntegrationEventPublisher>();
+                Assert.Throws<ArgumentNullException>(
+                    () =>
+                    {
+                        eventPublisher.Publish<SubscribedEvent>(null);
+                    });
+            }
+        }
+
         private Message GetMessageFrom(string clientToCheck)
         {
             if (clientToCheck == "topic")

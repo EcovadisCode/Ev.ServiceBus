@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.IntegrationEvents.Subscription;
 using Ev.ServiceBus.IntegrationEvents.UnitTests.Helpers;
 using FluentAssertions;
@@ -45,7 +46,20 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             {
                 composer.Provider.GetService(typeof(ServiceBusEventSubscriptionRegistry));
             });
-            exception.Types.Should().Contain(typeof(SubscribedEventHandler));
+            exception.Message.Should().NotBeNull();
+            exception.Duplicates.Should().SatisfyRespectively(
+                ev =>
+                {
+                    ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
+                    ev.ClientType.Should().Be(ClientType.Subscription);
+                    ev.EventTypeId.Should().Be("testEvent");
+                },
+                ev =>
+                {
+                    ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
+                    ev.ClientType.Should().Be(ClientType.Subscription);
+                    ev.EventTypeId.Should().Be("testEvent");
+                });
         }
 
         [Fact]
@@ -69,7 +83,61 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             {
                 composer.Provider.GetService(typeof(ServiceBusEventSubscriptionRegistry));
             });
-            exception.Types.Should().Contain(typeof(SubscribedEventHandler));
+            exception.Message.Should().NotBeNull();
+            exception.Duplicates.Should().SatisfyRespectively(
+                ev =>
+                {
+                    ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
+                    ev.ClientType.Should().Be(ClientType.Queue);
+                    ev.EventTypeId.Should().Be("testEvent");
+                },
+                ev =>
+                {
+                    ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
+                    ev.ClientType.Should().Be(ClientType.Queue);
+                    ev.EventTypeId.Should().Be("testEvent");
+                });
+        }
+
+        [Fact]
+        public async Task EventTypeIdCannotBeSetTwice()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterIntegrationEventSubscription<SubscribedEvent, SubscribedEventHandler>(builder =>
+                {
+                    builder.EventTypeId = "testEvent";
+                    builder.ReceiveFromQueue("queueName");
+                });
+                services.RegisterIntegrationEventSubscription<SubscribedEvent, SubscribedEventHandler2>(builder =>
+                {
+                    builder.EventTypeId = "testEvent";
+                    builder.ReceiveFromQueue("queueName");
+                });
+            });
+
+            await composer.Compose();
+
+            var exception = Assert.Throws<DuplicateEvenTypeIdDeclarationException>(() =>
+            {
+                composer.Provider.GetService(typeof(ServiceBusEventSubscriptionRegistry));
+            });
+            exception.Message.Should().NotBeNull();
+            exception.Duplicates.Should().SatisfyRespectively(
+                ev =>
+                {
+                    ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
+                    ev.ClientType.Should().Be(ClientType.Queue);
+                    ev.EventTypeId.Should().Be("testEvent");
+                },
+                ev =>
+                {
+                    ev.HandlerType.Should().Be(typeof(SubscribedEventHandler2));
+                    ev.ClientType.Should().Be(ClientType.Queue);
+                    ev.EventTypeId.Should().Be("testEvent");
+                });
         }
 
         [Fact]
@@ -111,6 +179,13 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
         public class SubscribedEvent { }
 
         public class SubscribedEventHandler : IIntegrationEventHandler<SubscribedEvent>
+        {
+            public Task Handle(SubscribedEvent @event, CancellationToken cancellationToken)
+            {
+                return Task.CompletedTask;
+            }
+        }
+        public class SubscribedEventHandler2 : IIntegrationEventHandler<SubscribedEvent>
         {
             public Task Handle(SubscribedEvent @event, CancellationToken cancellationToken)
             {
