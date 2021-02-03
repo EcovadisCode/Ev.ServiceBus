@@ -135,7 +135,8 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                         customizedPayload.Add(b);
                     });
                 });
-            }).WithIntegrationEventsQueueSender(queueName);
+            });
+            composer.WithIntegrationEventsQueueSender(queueName);
 
             await composer.Compose();
 

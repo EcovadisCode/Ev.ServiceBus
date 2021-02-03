@@ -7,45 +7,33 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
 {
     public class IntegrationEventDispatcher : IIntegrationEventPublisher, IIntegrationEventDispatcher
     {
-        private readonly List<KeyValuePair<EventPublicationRegistration, object>> _eventsToSend;
-        private readonly PublicationRegistry _registry;
+        private readonly IIntegrationEventSender _sender;
+        private readonly List<object> _eventsToSend;
 
-        public IntegrationEventDispatcher(PublicationRegistry registry)
+        public IntegrationEventDispatcher(IIntegrationEventSender sender)
         {
-            _registry = registry;
-            _eventsToSend = new List<KeyValuePair<EventPublicationRegistration, object>>();
+            _sender = sender;
+            _eventsToSend = new List<object>();
         }
 
         public async Task DispatchEvents()
         {
             if (_eventsToSend.Any())
             {
-                foreach (var group in _eventsToSend.GroupBy(o => o.Key.HandlerType))
-                {
-                    var sender = _registry.GetSender(group.Key);
-                    await sender.SendEvents(group.ToArray()).ConfigureAwait(false);
-                }
+                await _sender.SendEvents(_eventsToSend).ConfigureAwait(false);
 
                 _eventsToSend.Clear();
             }
         }
 
-        public void Publish<TIntegrationEvent>(TIntegrationEvent integrationEvent)
+        public void Publish<TMessageDto>(TMessageDto messageDto)
         {
-            if (integrationEvent == null)
+            if (messageDto == null)
             {
-                throw new ArgumentNullException(nameof(integrationEvent));
+                throw new ArgumentNullException(nameof(messageDto));
             }
 
-            var registrations = _registry.GetRegistrations<TIntegrationEvent>();
-
-            foreach (var eventPublicationRegistration in registrations)
-            {
-                _eventsToSend.Add(
-                    new KeyValuePair<EventPublicationRegistration, object>(
-                        eventPublicationRegistration,
-                        integrationEvent));
-            }
+            _eventsToSend.Add(messageDto);
         }
     }
 }
