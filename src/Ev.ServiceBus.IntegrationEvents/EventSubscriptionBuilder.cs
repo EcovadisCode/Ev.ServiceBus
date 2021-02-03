@@ -15,9 +15,20 @@ namespace Ev.ServiceBus.IntegrationEvents
         public EventSubscriptionBuilder()
         {
             _receivers = new List<ServiceBusReceiver>();
+            EventTypeId = typeof(TIntegrationEvent).Name;
         }
 
-        public string? EventTypeId { get; set; }
+        public string? EventTypeId { get; private set; }
+
+        public EventSubscriptionBuilder<TIntegrationEvent, THandler> CustomizeEventTypeId(string eventTypeId)
+        {
+            if (eventTypeId == null)
+            {
+                throw new ArgumentNullException(nameof(eventTypeId));
+            }
+            EventTypeId = eventTypeId;
+            return this;
+        }
 
         public EventSubscriptionBuilder<TIntegrationEvent, THandler> ReceiveFromQueue(string queueName)
         {
@@ -49,11 +60,6 @@ namespace Ev.ServiceBus.IntegrationEvents
 
         internal void Build(IServiceCollection services)
         {
-            if (string.IsNullOrEmpty(EventTypeId))
-            {
-                throw new EventTypeIdMustBeSetException();
-            }
-
             foreach (var receiver in _receivers)
             {
                 var subscription = receiver.Build(services);

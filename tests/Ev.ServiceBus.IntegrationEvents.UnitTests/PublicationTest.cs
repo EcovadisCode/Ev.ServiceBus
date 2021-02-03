@@ -37,24 +37,24 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
 
                 services.RegisterIntegrationEventPublication<PublishedEvent>(builder =>
                 {
-                    builder.EventTypeId = "MyEvent";
+                    builder.CustomizeEventTypeId("MyEvent");
                     builder.SendToTopic("testTopic");
                 });
                 services.RegisterIntegrationEventPublication<PublishedThroughQueueEvent>(builder =>
                 {
-                    builder.EventTypeId = "MyEventThroughQueue";
+                    builder.CustomizeEventTypeId("MyEventThroughQueue");
                     builder.SendToQueue("testQueue");
                 });
 
                 // noise
                 services.RegisterIntegrationEventPublication<PublishedEvent2>(builder =>
                 {
-                    builder.EventTypeId = "MyEvent2";
+                    builder.CustomizeEventTypeId("MyEvent2");
                     builder.SendToTopic("testTopic2");
                 });
                 services.RegisterIntegrationEventPublication<PublishedEvent3>(builder =>
                 {
-                    builder.EventTypeId = "MyEvent3";
+                    builder.CustomizeEventTypeId("MyEvent3");
                     builder.SendToTopic("testTopic");
                 });
 
