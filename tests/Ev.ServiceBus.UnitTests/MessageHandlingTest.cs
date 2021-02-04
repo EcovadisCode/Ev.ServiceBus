@@ -70,10 +70,10 @@ namespace Ev.ServiceBus.UnitTests
                     services.AddSingleton(mock);
                     services.AddSingleton(exceptionMock);
 
-                    services.RegisterServiceBusQueue("testQueue")
-                        .WithConnection("connectionStringTest")
-                        .WithCustomMessageHandler<FakeMessageHandler>()
-                        .WithCustomExceptionHandler<FakeExceptionHandler>();
+                    var queue = services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("connectionStringTest");
+                    queue.WithCustomMessageHandler<FakeMessageHandler>();
+                    queue.WithCustomExceptionHandler<FakeExceptionHandler>();
                 });
 
             var provider = await composer.ComposeAndSimulateStartup();

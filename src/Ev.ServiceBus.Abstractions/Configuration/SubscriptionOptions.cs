@@ -11,7 +11,7 @@ namespace Ev.ServiceBus.Abstractions
         private readonly IServiceCollection _serviceCollection;
 
         public SubscriptionOptions(IServiceCollection serviceCollection, string topicName, string subscriptionName)
-            : base(EntityNameHelper.FormatSubscriptionPath(topicName, subscriptionName), ClientType.Subscription)
+            : base(serviceCollection, EntityNameHelper.FormatSubscriptionPath(topicName, subscriptionName), ClientType.Subscription)
         {
             _serviceCollection = serviceCollection;
             SubscriptionName = subscriptionName;
@@ -20,23 +20,5 @@ namespace Ev.ServiceBus.Abstractions
 
         public string SubscriptionName { get; }
         public string TopicName { get; }
-
-        public SubscriptionOptions WithCustomMessageHandler<TMessageHandler>(
-            Action<MessageHandlerOptions>? config = null)
-            where TMessageHandler : class, IMessageHandler
-        {
-            _serviceCollection.TryAddScoped<TMessageHandler>();
-            MessageHandlerType = typeof(TMessageHandler);
-            MessageHandlerConfig = config;
-            return this;
-        }
-
-        public SubscriptionOptions WithCustomExceptionHandler<TExceptionHandler>()
-            where TExceptionHandler : class, IExceptionHandler
-        {
-            _serviceCollection.TryAddScoped<TExceptionHandler>();
-            ExceptionHandlerType = typeof(TExceptionHandler);
-            return this;
-        }
     }
 }

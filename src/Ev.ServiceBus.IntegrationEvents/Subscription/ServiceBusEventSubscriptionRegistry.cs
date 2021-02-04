@@ -6,29 +6,28 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
 {
     public class ServiceBusEventSubscriptionRegistry
     {
-        private readonly Dictionary<string, EventSubscriptionRegistration[]> _registrations;
+        private readonly Dictionary<string, MessageReceptionRegistration> _registrations;
 
-        public ServiceBusEventSubscriptionRegistry(IEnumerable<EventSubscriptionRegistration> registrations)
+        public ServiceBusEventSubscriptionRegistry(IEnumerable<MessageReceptionRegistration> registrations)
         {
             var regs = registrations.ToArray();
 
-            var duplicatedHandlers = regs.GroupBy(o => new { o.ClientType, o.ReceiverName, o.HandlerType }).Where(o => o.Count() > 1).ToArray();
+            var duplicatedHandlers = regs.GroupBy(o => new { o.Options.ClientType, o.Options.EntityPath, o.HandlerType }).Where(o => o.Count() > 1).ToArray();
             if (duplicatedHandlers.Any())
             {
                 throw new DuplicateSubscriptionHandlerDeclarationException(duplicatedHandlers.SelectMany(o => o).ToArray());
             }
 
-            var duplicateEvenTypeIds = regs.GroupBy(o => new {o.ClientType, o.ReceiverName, o.EventTypeId}).Where(o => o.Count() > 1).ToArray();
+            var duplicateEvenTypeIds = regs.GroupBy(o => new {o.Options.ClientType, o.Options.EntityPath, o.EventTypeId}).Where(o => o.Count() > 1).ToArray();
             if (duplicateEvenTypeIds.Any())
             {
                 throw new DuplicateEvenTypeIdDeclarationException(duplicateEvenTypeIds.SelectMany(o => o).ToArray());
             }
 
             _registrations = regs
-                .GroupBy(o => new { o.ClientType, o.ReceiverName, o.EventTypeId })
                 .ToDictionary(
-                    o => ComputeKey(o.Key.EventTypeId, o.Key.ReceiverName, o.Key.ClientType),
-                    o => o.ToArray());
+                    o => ComputeKey(o.EventTypeId, o.Options.EntityPath, o.Options.ClientType),
+                    o => o);
         }
 
         private string ComputeKey(string eventTypeId, string receiverName, ClientType clientType)
@@ -36,11 +35,11 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
             return $"{clientType}|{receiverName}|{eventTypeId}";
         }
 
-        public EventSubscriptionRegistration? GetRegistration(string eventTypeId, string receiverName, ClientType clientType)
+        public MessageReceptionRegistration? GetRegistration(string eventTypeId, string receiverName, ClientType clientType)
         {
             if (_registrations.TryGetValue(ComputeKey(eventTypeId, receiverName, clientType), out var registrations))
             {
-                return registrations.First();
+                return registrations;
             }
 
             return null;
