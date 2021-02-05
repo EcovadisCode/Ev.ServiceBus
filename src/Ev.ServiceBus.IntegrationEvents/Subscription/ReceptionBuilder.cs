@@ -12,7 +12,7 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
             _services = services;
         }
 
-        public ReceptionRegistrationBuilder FromQueue(string queueName)
+        public void FromQueue(string queueName, Action<ReceptionRegistrationBuilder> settings)
         {
             if (queueName == null)
             {
@@ -21,10 +21,14 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
 
             var options = _services.RegisterServiceBusQueue(queueName)
                 .ToIntegrationEventHandling();
-            return new ReceptionRegistrationBuilder(_services, options);
+            var builder = new ReceptionRegistrationBuilder(_services, options);
+            settings(builder);
         }
 
-        public ReceptionRegistrationBuilder FromSubscription(string topicName, string subscriptionName)
+        public void FromSubscription(
+            string topicName,
+            string subscriptionName,
+            Action<ReceptionRegistrationBuilder> settings)
         {
             if (topicName == null)
             {
@@ -38,7 +42,8 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
 
             var options = _services.RegisterServiceBusSubscription(topicName, subscriptionName)
                 .ToIntegrationEventHandling();
-            return new ReceptionRegistrationBuilder(_services, options);
+            var builder = new ReceptionRegistrationBuilder(_services, options);
+            settings(builder);
         }
     }
 }
