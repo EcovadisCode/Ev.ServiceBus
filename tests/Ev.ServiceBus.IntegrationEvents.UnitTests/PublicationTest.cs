@@ -207,6 +207,26 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             }
         }
 
+
+        [Fact]
+        public void SendEventsDoesntAcceptNulls()
+        {
+            var services = new ServiceCollection();
+            services.AddServiceBus(settings => {});
+            services.AddIntegrationEventHandling<BodyParser>();
+            var provider = services.BuildServiceProvider();
+
+            using (var scope = provider.CreateScope())
+            {
+                var eventPublisher = scope.ServiceProvider.GetService<IIntegrationEventSender>();
+                Assert.ThrowsAsync<ArgumentNullException>(
+                    async () =>
+                    {
+                        await eventPublisher.SendEvents(null!);
+                    });
+            }
+        }
+
         private Message GetMessageFrom(string clientToCheck)
         {
             if (clientToCheck == "topic")

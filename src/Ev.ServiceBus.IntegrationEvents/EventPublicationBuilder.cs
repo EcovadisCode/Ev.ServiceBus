@@ -119,7 +119,7 @@ namespace Ev.ServiceBus.IntegrationEvents
 
             public override EventPublicationRegistration Build(IServiceCollection services)
             {
-                var serviceBusEventPublicationRegistration = new ServiceBusEventPublicationRegistration(
+                var serviceBusEventPublicationRegistration = new EventPublicationRegistration(
                     Parent.EventTypeId!,
                     typeof(TIntegrationEvent),
                     SenderType,

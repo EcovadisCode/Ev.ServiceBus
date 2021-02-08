@@ -1,61 +1,86 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.IntegrationEvents.Publication
 {
     public class ServiceBusIntegrationEventSender : IIntegrationEventSender
     {
-        private readonly IServiceBusRegistry _registry;
+        private const int MaxMessagePerSend = 100;
         private readonly IMessageBodyParser _messageBodyParser;
-
-        private const int maxMessagePerSend = 100;
+        private readonly PublicationRegistry _publicationRegistry;
+        private readonly IServiceBusRegistry _registry;
 
         public ServiceBusIntegrationEventSender(
             IServiceBusRegistry registry,
-            IMessageBodyParser messageBodyParser)
+            IMessageBodyParser messageBodyParser,
+            PublicationRegistry publicationRegistry)
         {
             _registry = registry;
             _messageBodyParser = messageBodyParser;
+            _publicationRegistry = publicationRegistry;
         }
 
-        public async Task SendEvents(IReadOnlyList<KeyValuePair<EventPublicationRegistration, object>> events)
+        public async Task SendEvents(IEnumerable<object> messageDtos)
         {
-            foreach (var group in events.GroupBy(o => new {((ServiceBusEventPublicationRegistration)o.Key).ClientType, ((ServiceBusEventPublicationRegistration)o.Key).SenderName}))
+            if (messageDtos == null)
             {
-                IMessageSender sender;
-                if (group.Key.ClientType == ClientType.Queue)
-                {
-                    sender = _registry.GetQueueSender(group.Key.SenderName);
-                }
-                else
-                {
-                    sender = _registry.GetTopicSender(group.Key.SenderName);
-                }
+                throw new ArgumentNullException(nameof(messageDtos));
+            }
 
-                var messages = group.Select((o) =>
-                {
-                    var result = _messageBodyParser.SerializeBody(o.Value);
-                    var message = MessageHelper.CreateMessage(result.ContentType, result.Body, o.Key.EventTypeId);
-                    foreach (var customizer in ((ServiceBusEventPublicationRegistration) o.Key)
-                        .OutgoingMessageCustomizers)
-                    {
-                        customizer?.Invoke(message, o.Value);
-                    }
+            var dispatches =
+                (
+                    from dto in messageDtos
+                    // the same dto can be published to several senders
+                    let registrations = _publicationRegistry.GetRegistrations(dto.GetType())
+                    from eventPublicationRegistration in registrations
+                    let message = CreateMessage(eventPublicationRegistration, dto)
+                    select new Dispatch(message, eventPublicationRegistration))
+                .ToArray();
 
-                    return message;
-                }).ToList();
+            foreach (var groupedDispatch in dispatches
+                .GroupBy(o => new { o.Registration.ClientType, o.Registration.SenderName }))
+            {
+                var sender = groupedDispatch.Key.ClientType == ClientType.Queue
+                    ? _registry.GetQueueSender(groupedDispatch.Key.SenderName)
+                    : _registry.GetTopicSender(groupedDispatch.Key.SenderName);
 
-                var paginatedMessages = messages
-                  .Select((x, i) => new { Item = x, Index = i })
-                  .GroupBy(x => x.Index / maxMessagePerSend, x => x.Item);
+                var paginatedMessages = groupedDispatch.Select(o => o.Message)
+                    .Select((x, i) => new { Item = x, Index = i })
+                    .GroupBy(x => x.Index / MaxMessagePerSend, x => x.Item);
 
-                foreach(var pageMessages in paginatedMessages)
+                foreach (var pageMessages in paginatedMessages)
                 {
                     await sender.SendAsync(pageMessages.Select(m => m).ToArray()).ConfigureAwait(false);
                 }
             }
+        }
+
+        private Message CreateMessage(EventPublicationRegistration registration, object dto)
+        {
+            var result = _messageBodyParser.SerializeBody(dto);
+            var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.EventTypeId);
+            foreach (var customizer in registration.OutgoingMessageCustomizers)
+            {
+                customizer?.Invoke(message, dto);
+            }
+
+            return message;
+        }
+
+        private class Dispatch
+        {
+            public Dispatch(Message message, EventPublicationRegistration registration)
+            {
+                this.Message = message;
+                this.Registration = registration;
+            }
+
+            public Message Message { get; }
+            public EventPublicationRegistration Registration { get; }
         }
     }
 }

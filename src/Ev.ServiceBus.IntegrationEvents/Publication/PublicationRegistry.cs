@@ -7,13 +7,10 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
     public class PublicationRegistry
     {
         private readonly EventPublicationRegistration[] _registrations;
-        private readonly IIntegrationEventSender[] _senders;
 
         public PublicationRegistry(
-            IEnumerable<EventPublicationRegistration> registrations,
-            IEnumerable<IIntegrationEventSender> senders)
+            IEnumerable<EventPublicationRegistration> registrations)
         {
-            _senders = senders.ToArray();
             _registrations = registrations.ToArray();
 
             var doubleRegistrations = _registrations.GroupBy(o => o).Where(o => o.Count() > 1).ToArray();
@@ -23,16 +20,11 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
             }
         }
 
-        public EventPublicationRegistration[] GetRegistrations<TIntegrationEvent>()
+        public EventPublicationRegistration[] GetRegistrations(Type messageType)
         {
             return _registrations
-                .Where(o => o.EventType == typeof(TIntegrationEvent))
+                .Where(o => o.EventType == messageType)
                 .ToArray();
-        }
-
-        public IIntegrationEventSender GetSender(Type senderType)
-        {
-            return _senders.First(o => o.GetType() == senderType);
         }
     }
 }

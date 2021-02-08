@@ -47,11 +47,6 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests.Helpers
 
         public Composer WithIntegrationEventsQueueSender(string queueName)
         {
-            if (string.IsNullOrEmpty(queueName))
-            {
-                throw new NullException(queueName);
-            }
-
             _listOfIntegrationEventSenders.Add(new KeyValuePair<SenderType, string>(SenderType.Queue, queueName));
 
             return this;
@@ -81,9 +76,6 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests.Helpers
                 }
             }
             services.AddSingleton(s => serviceBusRegistry.Object);
-            services.AddSingleton<IEnumerable<IIntegrationEventSender>>(s =>
-                new List<IIntegrationEventSender>(new[]
-                    { new ServiceBusIntegrationEventSender(s.GetService<IServiceBusRegistry>(), s.GetService<IMessageBodyParser>())}));
         }
 
 
