@@ -84,7 +84,11 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests.Helpers
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus(settings => {});
+            services.AddServiceBus(
+                settings =>
+                {
+                    settings.WithConnection("testconnectionstring");
+                });
             services.AddIntegrationEventHandling<BodyParser>();
 
             ComposeSenders(services);

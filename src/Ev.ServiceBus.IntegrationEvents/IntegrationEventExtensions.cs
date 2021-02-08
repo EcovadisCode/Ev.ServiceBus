@@ -9,7 +9,8 @@ namespace Ev.ServiceBus.IntegrationEvents
 {
     public static class IntegrationEventExtensions
     {
-        public static IServiceCollection AddIntegrationEventHandling<TMessageBodyParser>(this IServiceCollection services)
+        public static IServiceCollection AddIntegrationEventHandling<TMessageBodyParser>(
+            this IServiceCollection services)
             where TMessageBodyParser : class, IMessageBodyParser
         {
             services.AddLogging();
@@ -27,10 +28,11 @@ namespace Ev.ServiceBus.IntegrationEvents
             return services;
         }
 
-        public static SubscriptionOptions ToIntegrationEventHandling(
-            this SubscriptionOptions options,
+        public static TOptions ToIntegrationEventHandling<TOptions>(
+            this TOptions options,
             int maxConcurrentCalls = 1,
             TimeSpan maxAutoRenewDuration = default)
+            where TOptions : ReceiverOptions
         {
             options.WithCustomMessageHandler<IntegrationEventMessageHandler>(
                 config =>
@@ -55,15 +57,9 @@ namespace Ev.ServiceBus.IntegrationEvents
             return services;
         }
 
-        public static IServiceCollection RegisterIntegrationEventSubscription<TIntegrationEvent, THandler>(
-            this IServiceCollection services,
-            Action<EventSubscriptionBuilder<TIntegrationEvent, THandler>> configure)
-            where THandler : class, IIntegrationEventHandler<TIntegrationEvent>
+        public static ReceptionBuilder RegisterServiceBusReception(this IServiceCollection services)
         {
-            var options = new EventSubscriptionBuilder<TIntegrationEvent, THandler>();
-            configure(options);
-            options.Build(services);
-            return services;
+            return new(services);
         }
     }
 }

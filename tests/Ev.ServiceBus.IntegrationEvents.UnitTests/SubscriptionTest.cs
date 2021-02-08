@@ -28,46 +28,42 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             _composer.WithAdditionalServices(
                 services =>
                 {
-                    services.RegisterServiceBusSubscription("testTopic", "testSubscription")
-                        .WithConnection("testconnectionstring")
-                        .ToIntegrationEventHandling();
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "testSubscription",
+                        builder =>
+                        {
+                            builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>()
+                                .CustomizeEventTypeId("MyEvent");
+                        });
 
-                    services.RegisterServiceBusSubscription("testTopic", "SubscriptionWithNoHandlers")
-                        .WithConnection("testconnectionstring")
-                        .ToIntegrationEventHandling();
+                    services.RegisterServiceBusReception()
+                        .FromSubscription("testTopic", "SubscriptionWithNoHandlers", builder => {});
 
-                    services.RegisterServiceBusSubscription("testTopic", "SubscriptionWithFailingHandler")
-                        .WithConnection("testconnectionstring")
-                        .ToIntegrationEventHandling();
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "SubscriptionWithFailingHandler",
+                            builder =>
+                            {
+                                builder.RegisterReception<SubscribedEvent, FailingEventHandler>()
+                                    .CustomizeEventTypeId("MyEvent");
+                            });
 
                     // noise
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription2")
-                        .WithConnection("testconnectionstring")
-                        .ToIntegrationEventHandling();
-                    services.RegisterServiceBusSubscription("testTopic2", "testSubscription3")
-                        .WithConnection("testconnectionstring")
                         .ToIntegrationEventHandling();
 
-                    services.RegisterIntegrationEventSubscription<SubscribedEvent, SubscribedEventHandler>(
-                        builder =>
-                        {
-                            builder.CustomizeEventTypeId("MyEvent");
-                            builder.ReceiveFromSubscription("testTopic", "testSubscription");
-                        });
-
-                    services.RegisterIntegrationEventSubscription<SubscribedEvent, FailingEventHandler>(
-                        builder =>
-                        {
-                            builder.CustomizeEventTypeId("MyEvent");
-                            builder.ReceiveFromSubscription("testTopic", "SubscriptionWithFailingHandler");
-                        });
-
-                    services.RegisterIntegrationEventSubscription<NoiseEvent, NoiseHandler>(
-                        builder =>
-                        {
-                            builder.CustomizeEventTypeId("MyEvent2");
-                            builder.ReceiveFromSubscription("testTopic2", "testSubscription3");
-                        });
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic2",
+                            "testSubscription3",
+                            builder =>
+                            {
+                                builder.RegisterReception<NoiseEvent, NoiseHandler>()
+                                    .CustomizeEventTypeId("MyEvent2");
+                            });
 
                     services.AddSingleton(_eventStore);
                 });
@@ -107,7 +103,6 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             Assert.Equal(typeof(SubscribedEventHandler), @event.HandlerType);
         }
 
-
         [Fact]
         public async Task ThrowsWhenReceivedMessageHasNoEventTypeId()
         {
@@ -116,16 +111,15 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.RegisterServiceBusSubscription("testTopic", "testSubscription")
-                        .WithConnection("testconnectionstring")
-                        .ToIntegrationEventHandling();
-
-                    services.RegisterIntegrationEventSubscription<NoiseEvent, NoiseHandler>(
-                        builder =>
-                        {
-                            builder.CustomizeEventTypeId("MyEvent");
-                            builder.ReceiveFromSubscription("testTopic", "testSubscription");
-                        });
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "testSubscription",
+                            builder =>
+                            {
+                                builder.RegisterReception<NoiseEvent, NoiseHandler>()
+                                    .CustomizeEventTypeId("MyEvent");
+                            });
 
                     services.AddSingleton(_eventStore);
                 });
@@ -163,9 +157,11 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.RegisterServiceBusSubscription("testTopic", "SubscriptionWithNoHandlers")
-                        .WithConnection("testconnectionstring")
-                        .ToIntegrationEventHandling();
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "SubscriptionWithNoHandlers",
+                            builder => { });
 
                     services.AddSingleton(_eventStore);
                 });
@@ -186,16 +182,15 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             composer.WithAdditionalServices(
                 services =>
                 {
-                    services.RegisterServiceBusSubscription("testTopic", "testSubscription")
-                        .WithConnection("testconnectionstring")
-                        .ToIntegrationEventHandling();
-
-                    services.RegisterIntegrationEventSubscription<SubscribedEvent, CancellingHandler>(
-                        builder =>
-                        {
-                            builder.CustomizeEventTypeId("MyEvent");
-                            builder.ReceiveFromSubscription("testTopic", "testSubscription");
-                        });
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "testSubscription",
+                            builder =>
+                            {
+                                builder.RegisterReception<SubscribedEvent, CancellingHandler>()
+                                    .CustomizeEventTypeId("MyEvent");
+                            });
 
                     services.AddSingleton(_eventStore);
                 });

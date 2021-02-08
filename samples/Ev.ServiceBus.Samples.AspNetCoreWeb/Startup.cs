@@ -31,9 +31,9 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb
             // - A topic named "mytopic" and under it :
             //     - A subscription named "mysubscription"
             //     - A subscription named "mysecondsubscription"
-            services.RegisterServiceBusQueue(ServiceBusResources.MyQueue)
-                .WithCustomMessageHandler<WeatherMessageHandler>()
-                .WithCustomExceptionHandler<WeatherExceptionHandler>();
+            var queue = services.RegisterServiceBusQueue(ServiceBusResources.MyQueue);
+            queue.WithCustomMessageHandler<WeatherMessageHandler>();
+            queue.WithCustomExceptionHandler<WeatherExceptionHandler>();
 
             services.RegisterServiceBusTopic(ServiceBusResources.MyTopic);
 

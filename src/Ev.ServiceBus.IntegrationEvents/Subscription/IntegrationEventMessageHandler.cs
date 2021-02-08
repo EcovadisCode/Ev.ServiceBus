@@ -38,12 +38,12 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
                 throw new MessageIsMissingEventTypeIdException(context);
             }
 
-            var eventSubscription = _registry.GetRegistration(
+            var receptionRegistration = _registry.GetRegistration(
                 eventTypeId,
                 context.Receiver.Name,
                 context.Receiver.ClientType);
 
-            if (eventSubscription == null)
+            if (receptionRegistration == null)
             {
                 return;
             }
@@ -55,32 +55,32 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
                 return;
             }
 
-            var @event = _messageBodyParser.DeSerializeBody(context.Message.Body, eventSubscription.EventType);
-            var methodInfo = _callHandlerInfo.MakeGenericMethod(eventSubscription.EventType);
+            var @event = _messageBodyParser.DeSerializeBody(context.Message.Body, receptionRegistration.ReceptionModelType);
+            var methodInfo = _callHandlerInfo.MakeGenericMethod(receptionRegistration.ReceptionModelType);
             try
             {
                 _logger.LogDebug(
-                    $"[Ev.ServiceBus.IntegrationEvents] Executing {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} handler");
-                await ((Task) methodInfo.Invoke(this, new[] { eventSubscription, @event, context.Token })!).ConfigureAwait(false);
+                    $"[Ev.ServiceBus.IntegrationEvents] Executing {receptionRegistration.EventTypeId}:{receptionRegistration.HandlerType.FullName} handler");
+                await ((Task) methodInfo.Invoke(this, new[] { receptionRegistration, @event, context.Token })!).ConfigureAwait(false);
                 _logger.LogDebug(
-                    $"[Ev.ServiceBus.IntegrationEvents] Execution of  {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} handler successful");
+                    $"[Ev.ServiceBus.IntegrationEvents] Execution of  {receptionRegistration.EventTypeId}:{receptionRegistration.HandlerType.FullName} handler successful");
             }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex,
-                    $"[Ev.ServiceBus.IntegrationEvents] Handler {eventSubscription.EventTypeId}:{eventSubscription.HandlerType.FullName} failed.\n"
+                    $"[Ev.ServiceBus.IntegrationEvents] Handler {receptionRegistration.EventTypeId}:{receptionRegistration.HandlerType.FullName} failed.\n"
                     + $"Receiver : {context.Receiver.ClientType} | {context.Receiver.Name}\n");
             }
         }
 
         private async Task CallHandler<TIntegrationEvent>(
-            EventSubscriptionRegistration eventSubscriptionRegistration,
+            MessageReceptionRegistration messageReceptionRegistration,
             TIntegrationEvent @event,
             CancellationToken token)
         {
             var handler = (IIntegrationEventHandler<TIntegrationEvent>) _provider.GetRequiredService(
-                eventSubscriptionRegistration.HandlerType);
+                messageReceptionRegistration.HandlerType);
 
             await handler.Handle(@event, token).ConfigureAwait(false);
         }

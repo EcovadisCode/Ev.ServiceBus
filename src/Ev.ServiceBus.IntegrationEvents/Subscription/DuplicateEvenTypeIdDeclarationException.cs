@@ -5,15 +5,15 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
 {
     public class DuplicateEvenTypeIdDeclarationException : Exception
     {
-        public DuplicateEvenTypeIdDeclarationException(EventSubscriptionRegistration[] duplicates)
+        public DuplicateEvenTypeIdDeclarationException(MessageReceptionRegistration[] duplicates)
         {
             Duplicates = duplicates;
             Message = "You cannot register the same EventTypeId twice for the same subscription.\n"
                       + "Duplicates at fault :\n"
-                      + $"{string.Join("\n", duplicates.Select(o => $"{o.ClientType} {o.ReceiverName} => {o.EventTypeId} => {o.HandlerType}"))}";
+                      + $"{string.Join("\n", duplicates.Select(o => $"{o.Options.ClientType} {o.Options.EntityPath} => {o.EventTypeId} => {o.HandlerType}"))}";
         }
 
-        public EventSubscriptionRegistration[] Duplicates { get; }
+        public MessageReceptionRegistration[] Duplicates { get; }
         public override string Message { get; }
     }
 }
