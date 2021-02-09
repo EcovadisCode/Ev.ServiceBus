@@ -1,6 +1,4 @@
-﻿
-
-// ReSharper disable once CheckNamespace
+﻿// ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions
 {
     public abstract class ClientOptions : IClientOptions
