@@ -17,7 +17,7 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
             _options = receiverOptions;
         }
 
-        public void CustomizeMessageHandling(int maxConcurrentCalls = 1, TimeSpan maxAutoRenewDuration = default)
+        public void CustomizeMessageHandling(int maxConcurrentCalls = 1, TimeSpan? maxAutoRenewDuration = null)
         {
             _options.ToIntegrationEventHandling(maxConcurrentCalls, maxAutoRenewDuration);
         }

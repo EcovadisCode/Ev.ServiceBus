@@ -31,7 +31,7 @@ namespace Ev.ServiceBus.IntegrationEvents
         public static TOptions ToIntegrationEventHandling<TOptions>(
             this TOptions options,
             int maxConcurrentCalls = 1,
-            TimeSpan maxAutoRenewDuration = default)
+            TimeSpan? maxAutoRenewDuration = null)
             where TOptions : ReceiverOptions
         {
             options.WithCustomMessageHandler<IntegrationEventMessageHandler>(
@@ -39,9 +39,9 @@ namespace Ev.ServiceBus.IntegrationEvents
                 {
                     config.AutoComplete = true;
                     config.MaxConcurrentCalls = maxConcurrentCalls;
-                    if (maxAutoRenewDuration != default)
+                    if (maxAutoRenewDuration != null)
                     {
-                        config.MaxAutoRenewDuration = maxAutoRenewDuration;
+                        config.MaxAutoRenewDuration = maxAutoRenewDuration.Value;
                     }
                 });
             return options;

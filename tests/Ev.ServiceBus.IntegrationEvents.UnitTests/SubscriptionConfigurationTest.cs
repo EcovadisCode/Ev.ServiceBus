@@ -230,7 +230,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                     It.Is<ConnectionSettings>(settings => settings.ConnectionString == "newConnectionString"
                                                           && settings.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
                 .Returns(new Mock<ISubscriptionClient>().Object);
-            
+
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusReception()
