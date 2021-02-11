@@ -42,11 +42,11 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
                 .ToArray();
 
             foreach (var groupedDispatch in dispatches
-                .GroupBy(o => new { o.Registration.ClientType, o.Registration.SenderName }))
+                .GroupBy(o => new { o.Registration.Options.ClientType, o.Registration.Options.EntityPath }))
             {
                 var sender = groupedDispatch.Key.ClientType == ClientType.Queue
-                    ? _registry.GetQueueSender(groupedDispatch.Key.SenderName)
-                    : _registry.GetTopicSender(groupedDispatch.Key.SenderName);
+                    ? _registry.GetQueueSender(groupedDispatch.Key.EntityPath)
+                    : _registry.GetTopicSender(groupedDispatch.Key.EntityPath);
 
                 var paginatedMessages = groupedDispatch.Select(o => o.Message)
                     .Select((x, i) => new { Item = x, Index = i })
@@ -59,7 +59,7 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
             }
         }
 
-        private Message CreateMessage(EventPublicationRegistration registration, object dto)
+        private Message CreateMessage(MessageDispatchRegistration registration, object dto)
         {
             var result = _messageBodyParser.SerializeBody(dto);
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.EventTypeId);
@@ -73,14 +73,14 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
 
         private class Dispatch
         {
-            public Dispatch(Message message, EventPublicationRegistration registration)
+            public Dispatch(Message message, MessageDispatchRegistration registration)
             {
                 this.Message = message;
                 this.Registration = registration;
             }
 
             public Message Message { get; }
-            public EventPublicationRegistration Registration { get; }
+            public MessageDispatchRegistration Registration { get; }
         }
     }
 }

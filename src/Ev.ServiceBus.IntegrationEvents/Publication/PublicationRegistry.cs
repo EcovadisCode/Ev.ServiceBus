@@ -6,10 +6,10 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
 {
     public class PublicationRegistry
     {
-        private readonly EventPublicationRegistration[] _registrations;
+        private readonly MessageDispatchRegistration[] _registrations;
 
         public PublicationRegistry(
-            IEnumerable<EventPublicationRegistration> registrations)
+            IEnumerable<MessageDispatchRegistration> registrations)
         {
             _registrations = registrations.ToArray();
 
@@ -20,7 +20,7 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
             }
         }
 
-        public EventPublicationRegistration[] GetRegistrations(Type messageType)
+        public MessageDispatchRegistration[] GetRegistrations(Type messageType)
         {
             return _registrations
                 .Where(o => o.EventType == messageType)

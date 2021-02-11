@@ -6,9 +6,9 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
 {
     public class MultiplePublicationRegistrationException : Exception
     {
-        public EventPublicationRegistration[] Registrations { get; }
+        public MessageDispatchRegistration[] Registrations { get; }
 
-        public MultiplePublicationRegistrationException(IReadOnlyList<EventPublicationRegistration> registrations)
+        public MultiplePublicationRegistrationException(IReadOnlyList<MessageDispatchRegistration> registrations)
             : base($"You can't register the same contract more than once.\n"
                    + $"Registrations at fault : \n"
                    + $"{string.Join("\n", registrations)}")

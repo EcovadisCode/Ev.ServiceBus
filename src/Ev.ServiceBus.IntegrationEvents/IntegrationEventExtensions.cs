@@ -47,17 +47,12 @@ namespace Ev.ServiceBus.IntegrationEvents
             return options;
         }
 
-        public static IServiceCollection RegisterIntegrationEventPublication<TIntegrationEvent>(
-            this IServiceCollection services,
-            Action<EventPublicationBuilder<TIntegrationEvent>> configure)
+        public static ReceptionBuilder RegisterServiceBusReception(this IServiceCollection services)
         {
-            var options = new EventPublicationBuilder<TIntegrationEvent>();
-            configure(options);
-            options.Build(services);
-            return services;
+            return new(services);
         }
 
-        public static ReceptionBuilder RegisterServiceBusReception(this IServiceCollection services)
+        public static DispatchBuilder RegisterServiceBusDispatch(this IServiceCollection services)
         {
             return new(services);
         }
