@@ -28,36 +28,23 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
 
             _composer.WithAdditionalServices(services =>
             {
-                    services.RegisterServiceBusTopic("testTopic").WithConnection("testConnectionString");
-                    services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
+                services.RegisterServiceBusDispatch().ToTopic("testTopic", builder =>
+                {
+                    builder.RegisterDispatch<PublishedEvent>().CustomizeEventTypeId("MyEvent");
 
                     // noise
-                    services.RegisterServiceBusTopic("testTopic2").WithConnection("testConnectionString");
-                    services.RegisterServiceBusQueue("testQueue2").WithConnection("testConnectionString");
-
-                services.RegisterIntegrationEventPublication<PublishedEvent>(builder =>
-                {
-                    builder.CustomizeEventTypeId("MyEvent");
-                    builder.SendToTopic("testTopic");
+                    builder.RegisterDispatch<PublishedEvent3>().CustomizeEventTypeId("MyEvent3");
                 });
-                services.RegisterIntegrationEventPublication<PublishedThroughQueueEvent>(builder =>
+                services.RegisterServiceBusDispatch().ToQueue("testQueue", builder =>
                 {
-                    builder.CustomizeEventTypeId("MyEventThroughQueue");
-                    builder.SendToQueue("testQueue");
+                    builder.RegisterDispatch<PublishedThroughQueueEvent>().CustomizeEventTypeId("MyEventThroughQueue");
                 });
 
                 // noise
-                services.RegisterIntegrationEventPublication<PublishedEvent2>(builder =>
+                services.RegisterServiceBusDispatch().ToTopic("testTopic2", builder =>
                 {
-                    builder.CustomizeEventTypeId("MyEvent2");
-                    builder.SendToTopic("testTopic2");
+                    builder.RegisterDispatch<PublishedEvent2>().CustomizeEventTypeId("MyEvent2");
                 });
-                services.RegisterIntegrationEventPublication<PublishedEvent3>(builder =>
-                {
-                    builder.CustomizeEventTypeId("MyEvent3");
-                    builder.SendToTopic("testTopic");
-                });
-
             });
 
             _composer.Compose().GetAwaiter().GetResult();
