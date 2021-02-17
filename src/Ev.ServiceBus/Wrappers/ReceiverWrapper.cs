@@ -1,53 +1,123 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Ev.ServiceBus
 {
-    public abstract class ReceiverWrapper : BaseWrapper
+    public class ReceiverWrapper
     {
+        private readonly ConnectionSettings? _connectionSettings;
+        private readonly Type? _exceptionHandlerType;
         private readonly ILogger<ReceiverWrapper> _logger;
-        private readonly IMessageReceiverOptions _receiverOptions;
+        private readonly Type _messageHandlerType;
+        private readonly IMessageReceiverOptions[] _options;
+        private readonly ServiceBusOptions _parentOptions;
+        private readonly IServiceProvider _provider;
 
         private Func<ExceptionReceivedEventArgs, Task>? _onExceptionReceivedHandler;
+        internal MessageReceiver? Receiver;
 
-        protected ReceiverWrapper(
-            IMessageReceiverOptions receiverOptions,
+        public ReceiverWrapper(IMessageReceiverOptions[] options,
             ServiceBusOptions parentOptions,
             IServiceProvider provider)
-            : base(receiverOptions, parentOptions, provider)
         {
-            _receiverOptions = receiverOptions;
-            _logger = Provider.GetRequiredService<ILogger<ReceiverWrapper>>();
+            ResourceId = options.First().ResourceId;
+            ClientType = options.First().ClientType;
+            _connectionSettings = options.First().ConnectionSettings;
+            _messageHandlerType = options.First().MessageHandlerType!;
+            _exceptionHandlerType = options.FirstOrDefault(o => o.ExceptionHandlerType != null)?.ExceptionHandlerType;
+            _options = options;
+            _parentOptions = parentOptions;
+            _provider = provider;
+            _logger = _provider.GetRequiredService<ILogger<ReceiverWrapper>>();
         }
 
-        protected void RegisterMessageHandler(IMessageReceiverOptions receiverOptions, MessageReceiver receiver)
+        public string ResourceId { get; }
+        public ClientType ClientType { get; }
+
+        internal IReceiverClient? ReceiverClient { get; private set; }
+
+        public void Initialize()
         {
-            if (ParentOptions.Settings.ReceiveMessages == false)
+            _logger.LogInformation($"[Ev.ServiceBus] Initialization of client '{ResourceId}': Start.");
+            if (_parentOptions.Settings.Enabled == false)
             {
+                Receiver = null;
+                _logger.LogInformation(
+                    $"[Ev.ServiceBus] Initialization of client '{ResourceId}': Client deactivated through configuration.");
                 return;
             }
-            if (receiverOptions.MessageHandlerType == null)
+
+            try
+            {
+                var connectionSettings = _connectionSettings ?? _parentOptions.Settings.ConnectionSettings;
+                if (connectionSettings == null)
+                {
+                    throw new MissingConnectionException(ResourceId, ClientType.Topic);
+                }
+
+                switch (ClientType)
+                {
+                    case ClientType.Queue:
+                        CreateQueueClient(connectionSettings);
+                        break;
+                    case ClientType.Subscription:
+                        CreateSubscriptionClient(connectionSettings);
+                        break;
+                }
+
+                RegisterMessageHandler(_options, Receiver!);
+                _logger.LogInformation($"[Ev.ServiceBus] Initialization of client '{ResourceId}': Success.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"[Ev.ServiceBus] Initialization of client '{ResourceId}': Failed.");
+            }
+        }
+
+        private void CreateQueueClient(ConnectionSettings settings)
+        {
+            var factory = _provider.GetService<IClientFactory<QueueOptions, IQueueClient>>();
+            ReceiverClient = factory.Create((QueueOptions) _options.First(), settings);
+            Receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
+        }
+
+        private void CreateSubscriptionClient(ConnectionSettings settings)
+        {
+            var factory = _provider.GetService<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
+            ReceiverClient = factory.Create((SubscriptionOptions) _options.First(), settings);
+            Receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
+        }
+
+        private void RegisterMessageHandler(IMessageReceiverOptions[] receiverOptions, MessageReceiver receiver)
+        {
+            if (_parentOptions.Settings.ReceiveMessages == false)
             {
                 return;
             }
 
-            _onExceptionReceivedHandler = (exceptionEvent) => Task.CompletedTask;
+            _onExceptionReceivedHandler = exceptionEvent => Task.CompletedTask;
 
-            if (receiverOptions.ExceptionHandlerType != null)
+            if (_exceptionHandlerType != null)
             {
                 _onExceptionReceivedHandler = CallDefinedExceptionHandler;
             }
 
             var messageHandlerOptions = new MessageHandlerOptions(OnExceptionOccured);
 
-            receiverOptions.MessageHandlerConfig?.Invoke(messageHandlerOptions);
+            foreach (var config in receiverOptions.Where(o => o.MessageHandlerConfig != null)
+                .Select(o => o.MessageHandlerConfig))
+            {
+                config!(messageHandlerOptions);
+            }
 
             receiver.Client.RegisterMessageHandler(OnMessageReceived, messageHandlerOptions);
         }
@@ -64,12 +134,12 @@ namespace Ev.ServiceBus
             _logger.LogInformation(
                 $"[Ev.ServiceBus] New message received from {Receiver!.ClientType} '{Receiver.Name}' : {message.Label}");
 
-            using var traceLogger = new MsgTraceLogger(_logger, $"[Ev.ServiceBus] Message from {Receiver.ClientType}: {Receiver.Name}: {message.MessageId}.");
-            using var scope = Provider.CreateScope();
+            using var traceLogger = new MsgTraceLogger(_logger,
+                $"[Ev.ServiceBus] Message from {Receiver.ClientType}: {Receiver.Name}: {message.MessageId}.");
+            using var scope = _provider.CreateScope();
             var messageHandler =
-                (IMessageHandler) scope.ServiceProvider.GetRequiredService(_receiverOptions.MessageHandlerType);
-            var context = new MessageContext(
-                message,
+                (IMessageHandler) scope.ServiceProvider.GetRequiredService(_messageHandlerType);
+            var context = new MessageContext(message,
                 Receiver,
                 cancellationToken);
             await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
@@ -83,8 +153,7 @@ namespace Ev.ServiceBus
         private async Task OnExceptionOccured(ExceptionReceivedEventArgs exceptionEvent)
         {
             var json = JsonConvert.SerializeObject(exceptionEvent.ExceptionReceivedContext, Formatting.Indented);
-            _logger.LogError(
-                exceptionEvent.Exception,
+            _logger.LogError(exceptionEvent.Exception,
                 $"[Ev.ServiceBus] Exception occured during message treatment of {Receiver!.ClientType} '{Receiver.Name}'.\n"
                 + $"Message : {exceptionEvent.Exception.Message}\n"
                 + $"Context:\n{json}");
@@ -95,7 +164,7 @@ namespace Ev.ServiceBus
         private async Task CallDefinedExceptionHandler(ExceptionReceivedEventArgs exceptionEvent)
         {
             var userDefinedExceptionHandler =
-                (IExceptionHandler) Provider.GetService(_receiverOptions.ExceptionHandlerType!)!;
+                (IExceptionHandler) _provider.GetService(_exceptionHandlerType!)!;
             await userDefinedExceptionHandler!.HandleExceptionAsync(exceptionEvent).ConfigureAwait(false);
         }
     }

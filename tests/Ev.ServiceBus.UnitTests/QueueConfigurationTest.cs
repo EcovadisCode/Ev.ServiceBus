@@ -26,7 +26,7 @@ namespace Ev.ServiceBus.UnitTests
                     services.RegisterServiceBusQueue("testQueue");
                 });
 
-            await Assert.ThrowsAnyAsync<DuplicateQueueRegistrationException>(
+            await Assert.ThrowsAnyAsync<DuplicateSenderRegistrationException>(
                 async () => await composer.ComposeAndSimulateStartup());
         }
 
@@ -63,7 +63,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
                         It.Is<ConnectionSettings>(conn => conn.Connection == serviceBusConnection)))
                 .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
@@ -93,7 +93,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
                         It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionString")))
                 .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
@@ -124,7 +124,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
                         It.Is<ConnectionSettings>(conn => conn.ConnectionStringBuilder == connectionStringBuilder)))
                 .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
@@ -154,7 +154,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
                         It.Is<ConnectionSettings>(conn => conn.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
                 .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
@@ -186,7 +186,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
                         It.Is<ConnectionSettings>(conn => conn.RetryPolicy == retryPolicy)))
                 .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
@@ -257,7 +257,8 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
-            var logger = new Mock<ILogger<BaseWrapper>>();
+            var logger = new Mock<ILogger<SenderWrapper>>();
+            composer.WithDefaultSettings(settings => {});
             composer.WithAdditionalServices(
                 services =>
                 {
@@ -291,7 +292,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
                         It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionStringFromDefault")))
                 .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();
@@ -323,7 +324,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.EntityPath == "testQueue"),
+                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
                         It.Is<ConnectionSettings>(conn => conn.ConnectionString == "concreteTestConnectionString")))
                 .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
                 .Verifiable();

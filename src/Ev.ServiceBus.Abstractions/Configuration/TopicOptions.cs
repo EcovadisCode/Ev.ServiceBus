@@ -3,7 +3,7 @@ namespace Ev.ServiceBus.Abstractions
 {
     public class TopicOptions : ClientOptions
     {
-        public TopicOptions(string topicName) : base(topicName, ClientType.Topic)
+        public TopicOptions(string topicName, bool strictMode) : base(topicName, ClientType.Topic, strictMode)
         {
             TopicName = topicName;
         }

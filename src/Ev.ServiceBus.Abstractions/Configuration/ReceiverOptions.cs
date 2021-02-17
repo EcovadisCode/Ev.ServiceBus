@@ -10,8 +10,8 @@ namespace Ev.ServiceBus.Abstractions
     {
         private readonly IServiceCollection _services;
 
-        protected ReceiverOptions(IServiceCollection services, string entityPath, ClientType clientType)
-            : base(entityPath, clientType)
+        protected ReceiverOptions(IServiceCollection services, string resourceId, ClientType clientType, bool strictMode)
+            : base(resourceId, clientType, strictMode)
         {
             _services = services;
         }

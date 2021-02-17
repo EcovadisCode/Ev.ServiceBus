@@ -27,7 +27,7 @@ namespace Ev.ServiceBus.UnitTests
 
             return (
                 provider.GetRequiredService<IServiceBusRegistry>().GetQueueSender("testQueue"),
-                provider.GetQueueClientMock("testQueue")
+                provider.GetQueueClientMock("testQueue", false)
             );
         }
 

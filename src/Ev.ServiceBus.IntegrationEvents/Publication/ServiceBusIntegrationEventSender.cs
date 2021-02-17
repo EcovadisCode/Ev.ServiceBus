@@ -42,11 +42,12 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
                 .ToArray();
 
             foreach (var groupedDispatch in dispatches
-                .GroupBy(o => new { o.Registration.Options.ClientType, o.Registration.Options.EntityPath }))
+                .GroupBy(o => new { o.Registration.Options.ClientType,
+                    o.Registration.Options.ResourceId }))
             {
                 var sender = groupedDispatch.Key.ClientType == ClientType.Queue
-                    ? _registry.GetQueueSender(groupedDispatch.Key.EntityPath)
-                    : _registry.GetTopicSender(groupedDispatch.Key.EntityPath);
+                    ? _registry.GetQueueSender(groupedDispatch.Key.ResourceId)
+                    : _registry.GetTopicSender(groupedDispatch.Key.ResourceId);
 
                 var paginatedMessages = groupedDispatch.Select(o => o.Message)
                     .Select((x, i) => new { Item = x, Index = i })

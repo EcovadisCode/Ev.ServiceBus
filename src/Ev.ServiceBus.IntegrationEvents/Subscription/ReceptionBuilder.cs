@@ -1,4 +1,5 @@
 ﻿using System;
+using Ev.ServiceBus.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ev.ServiceBus.IntegrationEvents.Subscription
@@ -19,9 +20,14 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
                 throw new ArgumentNullException(nameof(queueName));
             }
 
-            var options = _services.RegisterServiceBusQueue(queueName)
+            var queue = new QueueOptions(_services, queueName, false)
                 .ToIntegrationEventHandling();
-            var builder = new ReceptionRegistrationBuilder(_services, options);
+            _services.Configure<ServiceBusOptions>(
+                options =>
+                {
+                    options.RegisterQueue(queue);
+                });
+            var builder = new ReceptionRegistrationBuilder(_services, queue);
             settings(builder);
         }
 
@@ -40,9 +46,14 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
                 throw new ArgumentNullException(nameof(subscriptionName));
             }
 
-            var options = _services.RegisterServiceBusSubscription(topicName, subscriptionName)
+            var subscriptionOptions = new SubscriptionOptions(_services, topicName, subscriptionName, false)
                 .ToIntegrationEventHandling();
-            var builder = new ReceptionRegistrationBuilder(_services, options);
+            _services.Configure<ServiceBusOptions>(
+                options =>
+                {
+                    options.RegisterSubscription(subscriptionOptions);
+                });
+            var builder = new ReceptionRegistrationBuilder(_services, subscriptionOptions);
             settings(builder);
         }
     }

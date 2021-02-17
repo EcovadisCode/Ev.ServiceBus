@@ -31,10 +31,10 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             return provider;
         }
 
-        public static QueueClientMock GetQueueClientMock(this IServiceProvider provider, string queueName)
+        public static QueueClientMock GetQueueClientMock(this IServiceProvider provider, string queueName, bool isReceiver = true)
         {
             var factory = provider.GetRequiredService<FakeClientFactory>();
-            return factory.GetAssociatedMock(queueName);
+            return factory.GetAssociatedMock(queueName, isReceiver);
         }
 
         public static SubscriptionClientMock GetSubscriptionClientMock(this IServiceProvider provider, string subscriptionName)

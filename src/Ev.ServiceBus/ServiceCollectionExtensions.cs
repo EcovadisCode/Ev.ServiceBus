@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus.UnitTests")]
+[assembly: InternalsVisibleTo("Ev.ServiceBus.IntegrationEvents")]
+[assembly: InternalsVisibleTo("Ev.ServiceBus.IntegrationEvents.UnitTests")]
 
 namespace Ev.ServiceBus
 {
@@ -33,7 +35,7 @@ namespace Ev.ServiceBus
             return services;
         }
 
-        private static void RegisterBaseServices(IServiceCollection services)
+        internal static void RegisterBaseServices(IServiceCollection services)
         {
             services.TryAddSingleton<ServiceBusRegistry>();
             if (services.Any(o => o.ServiceType == typeof(IServiceBusRegistry)) == false)
@@ -63,7 +65,7 @@ namespace Ev.ServiceBus
         {
             RegisterBaseServices(services);
 
-            var queue = new QueueOptions(services, queueName);
+            var queue = new QueueOptions(services, queueName, true);
             services.Configure<ServiceBusOptions>(
                 options =>
                 {
@@ -82,7 +84,7 @@ namespace Ev.ServiceBus
         {
             RegisterBaseServices(services);
 
-            var topic = new TopicOptions(topicName);
+            var topic = new TopicOptions(topicName, true);
             services.Configure<ServiceBusOptions>(
                 options =>
                 {
@@ -102,7 +104,7 @@ namespace Ev.ServiceBus
         {
             RegisterBaseServices(services);
 
-            var subscriptionOptions = new SubscriptionOptions(services, topicName, subscriptionName);
+            var subscriptionOptions = new SubscriptionOptions(services, topicName, subscriptionName, true);
             services.Configure<ServiceBusOptions>(
                 options =>
                 {

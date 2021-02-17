@@ -34,7 +34,7 @@ namespace Ev.ServiceBus.Abstractions
             RetryPolicy? retryPolicy = null)
             where TOptions : ClientOptions
         {
-            connectionStringBuilder.EntityPath = options.EntityPath;
+            connectionStringBuilder.EntityPath = options.ResourceId;
             options.ConnectionSettings = new ConnectionSettings(connectionStringBuilder, receiveMode, retryPolicy);
             return options;
         }

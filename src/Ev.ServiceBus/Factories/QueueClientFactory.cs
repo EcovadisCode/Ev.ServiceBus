@@ -12,7 +12,7 @@ namespace Ev.ServiceBus
             {
                 return new QueueClient(
                     connectionSettings.Connection,
-                    options.EntityPath,
+                    options.QueueName,
                     connectionSettings.ReceiveMode,
                     connectionSettings.RetryPolicy);
             }
@@ -27,7 +27,7 @@ namespace Ev.ServiceBus
 
             return new QueueClient(
                 connectionSettings.ConnectionString,
-                options.EntityPath,
+                options.QueueName,
                 connectionSettings.ReceiveMode,
                 connectionSettings.RetryPolicy);
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using Ev.ServiceBus.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ev.ServiceBus.IntegrationEvents.Publication
@@ -19,8 +20,13 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
                 throw new ArgumentNullException(nameof(queueName));
             }
 
-            var options = _services.RegisterServiceBusQueue(queueName);
-            var builder = new DispatchRegistrationBuilder(_services, options);
+            var queue = new QueueOptions(_services, queueName, false);
+            _services.Configure<ServiceBusOptions>(
+                opts =>
+                {
+                    opts.RegisterQueue(queue);
+                });
+            var builder = new DispatchRegistrationBuilder(_services, queue);
             settings(builder);
         }
 
@@ -31,8 +37,13 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
                 throw new ArgumentNullException(nameof(topicName));
             }
 
-            var options = _services.RegisterServiceBusTopic(topicName);
-            var builder = new DispatchRegistrationBuilder(_services, options);
+            var topic = new TopicOptions(topicName, false);
+            _services.Configure<ServiceBusOptions>(
+                options =>
+                {
+                    options.RegisterTopic(topic);
+                });
+            var builder = new DispatchRegistrationBuilder(_services, topic);
             settings(builder);
         }
     }

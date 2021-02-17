@@ -10,7 +10,7 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
             Duplicates = duplicates;
             Message = "You cannot register the same handler Twice.\n"
                       + "Types at faults :\n"
-                      + $"{string.Join("\n", duplicates.Select(o => $"{o.Options.ClientType} {o.Options.EntityPath} => {o.EventTypeId} => {o.HandlerType}"))}";
+                      + $"{string.Join("\n", duplicates.Select(o => $"{o.Options.ClientType} {o.Options.ResourceId} => {o.EventTypeId} => {o.HandlerType}"))}";
         }
 
         public MessageReceptionRegistration[] Duplicates { get; }

@@ -5,9 +5,9 @@ namespace Ev.ServiceBus.Abstractions
     [Serializable]
     public class MissingConnectionException : Exception
     {
-        public MissingConnectionException(IClientOptions options, ClientType clientType)
+        public MissingConnectionException(string resourceId, ClientType clientType)
         {
-            Message = $"The {clientType} client '{options.EntityPath}' is missing connection information.";
+            Message = $"The {clientType} client '{resourceId}' is missing connection information.";
         }
 
         public override string Message { get; }

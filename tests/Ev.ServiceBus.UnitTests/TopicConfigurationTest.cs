@@ -25,7 +25,7 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusTopic("testTopic");
             });
 
-            await Assert.ThrowsAnyAsync<DuplicateTopicRegistrationException>(async () => await composer.ComposeAndSimulateStartup());
+            await Assert.ThrowsAnyAsync<DuplicateSenderRegistrationException>(async () => await composer.ComposeAndSimulateStartup());
         }
 
         [Fact]
@@ -217,8 +217,9 @@ namespace Ev.ServiceBus.UnitTests
         public async Task FailsSilentlyWhenRegisteringQueueWithNoConnectionAndNoDefaultConnection()
         {
             var composer = new ServiceBusComposer();
+            composer.WithDefaultSettings(settings => { });
 
-            var logger = new Mock<ILogger<BaseWrapper>>();
+            var logger = new Mock<ILogger<SenderWrapper>>();
             composer.WithAdditionalServices(
                 services =>
                 {
@@ -252,7 +253,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<TopicOptions>(opts => opts.EntityPath == "testTopic"),
+                        It.Is<TopicOptions>(opts => opts.ResourceId == "testTopic"),
                         It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionStringFromDefault")))
                 .Returns((QueueOptions o, ConnectionSettings p) => new TopicClientMock("testTopic").Client)
                 .Verifiable();
@@ -284,7 +285,7 @@ namespace Ev.ServiceBus.UnitTests
             factory
                 .Setup(
                     o => o.Create(
-                        It.Is<TopicOptions>(opts => opts.EntityPath == "testTopic"),
+                        It.Is<TopicOptions>(opts => opts.ResourceId == "testTopic"),
                         It.Is<ConnectionSettings>(conn => conn.ConnectionString == "concreteTestConnectionString")))
                 .Returns((QueueOptions o, ConnectionSettings p) => new TopicClientMock("testTopic").Client)
                 .Verifiable();
