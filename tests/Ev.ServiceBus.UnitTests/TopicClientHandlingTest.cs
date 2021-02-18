@@ -15,7 +15,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ClosesTheTopicClientsProperlyOnShutdown()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -24,7 +24,7 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusTopic("testtopic3").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeTopicClientFactory>();
             var clientMocks = factory.GetAllRegisteredTopicClients();
@@ -45,7 +45,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task FailsSilentlyIfATopicClientDoesNotCloseProperlyOnShutdown()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -54,7 +54,7 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusTopic("testtopic3").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeTopicClientFactory>();
             var clientMocks = factory.GetAllRegisteredTopicClients();
@@ -74,7 +74,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task DontCallCloseWhenTheTopicClientIsAlreadyClosing()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -83,7 +83,7 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusTopic("testtopic3").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeTopicClientFactory>();
             var clientMocks = factory.GetAllRegisteredTopicClients();
@@ -105,9 +105,9 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ThrowsExceptionWhenAQueueSenderIsNotFound()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 

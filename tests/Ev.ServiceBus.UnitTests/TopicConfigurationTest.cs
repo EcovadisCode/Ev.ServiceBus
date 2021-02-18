@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +18,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CannotRegisterTwoTopicsWithTheSameName()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -25,13 +26,13 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusTopic("testTopic");
             });
 
-            await Assert.ThrowsAnyAsync<DuplicateSenderRegistrationException>(async () => await composer.ComposeAndSimulateStartup());
+            await Assert.ThrowsAnyAsync<DuplicateSenderRegistrationException>(async () => await composer.Compose());
         }
 
         [Fact]
         public async Task CanRegisterAndRetrieveTopics()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -40,7 +41,7 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusTopic("testTopic3").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -52,7 +53,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterTopicWithConnection()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var serviceBusConnection = new ServiceBusConnection(
                 "Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
@@ -70,7 +71,7 @@ namespace Ev.ServiceBus.UnitTests
                     services.RegisterServiceBusTopic("testTopic").WithConnection(serviceBusConnection);
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -81,7 +82,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterTopicWithConnectionString()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var factory = new Mock<IClientFactory<TopicOptions, ITopicClient>>();
             factory
@@ -97,7 +98,7 @@ namespace Ev.ServiceBus.UnitTests
                     services.RegisterServiceBusTopic("testTopic").WithConnection("testConnectionString");
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -108,7 +109,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterTopicWithConnectionStringBuilder()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var connectionStringBuilder = new ServiceBusConnectionStringBuilder();
             var factory = new Mock<IClientFactory<TopicOptions, ITopicClient>>();
@@ -126,7 +127,7 @@ namespace Ev.ServiceBus.UnitTests
                     services.RegisterServiceBusTopic("testTopic").WithConnection(connectionStringBuilder);
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -137,7 +138,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterTopicWithReceiveMode()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var factory = new Mock<IClientFactory<TopicOptions, ITopicClient>>();
             factory
@@ -154,7 +155,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithConnection("testConnectionString", ReceiveMode.ReceiveAndDelete);
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -165,7 +166,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterTopicWithRetryPolicy()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var retryPolicy = new NoRetry();
             var factory = new Mock<IClientFactory<TopicOptions, ITopicClient>>();
@@ -183,7 +184,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithConnection("testConnectionString", ReceiveMode.PeekLock, retryPolicy);
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -197,7 +198,7 @@ namespace Ev.ServiceBus.UnitTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus(
+            services.AddServiceBus<PayloadParser>(
                 settings =>
                 {
                     settings.Enabled = false;
@@ -206,7 +207,7 @@ namespace Ev.ServiceBus.UnitTests
 
             var provider = services.BuildServiceProvider();
             await provider.SimulateStartHost(token: new CancellationToken());
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
             composer.OverrideClientFactory(new FailingClientFactory<TopicOptions, ITopicClient>());
 
             var registry = provider.GetService<ServiceBusRegistry>();
@@ -216,7 +217,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task FailsSilentlyWhenRegisteringQueueWithNoConnectionAndNoDefaultConnection()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
             composer.WithDefaultSettings(settings => { });
 
             var logger = new Mock<ILogger<SenderWrapper>>();
@@ -227,7 +228,7 @@ namespace Ev.ServiceBus.UnitTests
                     services.RegisterServiceBusTopic("testTopic");
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
             await Assert.ThrowsAsync<MessageSenderUnavailableException>(
@@ -248,7 +249,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
             var factory = new Mock<IClientFactory<TopicOptions, ITopicClient>>();
             factory
                 .Setup(
@@ -269,7 +270,7 @@ namespace Ev.ServiceBus.UnitTests
                     services.RegisterServiceBusTopic("testTopic");
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -280,7 +281,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
             var factory = new Mock<IClientFactory<TopicOptions, ITopicClient>>();
             factory
                 .Setup(
@@ -301,7 +302,7 @@ namespace Ev.ServiceBus.UnitTests
                     services.RegisterServiceBusTopic("testTopic").WithConnection("concreteTestConnectionString");
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 

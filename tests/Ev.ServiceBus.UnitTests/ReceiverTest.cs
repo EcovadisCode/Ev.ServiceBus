@@ -14,7 +14,7 @@ namespace Ev.ServiceBus.UnitTests
     {
         private async Task<(QueueClientMock clientMock, Mock<IMessageHandler> messageHandlerMock)> RegisterHandlerAndComposeServiceBus(Action<MessageContext> callback)
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
             var mock = new Mock<IMessageHandler>();
             mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
                 .Returns(Task.CompletedTask)
@@ -31,7 +31,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             return (provider.GetQueueClientMock("testQueue"), mock);
         }

@@ -18,7 +18,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CannotRegisterTwoSubscriptionWithTheSameName()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -26,13 +26,13 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusSubscription("testTopic", "testsubscription001").WithCustomMessageHandler<FakeMessageHandler>();
             });
 
-            await Assert.ThrowsAnyAsync<DuplicateReceiverRegistrationException>(async () => await composer.ComposeAndSimulateStartup());
+            await Assert.ThrowsAnyAsync<DuplicateReceiverRegistrationException>(async () => await composer.Compose());
         }
 
         [Fact]
         public async Task CanRegisterSubscriptions()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var mock = new Mock<IMessageHandler>();
             mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
@@ -50,9 +50,9 @@ namespace Ev.ServiceBus.UnitTests
                     .WithCustomMessageHandler<FakeMessageHandler>();
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
-            var clients = provider.GetRequiredService<FakeSubscriptionClientFactory>().GetAllRegisteredSubscriptionClients();
+            var clients = provider.GetRequiredService<FakeSubscriptionClientFactory>().GetAllRegisteredClients();
 
             var message = new Message();
             foreach (var client in clients)
@@ -77,7 +77,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterSubscriptionWithoutRegisteringTopic()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var mock = new Mock<IMessageHandler>();
             mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
@@ -97,10 +97,10 @@ namespace Ev.ServiceBus.UnitTests
                 services.AddSingleton(mock);
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeSubscriptionClientFactory>();
-            var client = factory.GetAllRegisteredSubscriptionClients().First();
+            var client = factory.GetAllRegisteredClients().First();
             await client.TriggerMessageReception(new Message(), CancellationToken.None);
             mock.VerifyAll();
         }
@@ -108,7 +108,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterSubscriptionWithConnection()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var serviceBusConnection = new ServiceBusConnection(
                 "Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
@@ -128,7 +128,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -138,7 +138,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterSubscriptionWithConnectionString()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
@@ -156,7 +156,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -166,7 +166,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterSubscriptionWithConnectionStringBuilder()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var connectionStringBuilder = new ServiceBusConnectionStringBuilder();
             var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
@@ -186,7 +186,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -196,7 +196,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterSubscriptionWithReceiveMode()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
@@ -214,7 +214,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -224,7 +224,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CanRegisterSubscriptionWithRetryPolicy()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var retryPolicy = new NoRetry();
             var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
@@ -243,7 +243,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 
@@ -253,7 +253,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task FailsSilentlyWhenRegisteringQueueWithNoConnectionAndNoDefaultConnection()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithDefaultSettings(settings => { });
             var logger = new Mock<ILogger<ReceiverWrapper>>();
@@ -265,7 +265,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            await composer.ComposeAndSimulateStartup();
+            await composer.Compose();
 
             logger.Verify(
                 x => x.Log(
@@ -280,7 +280,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
             var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(
@@ -302,7 +302,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            await composer.ComposeAndSimulateStartup();
+            await composer.Compose();
 
             factory.VerifyAll();
         }
@@ -310,7 +310,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
             var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             factory
                 .Setup(
@@ -333,7 +333,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             factory.VerifyAll();
         }

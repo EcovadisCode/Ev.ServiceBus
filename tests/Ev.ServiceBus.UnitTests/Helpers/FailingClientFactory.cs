@@ -2,7 +2,7 @@
 using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 
-namespace Ev.ServiceBus.UnitTests
+namespace Ev.ServiceBus.UnitTests.Helpers
 {
     public class FailingClientFactory<TOptions, TClient> : IClientFactory<TOptions, TClient>
         where TClient : IClientEntity

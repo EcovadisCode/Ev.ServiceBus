@@ -2,12 +2,14 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Dispatch;
+using Ev.ServiceBus.Management;
+using Ev.ServiceBus.Reception;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus.UnitTests")]
-[assembly: InternalsVisibleTo("Ev.ServiceBus.IntegrationEvents")]
 [assembly: InternalsVisibleTo("Ev.ServiceBus.IntegrationEvents.UnitTests")]
 
 namespace Ev.ServiceBus
@@ -20,12 +22,14 @@ namespace Ev.ServiceBus
         /// <param name="services"></param>
         /// <param name="config">Lambda expression to configure Service Bus</param>
         /// <returns></returns>
-        public static IServiceCollection AddServiceBus(
+        public static IServiceCollection AddServiceBus<TMessagePayloadParser>(
             this IServiceCollection services,
             Action<ServiceBusSettings> config)
+            where TMessagePayloadParser : class, IMessagePayloadParser
         {
             RegisterBaseServices(services);
 
+            services.TryAddSingleton<IMessagePayloadParser, TMessagePayloadParser>();
             services.Configure<ServiceBusOptions>(
                 options =>
                 {
@@ -35,14 +39,42 @@ namespace Ev.ServiceBus
             return services;
         }
 
-        internal static void RegisterBaseServices(IServiceCollection services)
+        private static void RegisterBaseServices(IServiceCollection services)
+        {
+            services.AddLogging();
+
+            RegisterResourceManagementServices(services);
+
+            RegisterMessageDispatchServices(services);
+
+            RegisterMessageReceptionServices(services);
+
+        }
+
+        private static void RegisterMessageReceptionServices(IServiceCollection services)
+        {
+            services.TryAddSingleton<ReceptionRegistry>();
+            services.TryAddScoped<MessageReceptionHandler>();
+        }
+
+        private static void RegisterMessageDispatchServices(IServiceCollection services)
+        {
+            services.TryAddSingleton<DispatchRegistry>();
+            services.TryAddScoped<MessageDispatcher>();
+            services.TryAddScoped<IMessagePublisher>(provider => provider.GetService<MessageDispatcher>());
+            services.TryAddScoped<IMessageDispatcher>(provider => provider.GetService<MessageDispatcher>());
+            services.TryAddSingleton<IDispatchSender, DispatchSender>();
+        }
+
+        private static void RegisterResourceManagementServices(IServiceCollection services)
         {
             services.TryAddSingleton<ServiceBusRegistry>();
             if (services.Any(o => o.ServiceType == typeof(IServiceBusRegistry)) == false)
             {
-                services.AddSingleton<IServiceBusRegistry, ServiceBusRegistry>(
-                    provider => provider.GetRequiredService<ServiceBusRegistry>());
+                services.AddSingleton<IServiceBusRegistry, ServiceBusRegistry>(provider =>
+                    provider.GetRequiredService<ServiceBusRegistry>());
             }
+
             services.TryAddSingleton<ServiceBusEngine>();
 
             services.TryAddSingleton<IClientFactory<QueueOptions, IQueueClient>, QueueClientFactory>();
@@ -53,6 +85,37 @@ namespace Ev.ServiceBus
             {
                 services.AddHostedService<ServiceBusHost>();
             }
+        }
+
+        public static TOptions ToMessageReceptionHandling<TOptions>(
+            this TOptions options,
+            int maxConcurrentCalls = 1,
+            TimeSpan? maxAutoRenewDuration = null)
+            where TOptions : ReceiverOptions
+        {
+            options.WithCustomMessageHandler<MessageReceptionHandler>(
+                config =>
+                {
+                    config.AutoComplete = true;
+                    config.MaxConcurrentCalls = maxConcurrentCalls;
+                    if (maxAutoRenewDuration != null)
+                    {
+                        config.MaxAutoRenewDuration = maxAutoRenewDuration.Value;
+                    }
+                });
+            return options;
+        }
+
+        public static ReceptionBuilder RegisterServiceBusReception(this IServiceCollection services)
+        {
+            RegisterBaseServices(services);
+            return new(services);
+        }
+
+        public static DispatchBuilder RegisterServiceBusDispatch(this IServiceCollection services)
+        {
+            RegisterBaseServices(services);
+            return new(services);
         }
 
         /// <summary>

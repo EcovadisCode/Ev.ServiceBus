@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus")]
-[assembly: InternalsVisibleTo("Ev.ServiceBus.IntegrationEvents")]
 
 namespace Ev.ServiceBus.Abstractions
 {
