@@ -429,7 +429,7 @@ namespace Ev.ServiceBus.UnitTests
                         });
                 });
             });
-            composer.WithIntegrationEventsQueueSender("queueName");
+            composer.WithDispatchQueueSender("queueName");
 
             await composer.Compose();
 
@@ -477,7 +477,7 @@ namespace Ev.ServiceBus.UnitTests
                             customizedPayload.Add(b);
                         });
                 });
-            }).WithIntegrationEventsQueueSender("queueName");
+            }).WithDispatchQueueSender("queueName");
 
             await composer.Compose();
 

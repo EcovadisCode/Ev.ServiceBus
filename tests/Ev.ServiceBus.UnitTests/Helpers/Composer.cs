@@ -24,7 +24,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             _defaultSettings = settings => { settings.WithConnection("testConnectionString"); };
         }
 
-        private readonly List<KeyValuePair<SenderType, string>> _listOfIntegrationEventSenders = new List<KeyValuePair<SenderType, string>>(5);
+        private readonly List<KeyValuePair<SenderType, string>> _listOfDispatchSenders = new List<KeyValuePair<SenderType, string>>(5);
 
         public ServiceProvider Provider { get; private set; }
         public FakeSubscriptionClientFactory SubscriptionFactory { get; private set; }
@@ -53,9 +53,9 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             return this;
         }
 
-        public void WithIntegrationEventsQueueSender(string queueName)
+        public void WithDispatchQueueSender(string queueName)
         {
-            _listOfIntegrationEventSenders.Add(new KeyValuePair<SenderType, string>(SenderType.Queue, queueName));
+            _listOfDispatchSenders.Add(new KeyValuePair<SenderType, string>(SenderType.Queue, queueName));
         }
 
         public void WithDefaultSettings(Action<ServiceBusSettings> defaultSettings)
@@ -65,23 +65,23 @@ namespace Ev.ServiceBus.UnitTests.Helpers
 
         private void ComposeSenders(IServiceCollection services)
         {
-            if (_listOfIntegrationEventSenders.Count == 0)
+            if (_listOfDispatchSenders.Count == 0)
             {
                 return;
             }
 
             var serviceBusRegistry = new Mock<IServiceBusRegistry>();
-            foreach (var integrationEventSender in _listOfIntegrationEventSenders)
+            foreach (var sender in _listOfDispatchSenders)
             {
                 var messageSender = new Mock<IMessageSender>();
-                switch (integrationEventSender.Key)
+                switch (sender.Key)
                 {
                     case SenderType.Queue:
-                        serviceBusRegistry.Setup(s => s.GetQueueSender(integrationEventSender.Value))
+                        serviceBusRegistry.Setup(s => s.GetQueueSender(sender.Value))
                             .Returns(messageSender.Object);
                         break;
                     case SenderType.Topic:
-                        serviceBusRegistry.Setup(s => s.GetTopicSender(integrationEventSender.Value))
+                        serviceBusRegistry.Setup(s => s.GetTopicSender(sender.Value))
                             .Returns(messageSender.Object);
                         break;
                 }

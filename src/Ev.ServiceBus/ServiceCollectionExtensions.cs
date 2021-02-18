@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus.UnitTests")]
-[assembly: InternalsVisibleTo("Ev.ServiceBus.IntegrationEvents.UnitTests")]
 
 namespace Ev.ServiceBus
 {
