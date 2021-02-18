@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
@@ -165,20 +166,20 @@ namespace Ev.ServiceBus.UnitTests
             var provider = services.BuildServiceProvider();
             await provider.SimulateStartHost(token: new CancellationToken());
 
-            var clientMock = provider.GetQueueClientMock("testQueue");
+            var factory = provider.GetRequiredService<FakeClientFactory>();
+            var receivers = factory.GetAllRegisteredQueueClients().Where(o => o.IsReceiver).ToArray();
+            receivers.Length.Should().Be(0);
 
-            var sentMessage = new Message();
-            var sentToken = new CancellationToken();
-            await clientMock.TriggerMessageReception(sentMessage, sentToken);
+            var senders = factory.GetAllRegisteredQueueClients().Where(o => o.IsReceiver == false).ToArray();
+            foreach (var sender in senders)
+            {
+                var sentMessage = new Message();
+                var sentToken = new CancellationToken();
+                await sender.TriggerMessageReception(sentMessage, sentToken);
+            }
 
-            mock
-                .Verify(
-                    o => o.HandleMessageAsync(
-                        It.Is<MessageContext>(
-                            context => context.Message == sentMessage
-                                       && context.Receiver.Name == "testQueue"
-                                       && context.Receiver.ClientType == ClientType.Queue
-                                       && context.Token == sentToken)),
+            mock.Verify(
+                    o => o.HandleMessageAsync(It.IsAny<MessageContext>()),
                     Times.Never);
         }
 

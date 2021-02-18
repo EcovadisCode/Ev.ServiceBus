@@ -42,6 +42,14 @@ namespace Ev.ServiceBus.UnitTests
             }
         }
 
+        public class MessageHandler : IMessageHandler
+        {
+            public Task HandleMessageAsync(MessageContext context)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
         [Fact]
         public async Task FailsSilentlyIfASubscriptionClientDoesNotCloseProperlyOnShutdown()
         {
@@ -49,9 +57,9 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusSubscription("testtopic1", "testsub1").WithConnection("testConnectionString1");
-                services.RegisterServiceBusSubscription("testtopic2", "testsub1").WithConnection("testConnectionString2");
-                services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithConnection("testConnectionString3");
+                services.RegisterServiceBusSubscription("testtopic1", "testsub1").WithCustomMessageHandler<MessageHandler>();
+                services.RegisterServiceBusSubscription("testtopic2", "testsub1").WithCustomMessageHandler<MessageHandler>();
+                services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithCustomMessageHandler<MessageHandler>();
             });
 
             var provider = await composer.ComposeAndSimulateStartup();

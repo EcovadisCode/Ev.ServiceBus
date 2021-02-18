@@ -16,7 +16,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
     public class SubscriptionConfigurationTest
     {
         [Fact]
-        public void EventTypeIdMustBeSet()
+        public void CustomizeEventTypeId_ArgumentNullException()
         {
             var services = new ServiceCollection();
             Assert.Throws<ArgumentNullException>(() =>
@@ -80,6 +80,444 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                         ev.Options.ClientType.Should().Be(ClientType.Subscription);
                         ev.EventTypeId.Should().Be("SubscribedEvent");
                     });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameQueueTwice_Case1()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(1);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameQueueTwice_Case2()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName");
+
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(1);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameQueueTwice_Case3()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName").WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(1);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameQueueTwice_Case4()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName")
+                    .WithConnection("anotherConnectionString")
+                    .WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(2);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName_2");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameQueueTwice_Case5()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName")
+                    .WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString");
+
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(2);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName_2");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameQueueTwice_Case6()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName")
+                    .WithConnection("anotherConnectionString")
+                    .WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString2");
+
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromQueue("queueName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(3);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName_2");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("queueName_3");
+                    receiver.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameSubscriptionTwice_Case1()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(1);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameSubscriptionTwice_Case2()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusSubscription("topicName", "subscriptionName");
+
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(1);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameSubscriptionTwice_Case3()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusSubscription("topicName", "subscriptionName").WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(1);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameSubscriptionTwice_Case4()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusSubscription("topicName", "subscriptionName")
+                    .WithConnection("anotherConnectionString")
+                    .WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(2);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName_2");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameSubscriptionTwice_Case5()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusSubscription("topicName", "subscriptionName")
+                    .WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString");
+
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(2);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName_2");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterFromTheSameSubscriptionTwice_Case6()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusSubscription("topicName", "subscriptionName")
+                    .WithConnection("anotherConnectionString")
+                    .WithCustomMessageHandler<CustomMessageHandler>();
+
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString2");
+
+                    builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                });
+                services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
+                {
+                    builder.RegisterReception<NoiseEvent, NoiseHandler>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var receivers = registry!.GetAllReceivers();
+            receivers.Length.Should().Be(3);
+            receivers.Should().SatisfyRespectively(
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName_2");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                },
+                receiver =>
+                {
+                    receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName_3");
+                    receiver.ClientType.Should().Be(ClientType.Subscription);
+                });
         }
 
         [Fact]
@@ -248,22 +686,20 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             factory.VerifyAll();
         }
 
-        public class SubscribedEvent { }
-
-        public class SubscribedEventHandler : IIntegrationEventHandler<SubscribedEvent>
-        {
-            public Task Handle(SubscribedEvent @event, CancellationToken cancellationToken)
-            {
-                return Task.CompletedTask;
-            }
-        }
-
         public class SubscribedEventHandler2 : IIntegrationEventHandler<SubscribedEvent>
         {
             public Task Handle(SubscribedEvent @event, CancellationToken cancellationToken)
             {
                 return Task.CompletedTask;
             }
+        }
+    }
+
+    public class CustomMessageHandler : IMessageHandler
+    {
+        public Task HandleMessageAsync(MessageContext context)
+        {
+            return Task.CompletedTask;
         }
     }
 }

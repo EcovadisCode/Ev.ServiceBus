@@ -49,11 +49,13 @@ namespace Ev.ServiceBus.IntegrationEvents
 
         public static ReceptionBuilder RegisterServiceBusReception(this IServiceCollection services)
         {
+            ServiceCollectionExtensions.RegisterBaseServices(services);
             return new(services);
         }
 
         public static DispatchBuilder RegisterServiceBusDispatch(this IServiceCollection services)
         {
+            ServiceCollectionExtensions.RegisterBaseServices(services);
             return new(services);
         }
     }

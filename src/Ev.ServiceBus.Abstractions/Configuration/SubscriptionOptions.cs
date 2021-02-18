@@ -1,7 +1,5 @@
-﻿using System;
-using Microsoft.Azure.ServiceBus;
+﻿using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions
@@ -10,8 +8,16 @@ namespace Ev.ServiceBus.Abstractions
     {
         private readonly IServiceCollection _serviceCollection;
 
-        public SubscriptionOptions(IServiceCollection serviceCollection, string topicName, string subscriptionName)
-            : base(serviceCollection, EntityNameHelper.FormatSubscriptionPath(topicName, subscriptionName), ClientType.Subscription)
+        public SubscriptionOptions(
+            IServiceCollection serviceCollection,
+            string topicName,
+            string subscriptionName,
+            bool strictMode)
+            : base(
+                serviceCollection,
+                EntityNameHelper.FormatSubscriptionPath(topicName, subscriptionName),
+                ClientType.Subscription,
+                strictMode)
         {
             _serviceCollection = serviceCollection;
             SubscriptionName = subscriptionName;

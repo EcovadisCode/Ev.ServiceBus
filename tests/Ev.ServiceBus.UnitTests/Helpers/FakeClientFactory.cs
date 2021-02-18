@@ -14,9 +14,9 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             _registeredClients = new List<QueueClientMock>();
         }
 
-        public QueueClientMock GetAssociatedMock(string name)
+        public QueueClientMock GetAssociatedMock(string name, bool isReceiver = false)
         {
-            return _registeredClients.FirstOrDefault(o => o.QueueName == name);
+            return _registeredClients.FirstOrDefault(o => o.QueueName == name && o.IsReceiver == isReceiver);
         }
 
         public QueueClientMock[] GetAllRegisteredQueueClients()
@@ -26,7 +26,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
 
         public IQueueClient Create(QueueOptions options, ConnectionSettings connectionSettings)
         {
-            var clientMock = new QueueClientMock(options.EntityPath);
+            var clientMock = new QueueClientMock(options.ResourceId);
 
             _registeredClients.Add(clientMock);
             return clientMock.QueueClient;
@@ -49,7 +49,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
 
         public ITopicClient Create(TopicOptions options, ConnectionSettings connectionSettings)
         {
-            var clientMock = new TopicClientMock(options.EntityPath);
+            var clientMock = new TopicClientMock(options.ResourceId);
 
             _registeredClients.Add(clientMock);
             return clientMock.Client;

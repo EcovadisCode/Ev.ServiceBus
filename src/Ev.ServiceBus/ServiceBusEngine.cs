@@ -11,11 +11,10 @@ namespace Ev.ServiceBus
     {
         private readonly ILogger<ServiceBusEngine> _logger;
         private readonly IOptions<ServiceBusOptions> _options;
-        private readonly ServiceBusRegistry _registry;
         private readonly IServiceProvider _provider;
+        private readonly ServiceBusRegistry _registry;
 
-        public ServiceBusEngine(
-            ILogger<ServiceBusEngine> logger,
+        public ServiceBusEngine(ILogger<ServiceBusEngine> logger,
             IOptions<ServiceBusOptions> options,
             ServiceBusRegistry registry,
             IServiceProvider provider)
@@ -30,103 +29,188 @@ namespace Ev.ServiceBus
         {
             _logger.LogInformation("[Ev.ServiceBus] Starting azure service bus clients");
 
-            foreach (var queueOptions in _options.Value.Queues)
+            BuildSenders();
+            BuildReceivers();
+        }
+
+        private void BuildReceivers()
+        {
+            // filtering out receivers that have no message handlers setup
+            var receivers = _options.Value.Receivers.Where(o => o.MessageHandlerType != null).ToArray();
+
+            var duplicateReceivers = receivers.Where(o => o.StrictMode).GroupBy(o => new
             {
-                BuildAndRegisterQueue(queueOptions, _options.Value);
+                o.ResourceId,
+                o.ClientType
+            }).Where(o => o.Count() > 1).ToArray();
+            // making sure there's not any duplicates in strict mode
+            if (duplicateReceivers.Any())
+            {
+                throw new DuplicateReceiverRegistrationException(duplicateReceivers
+                    .Select(o => $"{o.Key.ClientType}|{o.Key.ResourceId}").ToArray());
             }
 
-            foreach (var topicOptions in _options.Value.Topics)
+            var receiversByName = receivers.GroupBy(o => new
             {
-                BuildAndRegisterTopic(topicOptions, _options.Value);
-            }
-
-            foreach (var subscriptionOptions in _options.Value.Subscriptions)
+                o.ResourceId,
+                o.ClientType
+            }).ToArray();
+            foreach (var groupByName in receiversByName)
             {
-                BuildAndRegisterSubscription(subscriptionOptions, _options.Value);
+                // we group by connection to have one SenderWrapper by connection
+                // we order by StrictMode so their name will be resolved first and avoid exceptions
+                foreach (var groupByConnection in groupByName.GroupBy(o => o.ConnectionSettings)
+                    .OrderByDescending(o => o.Any(opts => opts.StrictMode)))
+                {
+                    RegisterReceiver(groupByConnection.ToArray());
+                }
             }
         }
 
-        private void BuildAndRegisterQueue(QueueOptions options, ServiceBusOptions parentOptions)
+        private void RegisterReceiver(ReceiverOptions[] receivers)
         {
-            var queue = new QueueWrapper(options, parentOptions, _provider);
-            queue.Initialize();
+            var resourceId = receivers.First().ResourceId;
+            var clientType = receivers.First().ClientType;
+            if (_registry.IsReceiverResourceIdTaken(clientType, resourceId))
+            {
+                resourceId = GetNewReceiverResourceId(clientType, resourceId);
+                foreach (var sender in receivers)
+                {
+                    sender.UpdateResourceId(resourceId);
+                }
+            }
 
-            _registry.Register(queue);
+            var receiverWrapper = new ReceiverWrapper(receivers.Cast<IMessageReceiverOptions>().ToArray(),
+                _options.Value, _provider);
+            receiverWrapper.Initialize();
+            _registry.Register(receiverWrapper);
         }
 
-        private void BuildAndRegisterTopic(TopicOptions options, ServiceBusOptions parentOptions)
+        private string GetNewReceiverResourceId(ClientType clientType, string resourceId)
         {
-            var topic = new TopicWrapper(options, parentOptions, _provider);
-            topic.Initialize();
+            var newResourceId = resourceId;
+            var suffix = 2;
+            while (_registry.IsReceiverResourceIdTaken(clientType, newResourceId))
+            {
+                newResourceId = $"{resourceId}_{suffix}";
+                ++suffix;
+            }
 
-            _registry.Register(topic);
+            return newResourceId;
         }
 
-        private void BuildAndRegisterSubscription(SubscriptionOptions options, ServiceBusOptions parentOptions)
+        private void BuildSenders()
         {
-            var subscription = new SubscriptionWrapper(options, parentOptions, _provider);
-            subscription.Initialize();
+            var senders = _options.Value.Senders;
+            var duplicateSenders = senders.Where(o => o.StrictMode).GroupBy(o => new
+            {
+                o.ResourceId,
+                o.ClientType
+            }).Where(o => o.Count() > 1).ToArray();
+            // making sure there's not any duplicates in strict mode
+            if (duplicateSenders.Any())
+            {
+                throw new DuplicateSenderRegistrationException(duplicateSenders
+                    .Select(o => $"{o.Key.ClientType}|{o.Key.ResourceId}").ToArray());
+            }
 
-            _registry.Register(subscription);
+            var sendersByName = senders.GroupBy(o => new
+            {
+                o.ResourceId,
+                o.ClientType
+            }).ToArray();
+            foreach (var groupByName in sendersByName)
+            {
+                // we group by connection to have one SenderWrapper by connection
+                // we order by StrictMode so their name will be resolved first and avoid exceptions
+                foreach (var groupByConnection in groupByName.GroupBy(o => o.ConnectionSettings)
+                    .OrderByDescending(o => o.Any(opts => opts.StrictMode)))
+                {
+                    RegisterSender(groupByConnection.ToArray());
+                }
+            }
+        }
+
+        private void RegisterSender(ClientOptions[] senders)
+        {
+            var resourceId = senders.First().ResourceId;
+            var clientType = senders.First().ClientType;
+            if (_registry.IsSenderResourceIdTaken(clientType, resourceId))
+            {
+                resourceId = GetNewSenderResourceId(clientType, resourceId);
+                foreach (var sender in senders)
+                {
+                    sender.UpdateResourceId(resourceId);
+                }
+            }
+
+            var senderWrapper = new SenderWrapper(senders.Cast<IClientOptions>().ToArray(), _options.Value, _provider);
+            senderWrapper.Initialize();
+            _registry.Register(senderWrapper);
+        }
+
+        private string GetNewSenderResourceId(ClientType clientType, string resourceId)
+        {
+            var newResourceId = resourceId;
+            var suffix = 2;
+            while (_registry.IsSenderResourceIdTaken(clientType, newResourceId))
+            {
+                newResourceId = $"{resourceId}_{suffix}";
+                ++suffix;
+            }
+
+            return newResourceId;
         }
 
         public async Task StopAll()
         {
             _logger.LogInformation("[Ev.ServiceBus] Stopping azure service bus clients");
 
-            await Task.WhenAll(_registry.GetAllQueues().Select(CloseQueueAsync).ToArray()).ConfigureAwait(false);
-            await Task.WhenAll(_registry.GetAllTopics().Select(CloseTopicAsync).ToArray()).ConfigureAwait(false);
-            await Task.WhenAll(_registry.GetAllSubscriptions().Select(CloseSubscriptionAsync).ToArray()).ConfigureAwait(false);
+            await Task.WhenAll(_registry.GetAllSenders().Select(CloseSenderAsync).ToArray()).ConfigureAwait(false);
+            await Task.WhenAll(_registry.GetAllReceivers().Select(CloseReceiverAsync).ToArray()).ConfigureAwait(false);
         }
 
-        private async Task CloseQueueAsync(QueueWrapper queue)
+        private async Task CloseSenderAsync(SenderWrapper sender)
         {
-            if (queue.QueueClient!.IsClosedOrClosing)
+            if (sender.SenderClient == null)
+            {
+                return;
+            }
+
+            if (sender.SenderClient.IsClosedOrClosing)
             {
                 return;
             }
 
             try
             {
-                await queue.QueueClient.CloseAsync().ConfigureAwait(false);
+                await sender.SenderClient.CloseAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of QueueClient {queue.Options.EntityPath} failed");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of client {sender.ResourceId} failed");
             }
         }
 
-        private async Task CloseTopicAsync(TopicWrapper topic)
+        private async Task CloseReceiverAsync(ReceiverWrapper receiver)
         {
-            if (topic.TopicClient!.IsClosedOrClosing)
+            if (receiver.ReceiverClient == null)
+            {
+                return;
+            }
+
+            if (receiver.ReceiverClient.IsClosedOrClosing)
             {
                 return;
             }
 
             try
             {
-                await topic.TopicClient.CloseAsync().ConfigureAwait(false);
+                await receiver.ReceiverClient.CloseAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of topic Client {topic.Options.EntityPath} failed");
-            }
-        }
-
-        private async Task CloseSubscriptionAsync(SubscriptionWrapper subscription)
-        {
-            if (subscription.SubscriptionClient!.IsClosedOrClosing)
-            {
-                return;
-            }
-
-            try
-            {
-                await subscription.SubscriptionClient.CloseAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of subscription Client {subscription.Options.EntityPath} failed");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Closing of client {receiver.ResourceId} failed");
             }
         }
     }

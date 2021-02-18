@@ -45,17 +45,17 @@ namespace Ev.ServiceBus.IntegrationEvents.Publication
         public override bool Equals(object? obj)
         {
             var reg = obj as MessageDispatchRegistration;
-            return EventType == reg?.EventType && Options.ClientType == reg?.Options.ClientType && Options.EntityPath == reg?.Options.EntityPath;
+            return EventType == reg?.EventType && Options.ClientType == reg?.Options.ClientType && Options.ResourceId == reg?.Options.ResourceId;
         }
 
         public override int GetHashCode()
         {
-            return EventType.GetHashCode() ^ Options.ClientType.GetHashCode() ^ Options.EntityPath.GetHashCode();
+            return EventType.GetHashCode() ^ Options.ClientType.GetHashCode() ^ Options.ResourceId.GetHashCode();
         }
 
         public override string ToString()
         {
-            return $"{EventType.FullName}|{Options.ClientType}|{Options.EntityPath}";
+            return $"{EventType.FullName}|{Options.ClientType}|{Options.ResourceId}";
         }
     }
 }

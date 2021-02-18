@@ -26,7 +26,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests.Helpers
 
         public IQueueClient Create(QueueOptions options, ConnectionSettings connectionSettings)
         {
-            var clientMock = new QueueClientMock(options.EntityPath);
+            var clientMock = new QueueClientMock(options.ResourceId);
 
             _registeredClients.Add(clientMock);
             return clientMock.QueueClient;
@@ -49,7 +49,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests.Helpers
 
         public ITopicClient Create(TopicOptions options, ConnectionSettings connectionSettings)
         {
-            var clientMock = new TopicClientMock(options.EntityPath);
+            var clientMock = new TopicClientMock(options.ResourceId);
 
             _registeredClients.Add(clientMock);
             return clientMock.Client;

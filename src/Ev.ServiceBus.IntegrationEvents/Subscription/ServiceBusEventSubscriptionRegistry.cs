@@ -12,13 +12,15 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
         {
             var regs = registrations.ToArray();
 
-            var duplicatedHandlers = regs.GroupBy(o => new { o.Options.ClientType, o.Options.EntityPath, o.HandlerType }).Where(o => o.Count() > 1).ToArray();
+            var duplicatedHandlers = regs.GroupBy(o => new { o.Options.ClientType,
+                o.Options.ResourceId, o.HandlerType }).Where(o => o.Count() > 1).ToArray();
             if (duplicatedHandlers.Any())
             {
                 throw new DuplicateSubscriptionHandlerDeclarationException(duplicatedHandlers.SelectMany(o => o).ToArray());
             }
 
-            var duplicateEvenTypeIds = regs.GroupBy(o => new {o.Options.ClientType, o.Options.EntityPath, o.EventTypeId}).Where(o => o.Count() > 1).ToArray();
+            var duplicateEvenTypeIds = regs.GroupBy(o => new {o.Options.ClientType,
+                o.Options.ResourceId, o.EventTypeId}).Where(o => o.Count() > 1).ToArray();
             if (duplicateEvenTypeIds.Any())
             {
                 throw new DuplicateEvenTypeIdDeclarationException(duplicateEvenTypeIds.SelectMany(o => o).ToArray());
@@ -26,7 +28,7 @@ namespace Ev.ServiceBus.IntegrationEvents.Subscription
 
             _registrations = regs
                 .ToDictionary(
-                    o => ComputeKey(o.EventTypeId, o.Options.EntityPath, o.Options.ClientType),
+                    o => ComputeKey(o.EventTypeId, o.Options.ResourceId, o.Options.ClientType),
                     o => o);
         }
 

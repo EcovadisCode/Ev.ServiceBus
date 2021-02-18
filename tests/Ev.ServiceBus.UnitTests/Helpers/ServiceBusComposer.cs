@@ -17,7 +17,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         {
             _additionalServices = _ => { };
             _overrideFactory = s => s.OverrideClientFactories();
-            _defaultSettings = _ => { };
+            _defaultSettings = settings => { settings.WithConnection("testConnectionString"); };
         }
 
         public ServiceBusComposer OverrideClientFactory<TOptions, TClient>(IClientFactory<TOptions, TClient> factory)

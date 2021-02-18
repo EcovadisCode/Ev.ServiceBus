@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.IntegrationEvents.Publication;
 using Ev.ServiceBus.Abstractions;
@@ -15,7 +16,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
     public class PublicationConfigurationTest
     {
         [Fact]
-        public void EventTypeIdMustBeSet()
+        public void CustomizeEventTypeId_ArgumentNullException()
         {
             var services = new ServiceCollection();
             Assert.Throws<ArgumentNullException>(
@@ -40,7 +41,7 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
         }
 
         [Fact]
-        public async Task CannotRegisterSameTopicSenderTwice()
+        public async Task CanRegisterSameTopicSenderTwice_Case1()
         {
             var composer = new Composer();
 
@@ -52,18 +53,166 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                 });
                 services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
                 {
-                    builder.RegisterDispatch<PublishedEvent>();
+                    builder.RegisterDispatch<NoiseEvent>();
                 });
             });
 
-            var exception =
-                await Assert.ThrowsAsync<DuplicateTopicRegistrationException>(
-                    async () => await composer.Compose());
-            exception.TopicName.Should().Be("topicName");
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(1);
+            senders.First().ResourceId.Should().Be("topicName");
+            senders.First().ClientType.Should().Be(ClientType.Topic);
         }
 
         [Fact]
-        public async Task CannotRegisterSameQueueSenderTwice()
+        public async Task CanRegisterSameTopicSenderTwice_Case2()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusTopic("topicName");
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(1);
+            senders.First().ResourceId.Should().Be("topicName");
+            senders.First().ClientType.Should().Be(ClientType.Topic);
+        }
+
+        [Fact]
+        public async Task CanRegisterSameTopicSenderTwice_Case3()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusTopic("topicName").WithConnection("anotherConnectionString");
+
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(2);
+            senders.Should().SatisfyRespectively(
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("topicName");
+                    sender.ClientType.Should().Be(ClientType.Topic);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("topicName_2");
+                    sender.ClientType.Should().Be(ClientType.Topic);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterSameTopicSenderTwice_Case4()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusTopic("topicName");
+
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString");
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(2);
+            senders.Should().SatisfyRespectively(
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("topicName");
+                    sender.ClientType.Should().Be(ClientType.Topic);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("topicName_2");
+                    sender.ClientType.Should().Be(ClientType.Topic);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterSameTopicSenderTwice_Case5()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusTopic("topicName").WithConnection("anotherConnectionString");
+
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString2");
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(3);
+            senders.Should().SatisfyRespectively(
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("topicName");
+                    sender.ClientType.Should().Be(ClientType.Topic);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("topicName_2");
+                    sender.ClientType.Should().Be(ClientType.Topic);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("topicName_3");
+                    sender.ClientType.Should().Be(ClientType.Topic);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterSameQueueSenderTwice()
         {
             var composer = new Composer();
 
@@ -75,14 +224,162 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
                 });
                 services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
                 {
-                    builder.RegisterDispatch<PublishedEvent>();
+                    builder.RegisterDispatch<NoiseEvent>();
                 });
             });
 
-            var exception =
-                await Assert.ThrowsAsync<DuplicateQueueRegistrationException>(
-                    async () => await composer.Compose());
-            exception.QueueName.Should().Be("queue");
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(1);
+            senders.First().ResourceId.Should().Be("queue");
+            senders.First().ClientType.Should().Be(ClientType.Queue);
+        }
+
+        [Fact]
+        public async Task CanRegisterSameQueueSenderTwice_Case2()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName");
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(1);
+            senders.First().ResourceId.Should().Be("queueName");
+            senders.First().ClientType.Should().Be(ClientType.Queue);
+        }
+
+        [Fact]
+        public async Task CanRegisterSameQueueSenderTwice_Case3()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName").WithConnection("anotherConnectionString");
+
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(2);
+            senders.Should().SatisfyRespectively(
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("queueName");
+                    sender.ClientType.Should().Be(ClientType.Queue);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("queueName_2");
+                    sender.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterSameQueueSenderTwice_Case4()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName");
+
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString");
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(2);
+            senders.Should().SatisfyRespectively(
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("queueName");
+                    sender.ClientType.Should().Be(ClientType.Queue);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("queueName_2");
+                    sender.ClientType.Should().Be(ClientType.Queue);
+                });
+        }
+
+        [Fact]
+        public async Task CanRegisterSameQueueSenderTwice_Case5()
+        {
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(services =>
+            {
+                services.RegisterServiceBusQueue("queueName").WithConnection("anotherConnectionString");
+
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.CustomizeConnection("anotherConnectionString2");
+                    builder.RegisterDispatch<PublishedEvent>();
+                });
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
+                {
+                    builder.RegisterDispatch<NoiseEvent>();
+                });
+            });
+
+            await composer.Compose();
+
+            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var senders = registry!.GetAllSenders();
+            senders.Length.Should().Be(3);
+            senders.Should().SatisfyRespectively(
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("queueName");
+                    sender.ClientType.Should().Be(ClientType.Queue);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("queueName_2");
+                    sender.ClientType.Should().Be(ClientType.Queue);
+                },
+                sender =>
+                {
+                    sender.ResourceId.Should().Be("queueName_3");
+                    sender.ClientType.Should().Be(ClientType.Queue);
+                });
         }
 
         [Fact]

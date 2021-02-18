@@ -1,24 +1,24 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Ev.ServiceBus.Abstractions;
+using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus
 {
     public class ServiceBusRegistry : IServiceBusRegistry
     {
-        private readonly SortedList<string, QueueWrapper> _queues;
-        private readonly SortedList<string, SubscriptionWrapper> _subscriptions;
-        private readonly SortedList<string, TopicWrapper> _topics;
+        private readonly SortedList<string, ReceiverWrapper> _receivers;
+        private readonly SortedList<string, SenderWrapper> _senders;
 
         public ServiceBusRegistry()
         {
-            _queues = new SortedList<string, QueueWrapper>();
-            _topics = new SortedList<string, TopicWrapper>();
-            _subscriptions = new SortedList<string, SubscriptionWrapper>();
+            _senders = new SortedList<string, SenderWrapper>();
+            _receivers = new SortedList<string, ReceiverWrapper>();
         }
 
         public IMessageSender GetQueueSender(string name)
         {
-            if (_queues.TryGetValue(name, out var queue))
+            if (_senders.TryGetValue(ComputeSenderKey(ClientType.Queue, name), out var queue))
             {
                 return queue.Sender;
             }
@@ -28,7 +28,7 @@ namespace Ev.ServiceBus
 
         public IMessageSender GetTopicSender(string name)
         {
-            if (_topics.TryGetValue(name, out var topic))
+            if (_senders.TryGetValue(ComputeSenderKey(ClientType.Topic, name), out var topic))
             {
                 return topic.Sender;
             }
@@ -36,34 +36,39 @@ namespace Ev.ServiceBus
             throw new TopicSenderNotFoundException(name);
         }
 
-        internal void Register(QueueWrapper queue)
+        private string ComputeSenderKey(ClientType clientType, string resourceId)
         {
-            _queues.Add(queue.Options.EntityPath, queue);
+            return $"{clientType}|{resourceId}";
         }
 
-        internal void Register(SubscriptionWrapper subscription)
+        public void Register(SenderWrapper senderWrapper)
         {
-            _subscriptions.Add(subscription.Options.EntityPath, subscription);
+            _senders.Add(ComputeSenderKey(senderWrapper.ClientType, senderWrapper.ResourceId), senderWrapper);
         }
 
-        internal void Register(TopicWrapper topic)
+        public void Register(ReceiverWrapper receiverWrapper)
         {
-            _topics.Add(topic.Options.EntityPath, topic);
+            _receivers.Add(ComputeSenderKey(receiverWrapper.ClientType, receiverWrapper.ResourceId), receiverWrapper);
         }
 
-        internal IList<QueueWrapper> GetAllQueues()
+        internal bool IsSenderResourceIdTaken(ClientType clientType, string resourceId)
         {
-            return _queues.Values;
+            return _senders.ContainsKey(ComputeSenderKey(clientType, resourceId));
         }
 
-        internal IList<TopicWrapper> GetAllTopics()
+        internal bool IsReceiverResourceIdTaken(ClientType clientType, string resourceId)
         {
-            return _topics.Values;
+            return _receivers.ContainsKey(ComputeSenderKey(clientType, resourceId));
         }
 
-        internal IList<SubscriptionWrapper> GetAllSubscriptions()
+        internal SenderWrapper[] GetAllSenders()
         {
-            return _subscriptions.Values;
+            return _senders.Values.ToArray();
+        }
+
+        internal ReceiverWrapper[] GetAllReceivers()
+        {
+            return _receivers.Values.ToArray();
         }
     }
 }

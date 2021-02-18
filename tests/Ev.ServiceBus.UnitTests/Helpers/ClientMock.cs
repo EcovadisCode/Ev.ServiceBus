@@ -18,13 +18,16 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             _client
                .Setup(o => o.RegisterMessageHandler(It.IsAny<Func<Message, CancellationToken, Task>>(), It.IsAny<MessageHandlerOptions>()))
                .Callback((Func<Message, CancellationToken, Task> messageHandler, MessageHandlerOptions options) =>
-                {
-                    _triggerMessageReception = messageHandler;
-                    _triggerExceptionOccured = options.ExceptionReceivedHandler;
+               {
+                   IsReceiver = true;
+                   _triggerMessageReception = messageHandler;
+                   _triggerExceptionOccured = options.ExceptionReceivedHandler;
                 });
             _client.SetupGet(o => o.QueueName).Returns(name);
             QueueName = name;
         }
+
+        public bool IsReceiver { get; private set; }
 
         public string QueueName { get; }
         public IQueueClient QueueClient => _client.Object;

@@ -12,7 +12,7 @@ namespace Ev.ServiceBus
             {
                 return new SubscriptionClient(
                     connectionSettings.Connection,
-                    options.EntityPath,
+                    options.TopicName,
                     options.SubscriptionName,
                     connectionSettings.ReceiveMode,
                     connectionSettings.RetryPolicy);
@@ -29,7 +29,7 @@ namespace Ev.ServiceBus
 
             return new SubscriptionClient(
                 connectionSettings.ConnectionString,
-                options.EntityPath,
+                options.TopicName,
                 options.SubscriptionName,
                 connectionSettings.ReceiveMode,
                 connectionSettings.RetryPolicy);

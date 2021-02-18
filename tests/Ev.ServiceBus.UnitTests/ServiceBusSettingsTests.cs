@@ -16,6 +16,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new ServiceBusComposer();
 
+            composer.WithDefaultSettings(settings => { });
             var provider = await composer.ComposeAndSimulateStartup();
 
             var options = provider.GetService<IOptions<ServiceBusOptions>>();

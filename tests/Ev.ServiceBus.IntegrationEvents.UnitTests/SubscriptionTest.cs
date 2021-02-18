@@ -218,8 +218,8 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             var provider = services.BuildServiceProvider();
 
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
-            options.Value.Subscriptions.Count.Should().Be(1);
-            var subOptions = options.Value.Subscriptions.First();
+            options.Value.Receivers.Count.Should().Be(1);
+            var subOptions = options.Value.Receivers.First();
             subOptions.MessageHandlerConfig.Should().NotBeNull();
 
             var messageHandlerOptions = new MessageHandlerOptions(_ => Task.CompletedTask);
@@ -269,11 +269,6 @@ namespace Ev.ServiceBus.IntegrationEvents.UnitTests
             {
                 throw new ArgumentNullException();
             }
-        }
-
-        public class NoiseHandler : StoringEventHandler<NoiseEvent>
-        {
-            public NoiseHandler(EventStore store) : base(store) { }
         }
 
         public class CancellingHandler : IIntegrationEventHandler<SubscribedEvent>

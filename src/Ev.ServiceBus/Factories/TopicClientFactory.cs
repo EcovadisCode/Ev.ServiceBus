@@ -12,7 +12,7 @@ namespace Ev.ServiceBus
             {
                 return new TopicClient(
                     connectionSettings.Connection,
-                    options.EntityPath,
+                    options.TopicName,
                     connectionSettings.RetryPolicy);
             }
 
@@ -25,7 +25,7 @@ namespace Ev.ServiceBus
 
             return new TopicClient(
                 connectionSettings.ConnectionString,
-                options.EntityPath,
+                options.TopicName,
                 connectionSettings.RetryPolicy);
         }
     }
