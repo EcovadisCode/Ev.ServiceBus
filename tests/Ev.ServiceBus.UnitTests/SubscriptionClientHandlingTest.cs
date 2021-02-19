@@ -15,7 +15,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ClosesTheSubscriptionClientsProperlyOnShutdown()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -24,10 +24,10 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeSubscriptionClientFactory>();
-            var clientMocks = factory.GetAllRegisteredSubscriptionClients();
+            var clientMocks = factory.GetAllRegisteredClients();
 
             foreach (var clientMock in clientMocks)
             {
@@ -53,7 +53,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task FailsSilentlyIfASubscriptionClientDoesNotCloseProperlyOnShutdown()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -62,10 +62,10 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithCustomMessageHandler<MessageHandler>();
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeSubscriptionClientFactory>();
-            var clientMocks = factory.GetAllRegisteredSubscriptionClients();
+            var clientMocks = factory.GetAllRegisteredClients();
 
             clientMocks[0].Mock.Setup(o => o.CloseAsync()).Returns(Task.CompletedTask).Verifiable();
             clientMocks[1].Mock.Setup(o => o.CloseAsync()).Throws<SocketException>().Verifiable();
@@ -82,7 +82,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task DontCallCloseWhenTheSubscriptionClientIsAlreadyClosing()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -91,10 +91,10 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusSubscription("testtopic3", "testsub1").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeSubscriptionClientFactory>();
-            var clientMocks = factory.GetAllRegisteredSubscriptionClients();
+            var clientMocks = factory.GetAllRegisteredClients();
 
             foreach (var clientMock in clientMocks)
             {
@@ -113,7 +113,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CustomMessageHandlerCanReceiveMessages()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var mock = new Mock<IMessageHandler>();
             mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
@@ -128,7 +128,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var clientMock = provider.GetSubscriptionClientMock("testSub");
 
@@ -153,7 +153,7 @@ namespace Ev.ServiceBus.UnitTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus(
+            services.AddServiceBus<PayloadParser>(
                 settings =>
                 {
                     settings.Enabled = true;

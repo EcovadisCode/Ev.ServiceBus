@@ -9,13 +9,13 @@ namespace Ev.ServiceBus.UnitTests.Helpers
     {
         public static IServiceCollection OverrideClientFactories(this IServiceCollection services)
         {
-            services.AddSingleton<FakeClientFactory>();
+            services.AddSingleton<FakeQueueClientFactory>();
             services.AddSingleton<FakeTopicClientFactory>();
             services.AddSingleton<FakeSubscriptionClientFactory>();
             services.Replace(
                 new ServiceDescriptor(
                     typeof(IClientFactory<QueueOptions, IQueueClient>),
-                    provider => provider.GetRequiredService<FakeClientFactory>(),
+                    provider => provider.GetRequiredService<FakeQueueClientFactory>(),
                     ServiceLifetime.Singleton));
             services.Replace(
                 new ServiceDescriptor(

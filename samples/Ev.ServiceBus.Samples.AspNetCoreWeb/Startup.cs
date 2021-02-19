@@ -20,7 +20,7 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddServiceBus(
+            services.AddServiceBus<MessagePayloadParser>(
                 settings =>
                 {
                     settings.WithConnection(""); // Provide a connection string here!

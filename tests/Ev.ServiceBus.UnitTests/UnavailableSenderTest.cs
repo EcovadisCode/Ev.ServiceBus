@@ -14,7 +14,7 @@ namespace Ev.ServiceBus.UnitTests
     {
         private async Task<IMessageSender> ComposeServiceBusAndGetSender()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.OverrideClientFactory(new FailingClientFactory<QueueOptions, IQueueClient>());
             composer.WithAdditionalServices(services =>
@@ -23,7 +23,7 @@ namespace Ev.ServiceBus.UnitTests
                     .WithConnection("testConnectionString");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             return provider.GetRequiredService<IServiceBusRegistry>().GetQueueSender("testQueue");
         }

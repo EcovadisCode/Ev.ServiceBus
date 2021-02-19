@@ -14,10 +14,10 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ServiceBusSettingsStateByDefault()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithDefaultSettings(settings => { });
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
 
@@ -29,14 +29,14 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ServiceBusSettingsStateAfterCallOfWithConnection_string()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithDefaultSettings(
                 settings =>
                 {
                     settings.WithConnection("testConnectionString");
                 });
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
 
@@ -49,7 +49,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ServiceBusSettingsStateAfterCallOfWithConnection_Connection()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var connection = new ServiceBusConnection("Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
             composer.WithDefaultSettings(
@@ -57,7 +57,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     settings.WithConnection(connection);
                 });
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
 
@@ -70,7 +70,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ServiceBusSettingsStateAfterCallOfWithConnection_ConnectionStringBuilder()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var builder = new ServiceBusConnectionStringBuilder();
             composer.WithDefaultSettings(
@@ -78,7 +78,7 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     settings.WithConnection(builder);
                 });
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
 
@@ -97,7 +97,7 @@ namespace Ev.ServiceBus.UnitTests
         [InlineData("connectionStringBuilder", "connection")]
         public async Task SubsequentCallOfWithConnectionOverridesConnectionSettings(string case1, string case2)
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var builder = new ServiceBusConnectionStringBuilder();
             var connection = new ServiceBusConnection("Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
@@ -123,7 +123,7 @@ namespace Ev.ServiceBus.UnitTests
                             break;
                     }
                 });
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
 
