@@ -23,7 +23,7 @@ namespace Ev.ServiceBus.Dispatch
         public MessageDispatchRegistration[] GetRegistrations(Type messageType)
         {
             return _registrations
-                .Where(o => o.EventType == messageType)
+                .Where(o => o.PayloadType == messageType)
                 .ToArray();
         }
     }
