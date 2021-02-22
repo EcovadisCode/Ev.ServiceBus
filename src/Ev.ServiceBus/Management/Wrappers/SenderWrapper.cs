@@ -86,14 +86,14 @@ namespace Ev.ServiceBus
         {
             var factory = _provider.GetRequiredService<IClientFactory<TopicOptions, ITopicClient>>();
             SenderClient = factory.Create((TopicOptions) Options.First(), connectionSettings);
-            Sender = new MessageSender(SenderClient, ResourceId, ClientType);
+            Sender = new MessageSender(SenderClient, ResourceId, ClientType, _provider.GetRequiredService<ILogger<MessageSender>>());
         }
 
         private void CreateQueueClient(ConnectionSettings connectionSettings)
         {
             var factory = _provider.GetRequiredService<IClientFactory<QueueOptions, IQueueClient>>();
             SenderClient = factory.Create((QueueOptions) Options.First(), connectionSettings);
-            Sender = new MessageSender(SenderClient, ResourceId, ClientType);
+            Sender = new MessageSender(SenderClient, ResourceId, ClientType, _provider.GetRequiredService<ILogger<MessageSender>>());
         }
     }
 }

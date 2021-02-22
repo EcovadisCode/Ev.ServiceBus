@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Exceptions;
 using Ev.ServiceBus.Dispatch;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
@@ -391,7 +392,7 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
+                services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
                 {
                     builder.RegisterDispatch<PublishedEvent>();
                     builder.RegisterDispatch<PublishedEvent>();
@@ -404,7 +405,7 @@ namespace Ev.ServiceBus.UnitTests
             {
                 composer.Provider.GetService(typeof(DispatchRegistry));
             });
-            exception.Registrations.Should().Contain(o => o.PayloadType == typeof(PublishedEvent));
+            exception.Message.Should().Contain("PublishedEvent|Queue|queueName");
         }
 
         [Theory]

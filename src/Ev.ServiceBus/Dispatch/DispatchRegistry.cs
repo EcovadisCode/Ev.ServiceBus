@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Ev.ServiceBus.Abstractions.Exceptions;
 
 namespace Ev.ServiceBus.Dispatch
 {
@@ -16,7 +17,7 @@ namespace Ev.ServiceBus.Dispatch
             var doubleRegistrations = _registrations.GroupBy(o => o).Where(o => o.Count() > 1).ToArray();
             if (doubleRegistrations.Any())
             {
-                throw new MultiplePublicationRegistrationException(doubleRegistrations.Select(o => o.Key).ToArray());
+                throw new MultiplePublicationRegistrationException(doubleRegistrations.Select(o => o.Key.ToString()).ToArray());
             }
         }
 
