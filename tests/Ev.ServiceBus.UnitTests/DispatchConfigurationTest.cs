@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Exceptions;
 using Ev.ServiceBus.Dispatch;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
@@ -39,6 +40,37 @@ namespace Ev.ServiceBus.UnitTests
             {
                 var reg = builder.RegisterDispatch<PublishedEvent>();
                 reg.PayloadTypeId.Should().Be("PublishedEvent");
+            });
+        }
+
+        [Fact]
+        public async Task ThrowsIfYouDispatchAnUnregisteredMessage()
+        {
+            var composer = new Composer();
+
+            await composer.Compose();
+
+            var sender = composer.Provider.GetRequiredService<IDispatchSender>();
+            await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
+            {
+                await sender.SendEvents(new[] { new PublishedEvent() });
+            });
+        }
+
+        [Fact]
+        public async Task ThrowsIfYouDispatchAnUnregisteredMessage_case2()
+        {
+            var composer = new Composer();
+
+            await composer.Compose();
+
+            var publisher = composer.Provider.GetRequiredService<IMessagePublisher>();
+            var dispatcher = composer.Provider.GetRequiredService<IMessageDispatcher>();
+
+            publisher.Publish(new PublishedEvent());
+            await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
+            {
+                await dispatcher.DispatchEvents();
             });
         }
 

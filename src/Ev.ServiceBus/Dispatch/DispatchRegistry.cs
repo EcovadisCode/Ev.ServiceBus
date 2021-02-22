@@ -7,12 +7,12 @@ namespace Ev.ServiceBus.Dispatch
 {
     public class DispatchRegistry
     {
-        private readonly SortedList<Type, MessageDispatchRegistration[]> _registrations;
+        private readonly Dictionary<Type, MessageDispatchRegistration[]> _registrations;
 
         public DispatchRegistry(
             IEnumerable<MessageDispatchRegistration> registrations)
         {
-            _registrations = new SortedList<Type, MessageDispatchRegistration[]>();
+            _registrations = new Dictionary<Type, MessageDispatchRegistration[]>();
 
             var doubleRegistrations = registrations.GroupBy(o => o).Where(o => o.Count() > 1).ToArray();
             if (doubleRegistrations.Any())
