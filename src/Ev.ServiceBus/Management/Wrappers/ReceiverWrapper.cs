@@ -85,14 +85,14 @@ namespace Ev.ServiceBus
 
         private void CreateQueueClient(ConnectionSettings settings)
         {
-            var factory = _provider.GetService<IClientFactory<QueueOptions, IQueueClient>>();
+            var factory = _provider.GetRequiredService<IClientFactory<QueueOptions, IQueueClient>>();
             ReceiverClient = factory.Create((QueueOptions) _options.First(), settings);
             Receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
         }
 
         private void CreateSubscriptionClient(ConnectionSettings settings)
         {
-            var factory = _provider.GetService<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
+            var factory = _provider.GetRequiredService<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             ReceiverClient = factory.Create((SubscriptionOptions) _options.First(), settings);
             Receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
         }

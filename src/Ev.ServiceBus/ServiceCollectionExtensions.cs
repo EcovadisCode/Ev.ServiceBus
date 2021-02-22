@@ -60,8 +60,8 @@ namespace Ev.ServiceBus
         {
             services.TryAddSingleton<DispatchRegistry>();
             services.TryAddScoped<MessageDispatcher>();
-            services.TryAddScoped<IMessagePublisher>(provider => provider.GetService<MessageDispatcher>());
-            services.TryAddScoped<IMessageDispatcher>(provider => provider.GetService<MessageDispatcher>());
+            services.TryAddScoped<IMessagePublisher>(provider => provider.GetRequiredService<MessageDispatcher>());
+            services.TryAddScoped<IMessageDispatcher>(provider => provider.GetRequiredService<MessageDispatcher>());
             services.TryAddSingleton<IDispatchSender, DispatchSender>();
         }
 

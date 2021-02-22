@@ -7,7 +7,6 @@ using Ev.ServiceBus.UnitTests.Helpers;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Xunit;
 
@@ -279,9 +278,9 @@ namespace Ev.ServiceBus.UnitTests
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.IsAny<FormattedLogValues>(),
+                    It.IsAny<It.IsAnyType>(),
                     It.IsAny<MissingConnectionException>(),
-                    It.IsAny<Func<object, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
                 Times.Once);
         }
 
