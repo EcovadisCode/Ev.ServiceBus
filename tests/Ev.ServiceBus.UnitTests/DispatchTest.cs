@@ -30,20 +30,20 @@ namespace Ev.ServiceBus.UnitTests
             {
                 services.RegisterServiceBusDispatch().ToTopic("testTopic", builder =>
                 {
-                    builder.RegisterDispatch<PublishedEvent>().CustomizeEventTypeId("MyEvent");
+                    builder.RegisterDispatch<PublishedEvent>().CustomizePayloadTypeId("MyEvent");
 
                     // noise
-                    builder.RegisterDispatch<PublishedEvent3>().CustomizeEventTypeId("MyEvent3");
+                    builder.RegisterDispatch<PublishedEvent3>().CustomizePayloadTypeId("MyEvent3");
                 });
                 services.RegisterServiceBusDispatch().ToQueue("testQueue", builder =>
                 {
-                    builder.RegisterDispatch<PublishedThroughQueueEvent>().CustomizeEventTypeId("MyEventThroughQueue");
+                    builder.RegisterDispatch<PublishedThroughQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
                 });
 
                 // noise
                 services.RegisterServiceBusDispatch().ToTopic("testTopic2", builder =>
                 {
-                    builder.RegisterDispatch<PublishedEvent2>().CustomizeEventTypeId("MyEvent2");
+                    builder.RegisterDispatch<PublishedEvent2>().CustomizePayloadTypeId("MyEvent2");
                 });
             });
 
@@ -140,11 +140,13 @@ namespace Ev.ServiceBus.UnitTests
         [Theory]
         [InlineData("topic", "MyEvent")]
         [InlineData("queue", "MyEventThroughQueue")]
-        public void MessageMustContainTheRightEventTypeId(string clientToCheck, string eventTypeId)
+        public void MessageMustContainTheRightPayloadTypeId(string clientToCheck, string eventTypeId)
         {
             var message = GetMessageFrom(clientToCheck);
             Assert.True(message?.UserProperties.ContainsKey("EventTypeId"));
+            Assert.True(message?.UserProperties.ContainsKey("PayloadTypeId"));
             Assert.Equal(eventTypeId, message?.UserProperties["EventTypeId"]);
+            Assert.Equal(eventTypeId, message?.UserProperties["PayloadTypeId"]);
         }
 
         [Theory]

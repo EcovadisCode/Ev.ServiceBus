@@ -63,7 +63,7 @@ namespace Ev.ServiceBus.Dispatch
         private Message CreateMessage(MessageDispatchRegistration registration, object dto)
         {
             var result = _messagePayloadParser.SerializeBody(dto);
-            var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.EventTypeId);
+            var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
             foreach (var customizer in registration.OutgoingMessageCustomizers)
             {
                 customizer?.Invoke(message, dto);

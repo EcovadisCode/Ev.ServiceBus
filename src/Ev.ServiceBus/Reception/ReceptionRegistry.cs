@@ -20,7 +20,7 @@ namespace Ev.ServiceBus.Reception
             }
 
             var duplicateEvenTypeIds = regs.GroupBy(o => new {o.Options.ClientType,
-                o.Options.ResourceId, o.EventTypeId}).Where(o => o.Count() > 1).ToArray();
+                o.Options.ResourceId, EventTypeId = o.PayloadTypeId}).Where(o => o.Count() > 1).ToArray();
             if (duplicateEvenTypeIds.Any())
             {
                 throw new DuplicateEvenTypeIdDeclarationException(duplicateEvenTypeIds.SelectMany(o => o).ToArray());
@@ -28,18 +28,18 @@ namespace Ev.ServiceBus.Reception
 
             _registrations = regs
                 .ToDictionary(
-                    o => ComputeKey(o.EventTypeId, o.Options.ResourceId, o.Options.ClientType),
+                    o => ComputeKey(o.PayloadTypeId, o.Options.ResourceId, o.Options.ClientType),
                     o => o);
         }
 
-        private string ComputeKey(string eventTypeId, string receiverName, ClientType clientType)
+        private string ComputeKey(string payloadTypeId, string receiverName, ClientType clientType)
         {
-            return $"{clientType}|{receiverName}|{eventTypeId}";
+            return $"{clientType}|{receiverName}|{payloadTypeId}";
         }
 
-        public MessageReceptionRegistration? GetRegistration(string eventTypeId, string receiverName, ClientType clientType)
+        public MessageReceptionRegistration? GetRegistration(string payloadTypeId, string receiverName, ClientType clientType)
         {
-            if (_registrations.TryGetValue(ComputeKey(eventTypeId, receiverName, clientType), out var registrations))
+            if (_registrations.TryGetValue(ComputeKey(payloadTypeId, receiverName, clientType), out var registrations))
             {
                 return registrations;
             }

@@ -32,14 +32,14 @@ namespace Ev.ServiceBus.Reception
 
         public async Task HandleMessageAsync(MessageContext context)
         {
-            var eventTypeId = context.Message.GetEventTypeId();
-            if (eventTypeId == null)
+            var payloadTypeId = context.Message.GetPayloadTypeId() ?? context.Message.GetEventTypeId();
+            if (payloadTypeId == null)
             {
-                throw new MessageIsMissingEventTypeIdException(context);
+                throw new MessageIsMissingPayloadTypeIdException(context);
             }
 
             var receptionRegistration = _registry.GetRegistration(
-                eventTypeId,
+                payloadTypeId,
                 context.Receiver.Name,
                 context.Receiver.ClientType);
 
@@ -54,21 +54,21 @@ namespace Ev.ServiceBus.Reception
                 return;
             }
 
-            var @event = _messagePayloadParser.DeSerializeBody(context.Message.Body, receptionRegistration.ReceptionModelType);
-            var methodInfo = _callHandlerInfo.MakeGenericMethod(receptionRegistration.ReceptionModelType);
+            var @event = _messagePayloadParser.DeSerializeBody(context.Message.Body, receptionRegistration.PayloadType);
+            var methodInfo = _callHandlerInfo.MakeGenericMethod(receptionRegistration.PayloadType);
             try
             {
                 _logger.LogDebug(
-                    $"[Ev.ServiceBus] Executing {receptionRegistration.EventTypeId}:{receptionRegistration.HandlerType.FullName} handler");
+                    $"[Ev.ServiceBus] Executing {receptionRegistration.PayloadTypeId}:{receptionRegistration.HandlerType.FullName} handler");
                 await ((Task) methodInfo.Invoke(this, new[] { receptionRegistration, @event, context.Token })!).ConfigureAwait(false);
                 _logger.LogDebug(
-                    $"[Ev.ServiceBus] Execution of  {receptionRegistration.EventTypeId}:{receptionRegistration.HandlerType.FullName} handler successful");
+                    $"[Ev.ServiceBus] Execution of  {receptionRegistration.PayloadTypeId}:{receptionRegistration.HandlerType.FullName} handler successful");
             }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex,
-                    $"[Ev.ServiceBus] Handler {receptionRegistration.EventTypeId}:{receptionRegistration.HandlerType.FullName} failed.\n"
+                    $"[Ev.ServiceBus] Handler {receptionRegistration.PayloadTypeId}:{receptionRegistration.HandlerType.FullName} failed.\n"
                     + $"Receiver : {context.Receiver.ClientType} | {context.Receiver.Name}\n");
             }
         }

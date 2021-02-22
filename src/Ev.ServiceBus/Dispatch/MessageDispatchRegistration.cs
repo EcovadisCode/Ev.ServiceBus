@@ -11,27 +11,27 @@ namespace Ev.ServiceBus.Dispatch
 
         public MessageDispatchRegistration(
             ClientOptions options,
-            Type eventType)
+            Type payloadType)
         {
             Options = options;
-            EventTypeId = eventType.Name;
-            EventType = eventType;
+            PayloadTypeId = payloadType.Name;
+            PayloadType = payloadType;
             _outgoingCustomizers = new List<Action<Message, object>>();
         }
 
         internal ClientOptions Options { get; }
         internal IReadOnlyList<Action<Message, object>> OutgoingMessageCustomizers => _outgoingCustomizers;
-        public string EventTypeId { get; private set; }
-        public Type EventType { get; }
+        public string PayloadTypeId { get; private set; }
+        public Type PayloadType { get; }
 
-        public MessageDispatchRegistration CustomizeEventTypeId(string eventTypeId)
+        public MessageDispatchRegistration CustomizePayloadTypeId(string payloadId)
         {
-            if (eventTypeId == null)
+            if (payloadId == null)
             {
-                throw new ArgumentNullException(nameof(eventTypeId));
+                throw new ArgumentNullException(nameof(payloadId));
             }
 
-            EventTypeId = eventTypeId;
+            PayloadTypeId = payloadId;
             return this;
         }
 
@@ -45,17 +45,17 @@ namespace Ev.ServiceBus.Dispatch
         public override bool Equals(object? obj)
         {
             var reg = obj as MessageDispatchRegistration;
-            return EventType == reg?.EventType && Options.ClientType == reg?.Options.ClientType && Options.ResourceId == reg?.Options.ResourceId;
+            return PayloadType == reg?.PayloadType && Options.ClientType == reg?.Options.ClientType && Options.ResourceId == reg?.Options.ResourceId;
         }
 
         public override int GetHashCode()
         {
-            return EventType.GetHashCode() ^ Options.ClientType.GetHashCode() ^ Options.ResourceId.GetHashCode();
+            return PayloadType.GetHashCode() ^ Options.ClientType.GetHashCode() ^ Options.ResourceId.GetHashCode();
         }
 
         public override string ToString()
         {
-            return $"{EventType.FullName}|{Options.ClientType}|{Options.ResourceId}";
+            return $"{PayloadType.FullName}|{Options.ClientType}|{Options.ResourceId}";
         }
     }
 }

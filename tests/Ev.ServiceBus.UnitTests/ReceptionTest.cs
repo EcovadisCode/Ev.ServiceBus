@@ -34,7 +34,7 @@ namespace Ev.ServiceBus.UnitTests
                         builder =>
                         {
                             builder.RegisterReception<SubscribedEvent, SubscribedPayloadHandler>()
-                                .CustomizeEventTypeId("MyEvent");
+                                .CustomizePayloadTypeId("MyEvent");
                         });
 
                     services.RegisterServiceBusReception()
@@ -47,7 +47,7 @@ namespace Ev.ServiceBus.UnitTests
                             builder =>
                             {
                                 builder.RegisterReception<SubscribedEvent, FailingEventHandler>()
-                                    .CustomizeEventTypeId("MyEvent");
+                                    .CustomizePayloadTypeId("MyEvent");
                             });
 
                     // noise
@@ -61,7 +61,7 @@ namespace Ev.ServiceBus.UnitTests
                             builder =>
                             {
                                 builder.RegisterReception<NoiseEvent, NoiseHandler>()
-                                    .CustomizeEventTypeId("MyEvent2");
+                                    .CustomizePayloadTypeId("MyEvent2");
                             });
 
                     services.AddSingleton(_eventStore);
@@ -103,7 +103,7 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
-        public async Task ThrowsWhenReceivedMessageHasNoEventTypeId()
+        public async Task ThrowsWhenReceivedMessageHasNoPayloadTypeId()
         {
             var composer = new Composer();
 
@@ -117,7 +117,7 @@ namespace Ev.ServiceBus.UnitTests
                             builder =>
                             {
                                 builder.RegisterReception<NoiseEvent, NoiseHandler>()
-                                    .CustomizeEventTypeId("MyEvent");
+                                    .CustomizePayloadTypeId("MyEvent");
                             });
 
                     services.AddSingleton(_eventStore);
@@ -141,7 +141,7 @@ namespace Ev.ServiceBus.UnitTests
                 propertyInfo.SetValue(message.SystemProperties, 1, null);
             }
 
-            var exception = await Assert.ThrowsAsync<MessageIsMissingEventTypeIdException>(async () =>
+            var exception = await Assert.ThrowsAsync<MessageIsMissingPayloadTypeIdException>(async () =>
             {
                 await client.TriggerMessageReception(message, CancellationToken.None);
             });
@@ -188,7 +188,7 @@ namespace Ev.ServiceBus.UnitTests
                             builder =>
                             {
                                 builder.RegisterReception<SubscribedEvent, CancellingHandler>()
-                                    .CustomizeEventTypeId("MyEvent");
+                                    .CustomizePayloadTypeId("MyEvent");
                             });
 
                     services.AddSingleton(_eventStore);

@@ -4,11 +4,11 @@ using Ev.ServiceBus.Abstractions;
 
 namespace Ev.ServiceBus.Reception
 {
-    public class MessageIsMissingEventTypeIdException : Exception
+    public class MessageIsMissingPayloadTypeIdException : Exception
     {
-        public MessageIsMissingEventTypeIdException(MessageContext messageContext)
+        public MessageIsMissingPayloadTypeIdException(MessageContext messageContext)
         {
-            Message = "An incoming message is missing its 'EventTypeId' UserProperty. Processing cannot continue without this information.\n"
+            Message = "An incoming message is missing its 'EventTypeId' or 'PayloadTypeId' UserProperty. Processing cannot continue without this information.\n"
                       + $"context : \n"
                       + $"\tReceiver : {messageContext.Receiver.ClientType} {messageContext.Receiver.Name}"
                       + $"\tLabel : {messageContext.Message.Label}"

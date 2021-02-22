@@ -5,27 +5,27 @@ namespace Ev.ServiceBus.Reception
 {
     public class MessageReceptionRegistration
     {
-        public MessageReceptionRegistration(ClientOptions clientOptions, Type receptionModelType, Type handlerType)
+        public MessageReceptionRegistration(ClientOptions clientOptions, Type payloadType, Type handlerType)
         {
             Options = clientOptions;
-            ReceptionModelType = receptionModelType;
+            PayloadType = payloadType;
             HandlerType = handlerType;
-            EventTypeId = ReceptionModelType.Name;
+            PayloadTypeId = PayloadType.Name;
         }
 
         public ClientOptions Options { get; }
-        public Type ReceptionModelType { get; }
+        public Type PayloadType { get; }
         public Type HandlerType { get; }
-        public string EventTypeId { get; private set; }
+        public string PayloadTypeId { get; private set; }
 
-        public MessageReceptionRegistration CustomizeEventTypeId(string eventTypeId)
+        public MessageReceptionRegistration CustomizePayloadTypeId(string payloadTypeId)
         {
-            if (eventTypeId == null)
+            if (payloadTypeId == null)
             {
-                throw new ArgumentNullException(nameof(eventTypeId));
+                throw new ArgumentNullException(nameof(payloadTypeId));
             }
 
-            EventTypeId = eventTypeId;
+            PayloadTypeId = payloadTypeId;
             return this;
         }
     }
