@@ -7,25 +7,33 @@ namespace Ev.ServiceBus.Dispatch
 {
     public class DispatchRegistry
     {
-        private readonly MessageDispatchRegistration[] _registrations;
+        private readonly Dictionary<Type, MessageDispatchRegistration[]> _registrations;
 
         public DispatchRegistry(
             IEnumerable<MessageDispatchRegistration> registrations)
         {
-            _registrations = registrations.ToArray();
+            _registrations = new Dictionary<Type, MessageDispatchRegistration[]>();
 
-            var doubleRegistrations = _registrations.GroupBy(o => o).Where(o => o.Count() > 1).ToArray();
+            var doubleRegistrations = registrations.GroupBy(o => o).Where(o => o.Count() > 1).ToArray();
             if (doubleRegistrations.Any())
             {
                 throw new MultiplePublicationRegistrationException(doubleRegistrations.Select(o => o.Key.ToString()).ToArray());
+            }
+
+            foreach (var group in registrations.GroupBy(o => o.PayloadType))
+            {
+                _registrations.Add(group.Key, group.ToArray());
             }
         }
 
         public MessageDispatchRegistration[] GetRegistrations(Type messageType)
         {
-            return _registrations
-                .Where(o => o.PayloadType == messageType)
-                .ToArray();
+            if (_registrations.TryGetValue(messageType, out var registrations))
+            {
+                return registrations;
+            }
+
+            throw new DispatchRegistrationNotFoundException(messageType);
         }
     }
 }

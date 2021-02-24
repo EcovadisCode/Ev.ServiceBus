@@ -44,6 +44,37 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
+        public async Task ThrowsIfYouDispatchAnUnregisteredMessage()
+        {
+            var composer = new Composer();
+
+            await composer.Compose();
+
+            var sender = composer.Provider.GetRequiredService<IDispatchSender>();
+            await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
+            {
+                await sender.SendEvents(new[] { new PublishedEvent() });
+            });
+        }
+
+        [Fact]
+        public async Task ThrowsIfYouDispatchAnUnregisteredMessage_case2()
+        {
+            var composer = new Composer();
+
+            await composer.Compose();
+
+            var publisher = composer.Provider.GetRequiredService<IMessagePublisher>();
+            var dispatcher = composer.Provider.GetRequiredService<IMessageDispatcher>();
+
+            publisher.Publish(new PublishedEvent());
+            await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
+            {
+                await dispatcher.DispatchEvents();
+            });
+        }
+
+        [Fact]
         public async Task CanRegisterSameTopicSenderTwice_Case1()
         {
             var composer = new Composer();
