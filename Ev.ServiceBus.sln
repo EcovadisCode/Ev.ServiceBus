@@ -30,7 +30,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C4692485
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.AspNetCoreWeb", "samples\Ev.ServiceBus.Samples.AspNetCoreWeb\Ev.ServiceBus.Samples.AspNetCoreWeb.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.Sender", "samples\Ev.ServiceBus.Samples.Sender\Ev.ServiceBus.Samples.Sender.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{CCDE7DC7-6FBB-4595-9FBB-CA663DFC9F39}"
 ProjectSection(SolutionItems) = preProject
@@ -43,6 +43,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationEvents", "Integr
 ProjectSection(SolutionItems) = preProject
 	docs\IntegrationEvents\Setup.md = docs\IntegrationEvents\Setup.md
 EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.Receiver", "samples\Ev.ServiceBus.Samples.Receiver\Ev.ServiceBus.Samples.Receiver.csproj", "{71B77C77-BF1D-4D00-99FF-ABB6441822C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Sample.Contracts", "samples\Ev.ServiceBus.Sample.Contracts\Ev.ServiceBus.Sample.Contracts.csproj", "{BDA83E88-DB4F-4918-978C-833721A4ED10}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,6 +70,14 @@ Global
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4C7DEB15-4C1B-4534-AE17-94E8515EB7EC} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
@@ -74,5 +86,7 @@ Global
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
 		{CCDE7DC7-6FBB-4595-9FBB-CA663DFC9F39} = {61CAB7C6-2637-4F75-82F2-348AE7878671}
 		{CE7FCFF5-54E1-42E8-9405-250A9F23B426} = {15791C07-761C-4CDD-A77D-F0F1DFA606AF}
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
+		{BDA83E88-DB4F-4918-978C-833721A4ED10} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
 	EndGlobalSection
 EndGlobal

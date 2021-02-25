@@ -1,6 +1,6 @@
 using System;
 
-namespace Ev.ServiceBus.Samples.AspNetCoreWeb
+namespace Ev.ServiceBus.Sample.Contracts
 {
     [Serializable]
     public class WeatherForecast

@@ -2,9 +2,10 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Ev.ServiceBus.Samples.AspNetCoreWeb.Controllers
+namespace Ev.ServiceBus.Samples.Sender.Controllers
 {
     [ApiController]
     [Route("[controller]/[action]")]

@@ -1,10 +1,10 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Reception;
+using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.Extensions.Logging;
 
-namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
+namespace Ev.ServiceBus.Samples.Receiver.ServiceBus
 {
     public class SecondaryWeatherEventHandler : IMessageReceptionHandler<WeatherForecast>
     {

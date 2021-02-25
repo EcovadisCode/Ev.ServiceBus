@@ -1,11 +1,11 @@
-using Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus;
+using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Ev.ServiceBus.Samples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.Sender
 {
     public class Startup
     {
@@ -35,30 +35,11 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb
             {
                 builder.RegisterDispatch<WeatherForecast[]>();
             });
-            services.RegisterServiceBusReception().FromQueue(ServiceBusResources.MyQueue, builder =>
-            {
-                builder.RegisterReception<WeatherForecast[], WeatherMessageHandler>();
-            });
 
             services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
             {
                 builder.RegisterDispatch<WeatherForecast>();
             });
-
-            services.RegisterServiceBusReception().FromSubscription(
-                ServiceBusResources.MyTopic,
-                ServiceBusResources.MySubscription,
-                builder =>
-                {
-                    builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
-                });
-            services.RegisterServiceBusReception().FromSubscription(
-                ServiceBusResources.MyTopic,
-                ServiceBusResources.MySecondSubscription,
-                builder =>
-                {
-                    builder.RegisterReception<WeatherForecast, SecondaryWeatherEventHandler>();
-                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
