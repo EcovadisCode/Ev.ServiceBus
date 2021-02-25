@@ -1,11 +1,11 @@
-﻿using System;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Reception;
 using Microsoft.Extensions.Logging;
 
 namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
 {
-    public class WeatherMessageHandler : IMessageHandler
+    public class WeatherMessageHandler : IMessageReceptionHandler<WeatherForecast[]>
     {
         private readonly ILogger<WeatherMessageHandler> _logger;
 
@@ -14,17 +14,8 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
             _logger = logger;
         }
 
-        public Task HandleMessageAsync(MessageContext context)
+        public Task Handle(WeatherForecast[] results, CancellationToken cancellationToken)
         {
-            var message = context.Message;
-
-            var results = MessageParser.DeserializeMessage<WeatherForecast[]>(message);
-
-            if (results.Length == 0)
-            {
-                throw new ArgumentException("Forecast should not be empty!");
-            }
-
             foreach (var weather in results)
             {
                 _logger.LogInformation($"Received from queue : {weather.Date}: {weather.Summary}");

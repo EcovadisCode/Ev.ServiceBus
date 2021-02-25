@@ -20,7 +20,7 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddServiceBus<MessagePayloadParser>(
+            services.AddServiceBus<MessagePayloadSerializer>(
                 settings =>
                 {
                     settings.WithConnection(""); // Provide a connection string here!
@@ -31,16 +31,34 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb
             // - A topic named "mytopic" and under it :
             //     - A subscription named "mysubscription"
             //     - A subscription named "mysecondsubscription"
-            var queue = services.RegisterServiceBusQueue(ServiceBusResources.MyQueue);
-            queue.WithCustomMessageHandler<WeatherMessageHandler>();
-            queue.WithCustomExceptionHandler<WeatherExceptionHandler>();
+            services.RegisterServiceBusDispatch().ToQueue(ServiceBusResources.MyQueue, builder =>
+            {
+                builder.RegisterDispatch<WeatherForecast[]>();
+            });
+            services.RegisterServiceBusReception().FromQueue(ServiceBusResources.MyQueue, builder =>
+            {
+                builder.RegisterReception<WeatherForecast[], WeatherMessageHandler>();
+            });
 
-            services.RegisterServiceBusTopic(ServiceBusResources.MyTopic);
+            services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
+            {
+                builder.RegisterDispatch<WeatherForecast>();
+            });
 
-            services.RegisterServiceBusSubscription(ServiceBusResources.MyTopic, ServiceBusResources.MySubscription)
-                .WithCustomMessageHandler<WeatherEventHandler>();
-            services.RegisterServiceBusSubscription(ServiceBusResources.MyTopic, ServiceBusResources.MySecondSubscription)
-                .WithCustomMessageHandler<SecondaryWeatherEventHandler>();
+            services.RegisterServiceBusReception().FromSubscription(
+                ServiceBusResources.MyTopic,
+                ServiceBusResources.MySubscription,
+                builder =>
+                {
+                    builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
+                });
+            services.RegisterServiceBusReception().FromSubscription(
+                ServiceBusResources.MyTopic,
+                ServiceBusResources.MySecondSubscription,
+                builder =>
+                {
+                    builder.RegisterReception<WeatherForecast, SecondaryWeatherEventHandler>();
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

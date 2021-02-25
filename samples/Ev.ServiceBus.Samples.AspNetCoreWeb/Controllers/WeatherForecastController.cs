@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ev.ServiceBus.Samples.AspNetCoreWeb.Controllers
@@ -16,11 +15,15 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb.Controllers
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
-        private readonly IServiceBusRegistry _serviceBusRegistry;
+        private readonly IMessagePublisher _publisher;
+        private readonly IMessageDispatcher _dispatcher;
 
-        public WeatherForecastController(IServiceBusRegistry serviceBusRegistry)
+        public WeatherForecastController(
+            IMessagePublisher publisher,
+            IMessageDispatcher dispatcher)
         {
-            _serviceBusRegistry = serviceBusRegistry;
+            _publisher = publisher;
+            _dispatcher = dispatcher;
         }
 
         public async Task PushWeather(int count = 5)
@@ -34,12 +37,14 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb.Controllers
             })
             .ToArray();
 
-            var queue = _serviceBusRegistry.GetQueueSender(ServiceBusResources.MyQueue);
-            await queue.SendAsync(MessageParser.SerializeMessage(forecasts));
+            _publisher.Publish(forecasts);
 
-            var topic = _serviceBusRegistry.GetTopicSender(ServiceBusResources.MyTopic);
-            var messages = forecasts.Select(MessageParser.SerializeMessage).ToList();
-            await topic.SendAsync(messages);
+            foreach (var forecast in forecasts)
+            {
+                _publisher.Publish(forecast);
+            }
+
+            await _dispatcher.DispatchEvents();
         }
     }
 }

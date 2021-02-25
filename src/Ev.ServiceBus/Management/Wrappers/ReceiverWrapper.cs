@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -38,6 +39,8 @@ namespace Ev.ServiceBus
             _parentOptions = parentOptions;
             _provider = provider;
             _logger = _provider.GetRequiredService<ILogger<ReceiverWrapper>>();
+            var factory = _provider.GetRequiredService<ILoggerFactory>();
+            factory.CreateLogger("");
         }
 
         public string ResourceId { get; }
@@ -47,7 +50,7 @@ namespace Ev.ServiceBus
 
         public void Initialize()
         {
-            _logger.LogInformation($"[Ev.ServiceBus] Initialization of client '{ResourceId}': Start.");
+            _logger.LogInformation($"[Ev.ServiceBus] Initialization of receiver client '{ResourceId}': Start.");
             if (_parentOptions.Settings.Enabled == false)
             {
                 Receiver = null;
@@ -131,18 +134,45 @@ namespace Ev.ServiceBus
         /// <returns></returns>
         private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
         {
-            _logger.LogInformation(
-                $"[Ev.ServiceBus] New message received from {Receiver!.ClientType} '{Receiver.Name}' : {message.Label}");
+            var sw = new Stopwatch();
+            var scopeValues = new Dictionary<string, string>
+            {
+                ["EVSB_Client"] = ClientType.ToString(),
+                ["EVSB_ResourceId"] = ResourceId,
+                ["EVSB_Handler"] = _messageHandlerType.FullName!,
+                ["EVSB_MessageId"] = message.MessageId,
+            };
+            using (_logger.BeginScope(scopeValues))
+            using (var scope = _provider.CreateScope())
+            {
+                _logger.LogInformation("[Ev.ServiceBus] New message received from {EVSB_Client} '{EVSB_ResourceId}' : {EVSB_MessageLabel}", ClientType, ResourceId,message.Label);
 
-            using var traceLogger = new MsgTraceLogger(_logger,
-                $"[Ev.ServiceBus] Message from {Receiver.ClientType}: {Receiver.Name}: {message.MessageId}.");
-            using var scope = _provider.CreateScope();
-            var messageHandler =
-                (IMessageHandler) scope.ServiceProvider.GetRequiredService(_messageHandlerType);
-            var context = new MessageContext(message,
-                Receiver,
-                cancellationToken);
-            await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
+                var messageHandler = (IMessageHandler) scope.ServiceProvider.GetRequiredService(_messageHandlerType);
+                sw.Start();
+                try
+                {
+                    var context = new MessageContext(message, Receiver!, cancellationToken);
+                    await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (LogError(ex)) { }
+                finally
+                {
+                    sw.Stop();
+                }
+                _logger.LogInformation("[Ev.ServiceBus] Message finished execution in {EVSB_Duration} milliseconds", sw.ElapsedMilliseconds);
+            }
+        }
+
+        /// <summary>
+        ///     workaround to attach the log scope to the logged exception
+        ///     https://andrewlock.net/how-to-include-scopes-when-logging-exceptions-in-asp-net-core/
+        /// </summary>
+        /// <param name="ex"></param>
+        /// <returns></returns>
+        private bool LogError(Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return true;
         }
 
         /// <summary>
@@ -166,28 +196,6 @@ namespace Ev.ServiceBus
             var userDefinedExceptionHandler =
                 (IExceptionHandler) _provider.GetService(_exceptionHandlerType!)!;
             await userDefinedExceptionHandler!.HandleExceptionAsync(exceptionEvent).ConfigureAwait(false);
-        }
-    }
-
-    internal class MsgTraceLogger : IDisposable
-    {
-        private readonly ILogger<ReceiverWrapper> _logger;
-        private readonly string _msg;
-        private readonly Stopwatch _sw;
-
-        public MsgTraceLogger(ILogger<ReceiverWrapper> logger, string msg)
-        {
-            _logger = logger;
-            _msg = msg;
-            _sw = new Stopwatch();
-            _sw.Start();
-        }
-
-        public void Dispose()
-        {
-            var executionTime = _sw.ElapsedMilliseconds;
-            _sw.Stop();
-            _logger.LogInformation($"{_msg}: executed in: {executionTime} milliseconds.");
         }
     }
 }

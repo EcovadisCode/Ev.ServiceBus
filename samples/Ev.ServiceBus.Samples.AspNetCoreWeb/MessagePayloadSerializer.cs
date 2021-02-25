@@ -7,7 +7,7 @@ using Newtonsoft.Json.Serialization;
 
 namespace Ev.ServiceBus.Samples.AspNetCoreWeb
 {
-    public class MessagePayloadParser : IMessagePayloadParser
+    public class MessagePayloadSerializer : IMessagePayloadParser
     {
         private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
         {
