@@ -8,7 +8,9 @@ using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Moq;
 using Xunit;
 using Composer = Ev.ServiceBus.UnitTests.Helpers.Composer;
 
@@ -103,13 +105,14 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
-        public async Task ThrowsWhenReceivedMessageHasNoPayloadTypeId()
+        public async Task FailsSilentlyWhenReceivedMessageHasNoPayloadTypeId()
         {
             var composer = new Composer();
-
+            var logger = new Mock<ILogger<ReceiverWrapper>>();
             composer.WithAdditionalServices(
                 services =>
                 {
+                    services.AddSingleton(logger.Object);
                     services.RegisterServiceBusReception()
                         .FromSubscription(
                             "testTopic",
@@ -141,11 +144,15 @@ namespace Ev.ServiceBus.UnitTests
                 propertyInfo.SetValue(message.SystemProperties, 1, null);
             }
 
-            var exception = await Assert.ThrowsAsync<MessageIsMissingPayloadTypeIdException>(async () =>
-            {
-                await client.TriggerMessageReception(message, CancellationToken.None);
-            });
-            exception.Message.Should().NotBeNull();
+            await client.TriggerMessageReception(message, CancellationToken.None);
+            logger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<MessageIsMissingPayloadTypeIdException>(),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                Times.Once);
         }
 
         [Fact]

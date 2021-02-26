@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
-using Ev.ServiceBus.Abstractions;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Ev.ServiceBus.Reception;
+using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.Extensions.Logging;
 
-namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
+namespace Ev.ServiceBus.Samples.Receiver.ServiceBus
 {
-    public class SecondaryWeatherEventHandler : IMessageHandler
+    public class SecondaryWeatherEventHandler : IMessageReceptionHandler<WeatherForecast>
     {
         private readonly ILogger<SecondaryWeatherEventHandler> _logger;
 
@@ -13,12 +15,8 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
             _logger = logger;
         }
 
-        public Task HandleMessageAsync(MessageContext context)
+        public Task Handle(WeatherForecast weather, CancellationToken cancellationToken)
         {
-            var message = context.Message;
-
-            var weather = MessageParser.DeserializeMessage<WeatherForecast>(message);
-
             _logger.LogInformation($"Received from 2nd subscription : {weather.Date}: {weather.Summary}");
 
             return Task.CompletedTask;

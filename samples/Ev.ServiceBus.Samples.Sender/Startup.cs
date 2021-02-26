@@ -1,11 +1,11 @@
-using Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus;
+using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Ev.ServiceBus.Samples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.Sender
 {
     public class Startup
     {
@@ -20,7 +20,7 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddServiceBus<MessagePayloadParser>(
+            services.AddServiceBus<MessagePayloadSerializer>(
                 settings =>
                 {
                     settings.WithConnection(""); // Provide a connection string here!
@@ -31,16 +31,15 @@ namespace Ev.ServiceBus.Samples.AspNetCoreWeb
             // - A topic named "mytopic" and under it :
             //     - A subscription named "mysubscription"
             //     - A subscription named "mysecondsubscription"
-            var queue = services.RegisterServiceBusQueue(ServiceBusResources.MyQueue);
-            queue.WithCustomMessageHandler<WeatherMessageHandler>();
-            queue.WithCustomExceptionHandler<WeatherExceptionHandler>();
+            services.RegisterServiceBusDispatch().ToQueue(ServiceBusResources.MyQueue, builder =>
+            {
+                builder.RegisterDispatch<WeatherForecast[]>();
+            });
 
-            services.RegisterServiceBusTopic(ServiceBusResources.MyTopic);
-
-            services.RegisterServiceBusSubscription(ServiceBusResources.MyTopic, ServiceBusResources.MySubscription)
-                .WithCustomMessageHandler<WeatherEventHandler>();
-            services.RegisterServiceBusSubscription(ServiceBusResources.MyTopic, ServiceBusResources.MySecondSubscription)
-                .WithCustomMessageHandler<SecondaryWeatherEventHandler>();
+            services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
+            {
+                builder.RegisterDispatch<WeatherForecast>();
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

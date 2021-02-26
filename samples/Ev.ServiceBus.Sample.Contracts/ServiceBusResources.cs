@@ -1,4 +1,4 @@
-﻿namespace Ev.ServiceBus.Samples.AspNetCoreWeb.ServiceBus
+﻿namespace Ev.ServiceBus.Sample.Contracts
 {
     public static class ServiceBusResources
     {

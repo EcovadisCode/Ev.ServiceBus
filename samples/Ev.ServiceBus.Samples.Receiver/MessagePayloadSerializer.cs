@@ -5,9 +5,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace Ev.ServiceBus.Samples.AspNetCoreWeb
+namespace Ev.ServiceBus.Samples.Receiver
 {
-    public class MessagePayloadParser : IMessagePayloadParser
+    public class MessagePayloadSerializer : IMessagePayloadParser
     {
         private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
         {
