@@ -1,3 +1,4 @@
+using Ev.ServiceBus.HealthChecks;
 using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -40,6 +41,9 @@ namespace Ev.ServiceBus.Samples.Sender
             {
                 builder.RegisterDispatch<WeatherForecast>();
             });
+
+            services.AddHealthChecks()
+                .AddEvServiceBusChecks();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

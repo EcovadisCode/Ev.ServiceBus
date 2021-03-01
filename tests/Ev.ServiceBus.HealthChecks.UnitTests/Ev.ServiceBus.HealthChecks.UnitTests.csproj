@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net48;net5.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Ev.ServiceBus.HealthChecks\Ev.ServiceBus.HealthChecks.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.12" />
+    </ItemGroup>
+</Project>
