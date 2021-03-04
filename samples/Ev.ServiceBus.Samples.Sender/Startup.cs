@@ -1,4 +1,5 @@
 using Ev.ServiceBus.HealthChecks;
+using Ev.ServiceBus.Mvc;
 using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -20,6 +21,9 @@ namespace Ev.ServiceBus.Samples.Sender
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc()
+                .AddServiceBusMvcIntegration();
+
             services.AddControllers();
             services.AddServiceBus<MessagePayloadSerializer>(
                 settings =>

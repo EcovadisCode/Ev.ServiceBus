@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.UnitTests.Helpers;
 using Microsoft.Azure.ServiceBus;
 
-namespace Ev.ServiceBus.UnitTests.Helpers
+namespace Ev.ServiceBus.TestHelpers
 {
     public class FakeQueueClientFactory : IClientFactory<QueueOptions, IQueueClient>
     {
