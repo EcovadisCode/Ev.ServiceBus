@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net48;net5.0;netcoreapp2.1;netcoreapp3.1;netstandard2.0;netstandard2.1</TargetFrameworks>
+        <IsPackable>true</IsPackable>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Description>This package links Ev.ServiceBus and Microsoft.Extensions.Diagnostics.HealthChecks NuGet packages. 
+            Resources registered in Ev.ServiceBus will be automatically health checked.</Description>
+        <PackageProjectUrl>https://github.com/EcovadisCode/Ev.ServiceBus</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/EcovadisCode/Ev.ServiceBus</RepositoryUrl>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AspNetCore.HealthChecks.AzureServiceBus" Version="5.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="5.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Ev.ServiceBus\Ev.ServiceBus.csproj" />
+    </ItemGroup>
+
+</Project>

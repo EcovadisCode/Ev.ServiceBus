@@ -48,6 +48,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.Recei
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Sample.Contracts", "samples\Ev.ServiceBus.Sample.Contracts\Ev.ServiceBus.Sample.Contracts.csproj", "{BDA83E88-DB4F-4918-978C-833721A4ED10}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.HealthChecks", "src\Ev.ServiceBus.HealthChecks\Ev.ServiceBus.HealthChecks.csproj", "{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.HealthChecks.UnitTests", "tests\Ev.ServiceBus.HealthChecks.UnitTests\Ev.ServiceBus.HealthChecks.UnitTests.csproj", "{CA4191AC-5278-43D1-A811-6C31BB902556}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +82,14 @@ Global
 		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4C7DEB15-4C1B-4534-AE17-94E8515EB7EC} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
@@ -88,5 +100,7 @@ Global
 		{CE7FCFF5-54E1-42E8-9405-250A9F23B426} = {15791C07-761C-4CDD-A77D-F0F1DFA606AF}
 		{71B77C77-BF1D-4D00-99FF-ABB6441822C8} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
 		{BDA83E88-DB4F-4918-978C-833721A4ED10} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
+		{CA4191AC-5278-43D1-A811-6C31BB902556} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
 	EndGlobalSection
 EndGlobal
