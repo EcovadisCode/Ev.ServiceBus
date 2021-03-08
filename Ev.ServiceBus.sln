@@ -37,6 +37,7 @@ ProjectSection(SolutionItems) = preProject
 	.github\workflows\publish-nugets-Ev-ServiceBus.yml = .github\workflows\publish-nugets-Ev-ServiceBus.yml
 	.github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml = .github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml
 	.github\workflows\pr-gate.yml = .github\workflows\pr-gate.yml
+	.github\workflows\publish-nugets.yml = .github\workflows\publish-nugets.yml
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationEvents", "IntegrationEvents", "{CE7FCFF5-54E1-42E8-9405-250A9F23B426}"
@@ -51,6 +52,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.HealthChecks", "src\Ev.ServiceBus.HealthChecks\Ev.ServiceBus.HealthChecks.csproj", "{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.HealthChecks.UnitTests", "tests\Ev.ServiceBus.HealthChecks.UnitTests\Ev.ServiceBus.HealthChecks.UnitTests.csproj", "{CA4191AC-5278-43D1-A811-6C31BB902556}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Mvc", "src\Ev.ServiceBus.Mvc\Ev.ServiceBus.Mvc.csproj", "{4210BD43-86F2-4C80-BB7B-C582030AC770}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Mvc.UnitTests", "tests\Ev.ServiceBus.Mvc.UnitTests\Ev.ServiceBus.Mvc.UnitTests.csproj", "{FECE7F48-3543-432E-8F55-6DE743CD1DB0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.TestHelpers", "tests\Ev.ServiceBus.TestHelpers\Ev.ServiceBus.TestHelpers.csproj", "{C174493E-8890-4C67-8C77-971DE935AD17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -90,6 +97,18 @@ Global
 		{CA4191AC-5278-43D1-A811-6C31BB902556}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA4191AC-5278-43D1-A811-6C31BB902556}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA4191AC-5278-43D1-A811-6C31BB902556}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4C7DEB15-4C1B-4534-AE17-94E8515EB7EC} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
@@ -102,5 +121,8 @@ Global
 		{BDA83E88-DB4F-4918-978C-833721A4ED10} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
 		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
 		{CA4191AC-5278-43D1-A811-6C31BB902556} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
+		{4210BD43-86F2-4C80-BB7B-C582030AC770} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
+		{C174493E-8890-4C67-8C77-971DE935AD17} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
 	EndGlobalSection
 EndGlobal

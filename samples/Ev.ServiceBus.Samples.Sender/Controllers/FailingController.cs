@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Mvc;
@@ -9,17 +8,16 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
 {
     [ApiController]
     [Route("[controller]/[action]")]
-    public class WeatherForecastController : ControllerBase
+    public class FailingController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
+        private static readonly string[] Summaries =
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
         private readonly IMessagePublisher _publisher;
 
-        public WeatherForecastController(
-            IMessagePublisher publisher)
+        public FailingController(IMessagePublisher publisher)
         {
             _publisher = publisher;
         }
@@ -28,12 +26,12 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
         {
             var rng = new Random();
             var forecasts = Enumerable.Range(1, count).Select(index => new WeatherForecast
-            {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
-            })
-            .ToArray();
+                {
+                    Date = DateTime.Now.AddDays(index),
+                    TemperatureC = rng.Next(-20, 55),
+                    Summary = Summaries[rng.Next(Summaries.Length)]
+                })
+                .ToArray();
 
             // Messages here are not sent right away
             _publisher.Publish(forecasts);
@@ -43,7 +41,8 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
                 _publisher.Publish(forecast);
             }
 
-            // Messages are automatically sent when the request is successful using Ev.ServiceBus.Mvc integration.
+            // Since an exception has been thrown events won't be emitted
+            throw new ArgumentException();
         }
     }
 }

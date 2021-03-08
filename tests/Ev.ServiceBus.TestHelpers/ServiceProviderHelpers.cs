@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Ev.ServiceBus.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -35,6 +36,12 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         {
             var factory = provider.GetRequiredService<FakeQueueClientFactory>();
             return factory.GetAssociatedMock(queueName, isReceiver);
+        }
+
+        public static TopicClientMock GetTopicClientMock(this IServiceProvider provider, string topicName)
+        {
+            var factory = provider.GetRequiredService<FakeTopicClientFactory>();
+            return factory.GetAllRegisteredTopicClients().FirstOrDefault(o => o.ClientName == topicName);
         }
 
         public static SubscriptionClientMock GetSubscriptionClientMock(this IServiceProvider provider, string subscriptionName)
