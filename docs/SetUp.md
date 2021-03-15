@@ -1,12 +1,27 @@
 # Set-Up
 
 ## .Net Core Web Project
-All you need to do to be sure that everything works as expected is the following code:
+You will need to do two things to setup the NuGet :
+1. Implement a class inheriting from `IMessagePayloadSerializer`.
+2. Call `service.AddService<>()` method.
 
 ```csharp
+public class PayloadSerializer : IMessagePayloadSerializer
+{
+    public SerializationResult SerializeBody(object objectToSerialize)
+    {
+        // ...
+    }
+
+    public object DeSerializeBody(byte[] content, Type typeToCreate)
+    {
+        // ...
+    }
+}
+
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus(settings => {
+    services.AddServiceBus<PayloadSerializer>(settings => {
         settings.Enabled = true;
         settings.ReceiveMessages = true;
         settings.WithConnection();
@@ -14,7 +29,10 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
-Thanks to that, the necessary services of this service-bus library are working in the background.
+> Concretely, we don't know how you (the user) want to serialize your service bus messages.
+> So we decided to give you full control over that.
+
+Once this is done, the necessary services of this service-bus library are working in the background.
 To learn more about this mechanism [read here](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/multi-container-microservice-net-applications/background-tasks-with-ihostedservice)
 on official microsoft pages.
 
@@ -25,10 +43,10 @@ Calling `settings.WithConnection()` will setup a default connection that all you
 
 ## Other types of projects
 
-To all work as expected, you have to ensure that ```ServiceBusHost``` is started and properly stopped.
+For everything to work as expected, you have to ensure that `ServiceBusHost` is started and properly stopped.
 
 ```csharp
-services.AddServiceBus();
+services.AddServiceBus<PayloadSerializer>(settings => {});
 var serviceProvider = services.BuildServiceProvider();
 
 var hostedServices = serviceProvider.GetServices<IHostedService>();
@@ -37,5 +55,5 @@ await host.StartAsync();
 /*
 Code here...
 */
-await host.StartAsync();
+await host.StopAsync();
 ```

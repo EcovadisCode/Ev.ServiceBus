@@ -95,7 +95,7 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(_defaultSettings);
+            services.AddServiceBus<PayloadSerializer>(_defaultSettings);
 
             ComposeSenders(services);
 

@@ -39,11 +39,9 @@ namespace Ev.ServiceBus
             // filtering out receivers that have no message handlers setup
             var receivers = _options.Value.Receivers.Where(o => o.MessageHandlerType != null).ToArray();
 
-            var duplicateReceivers = receivers.Where(o => o.StrictMode).GroupBy(o => new
-            {
-                o.ResourceId,
-                o.ClientType
-            }).Where(o => o.Count() > 1).ToArray();
+            var duplicateReceivers = receivers.Where(o => o.StrictMode)
+                .GroupBy(o => new { o.ResourceId, o.ClientType })
+                .Where(o => o.Count() > 1).ToArray();
             // making sure there's not any duplicates in strict mode
             if (duplicateReceivers.Any())
             {
@@ -51,11 +49,7 @@ namespace Ev.ServiceBus
                     .Select(o => $"{o.Key.ClientType}|{o.Key.ResourceId}").ToArray());
             }
 
-            var receiversByName = receivers.GroupBy(o => new
-            {
-                o.ResourceId,
-                o.ClientType
-            }).ToArray();
+            var receiversByName = receivers.GroupBy(o => new { o.ResourceId, o.ClientType }).ToArray();
             foreach (var groupByName in receiversByName)
             {
                 // we group by connection to have one SenderWrapper by connection
@@ -103,11 +97,9 @@ namespace Ev.ServiceBus
         private void BuildSenders()
         {
             var senders = _options.Value.Senders;
-            var duplicateSenders = senders.Where(o => o.StrictMode).GroupBy(o => new
-            {
-                o.ResourceId,
-                o.ClientType
-            }).Where(o => o.Count() > 1).ToArray();
+            var duplicateSenders = senders.Where(o => o.StrictMode)
+                .GroupBy(o => new { o.ResourceId, o.ClientType })
+                .Where(o => o.Count() > 1).ToArray();
             // making sure there's not any duplicates in strict mode
             if (duplicateSenders.Any())
             {
@@ -115,11 +107,7 @@ namespace Ev.ServiceBus
                     .Select(o => $"{o.Key.ClientType}|{o.Key.ResourceId}").ToArray());
             }
 
-            var sendersByName = senders.GroupBy(o => new
-            {
-                o.ResourceId,
-                o.ClientType
-            }).ToArray();
+            var sendersByName = senders.GroupBy(o => new { o.ResourceId, o.ClientType }).ToArray();
             foreach (var groupByName in sendersByName)
             {
                 // we group by connection to have one SenderWrapper by connection

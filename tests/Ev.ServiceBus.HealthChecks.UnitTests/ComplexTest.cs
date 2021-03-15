@@ -18,7 +18,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection("testConnectionString");
             });
@@ -63,7 +63,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection("testConnectionString");
             });
@@ -99,7 +99,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection("testConnectionString");
             });
@@ -135,7 +135,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection("testConnectionString");
             });

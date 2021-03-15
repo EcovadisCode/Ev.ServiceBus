@@ -20,9 +20,19 @@ namespace Ev.ServiceBus.Abstractions
             Receivers = new ReadOnlyCollection<ReceiverOptions>(_receivers);
         }
 
+        /// <summary>
+        /// General settings for Ev.ServiceBus.
+        /// </summary>
         public ServiceBusSettings Settings { get; }
 
+        /// <summary>
+        /// The list of registered senders.
+        /// </summary>
         public ReadOnlyCollection<ClientOptions> Senders { get; }
+
+        /// <summary>
+        /// The list of registered receivers.
+        /// </summary>
         public ReadOnlyCollection<ReceiverOptions> Receivers { get; }
 
         /// <summary>

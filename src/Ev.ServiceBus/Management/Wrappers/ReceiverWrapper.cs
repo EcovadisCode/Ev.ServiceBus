@@ -24,7 +24,7 @@ namespace Ev.ServiceBus
         private readonly IServiceProvider _provider;
 
         private Func<ExceptionReceivedEventArgs, Task>? _onExceptionReceivedHandler;
-        internal MessageReceiver? Receiver;
+        private MessageReceiver? _receiver;
 
         public ReceiverWrapper(IMessageReceiverOptions[] options,
             ServiceBusOptions parentOptions,
@@ -39,8 +39,6 @@ namespace Ev.ServiceBus
             _parentOptions = parentOptions;
             _provider = provider;
             _logger = _provider.GetRequiredService<ILogger<ReceiverWrapper>>();
-            var factory = _provider.GetRequiredService<ILoggerFactory>();
-            factory.CreateLogger("");
         }
 
         public string ResourceId { get; }
@@ -50,12 +48,12 @@ namespace Ev.ServiceBus
 
         public void Initialize()
         {
-            _logger.LogInformation($"[Ev.ServiceBus] Initialization of receiver client '{ResourceId}': Start.");
+            _logger.LogInformation("[Ev.ServiceBus] Initialization of receiver client '{ResourceId}': Start", ResourceId);
             if (_parentOptions.Settings.Enabled == false)
             {
-                Receiver = null;
+                _receiver = null;
                 _logger.LogInformation(
-                    $"[Ev.ServiceBus] Initialization of client '{ResourceId}': Client deactivated through configuration.");
+                    "[Ev.ServiceBus] Initialization of client '{ResourceId}': Client deactivated through configuration", ResourceId);
                 return;
             }
 
@@ -77,12 +75,12 @@ namespace Ev.ServiceBus
                         break;
                 }
 
-                RegisterMessageHandler(_options, Receiver!);
-                _logger.LogInformation($"[Ev.ServiceBus] Initialization of client '{ResourceId}': Success.");
+                RegisterMessageHandler(_options, _receiver!);
+                _logger.LogInformation("[Ev.ServiceBus] Initialization of client '{ResourceId}': Success", ResourceId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Initialization of client '{ResourceId}': Failed.");
+                _logger.LogError(ex, "[Ev.ServiceBus] Initialization of client '{ResourceId}': Failed", ResourceId);
             }
         }
 
@@ -90,14 +88,14 @@ namespace Ev.ServiceBus
         {
             var factory = _provider.GetRequiredService<IClientFactory<QueueOptions, IQueueClient>>();
             ReceiverClient = factory.Create((QueueOptions) _options.First(), settings);
-            Receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
+            _receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
         }
 
         private void CreateSubscriptionClient(ConnectionSettings settings)
         {
             var factory = _provider.GetRequiredService<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
             ReceiverClient = factory.Create((SubscriptionOptions) _options.First(), settings);
-            Receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
+            _receiver = new MessageReceiver(ReceiverClient, ResourceId, ClientType);
         }
 
         private void RegisterMessageHandler(IMessageReceiverOptions[] receiverOptions, MessageReceiver receiver)
@@ -151,7 +149,7 @@ namespace Ev.ServiceBus
                 sw.Start();
                 try
                 {
-                    var context = new MessageContext(message, Receiver!, cancellationToken);
+                    var context = new MessageContext(message, _receiver!, cancellationToken);
                     await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (LogError(ex)) { }
@@ -184,9 +182,9 @@ namespace Ev.ServiceBus
         {
             var json = JsonConvert.SerializeObject(exceptionEvent.ExceptionReceivedContext, Formatting.Indented);
             _logger.LogError(exceptionEvent.Exception,
-                $"[Ev.ServiceBus] Exception occured during message treatment of {Receiver!.ClientType} '{Receiver.Name}'.\n"
-                + $"Message : {exceptionEvent.Exception.Message}\n"
-                + $"Context:\n{json}");
+                "[Ev.ServiceBus] Exception occured during message treatment of {ClientType} '{ResourceId}'.\n"
+                + "Message : {ExceptionMessage}\n"
+                + "Context:\n{ContextJson}", _receiver!.ClientType, ResourceId, exceptionEvent.Exception.Message, json);
 
             await _onExceptionReceivedHandler!(exceptionEvent).ConfigureAwait(false);
         }

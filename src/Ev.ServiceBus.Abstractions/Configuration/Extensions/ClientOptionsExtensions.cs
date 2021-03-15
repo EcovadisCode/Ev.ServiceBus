@@ -5,6 +5,16 @@ namespace Ev.ServiceBus.Abstractions
 {
     public static class ClientOptionsExtensions
     {
+        /// <summary>
+        /// Sets the connection to use for this resource.
+        /// If no connection is set then the default connection will be used.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="connectionString"></param>
+        /// <param name="receiveMode"></param>
+        /// <param name="retryPolicy"></param>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <returns></returns>
         public static TOptions WithConnection<TOptions>(
             this TOptions options,
             string connectionString,
@@ -16,6 +26,16 @@ namespace Ev.ServiceBus.Abstractions
             return options;
         }
 
+        /// <summary>
+        /// Sets the connection to use for this resource.
+        /// If no connection is set then the default connection will be used.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="connection"></param>
+        /// <param name="receiveMode"></param>
+        /// <param name="retryPolicy"></param>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <returns></returns>
         public static TOptions WithConnection<TOptions>(
             this TOptions options,
             ServiceBusConnection connection,
@@ -27,6 +47,16 @@ namespace Ev.ServiceBus.Abstractions
             return options;
         }
 
+        /// <summary>
+        /// Sets the connection to use for this resource.
+        /// If no connection is set then the default connection will be used.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="connectionStringBuilder"></param>
+        /// <param name="receiveMode"></param>
+        /// <param name="retryPolicy"></param>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <returns></returns>
         public static TOptions WithConnection<TOptions>(
             this TOptions options,
             ServiceBusConnectionStringBuilder connectionStringBuilder,

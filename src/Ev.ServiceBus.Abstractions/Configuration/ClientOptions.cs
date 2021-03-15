@@ -17,9 +17,7 @@ namespace Ev.ServiceBus.Abstractions
         /// </summary>
         internal bool StrictMode { get; }
 
-        /// <summary>
-        /// Internal identifier of the Resource
-        /// </summary>
+        /// <inheritdoc />
         public string ResourceId { get; private set; }
 
         internal void UpdateResourceId(string resourceId)
@@ -32,7 +30,10 @@ namespace Ev.ServiceBus.Abstractions
             ResourceId = resourceId;
         }
 
+        /// <inheritdoc />
         public ClientType ClientType { get; }
+
+        /// <inheritdoc />
         public ConnectionSettings? ConnectionSettings { get; internal set; }
     }
 }

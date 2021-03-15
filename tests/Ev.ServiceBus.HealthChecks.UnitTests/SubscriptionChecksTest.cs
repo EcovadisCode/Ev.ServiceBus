@@ -16,7 +16,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
             });
 
@@ -39,7 +39,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection(new ServiceBusConnectionStringBuilder());
             });
@@ -63,7 +63,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection(new ServiceBusConnection("Endpoint=sb://localhost.windows.net/;SharedAccessKeyName=accessKey;SharedAccessKey=6WXpAsTC+9QzmGiPt+58khMtryasgplsL6y9dpjSF1w="));
             });
@@ -87,7 +87,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection("testConnectionString");
             });
@@ -114,7 +114,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
             });
 
@@ -141,7 +141,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(settings =>
+            services.AddServiceBus<PayloadSerializer>(settings =>
             {
                 settings.WithConnection("testConnectionString");
             });

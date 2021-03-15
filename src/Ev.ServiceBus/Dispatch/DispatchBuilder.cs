@@ -13,6 +13,12 @@ namespace Ev.ServiceBus.Dispatch
             _services = services;
         }
 
+        /// <summary>
+        /// Configures the payload models to be dispatched to the queue named <param name="queueName"></param>.
+        /// </summary>
+        /// <param name="queueName">The name of the queue that will dispatch the messages</param>
+        /// <param name="settings"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         public void ToQueue(string queueName, Action<DispatchRegistrationBuilder> settings)
         {
             if (queueName == null)
@@ -30,6 +36,12 @@ namespace Ev.ServiceBus.Dispatch
             settings(builder);
         }
 
+        /// <summary>
+        /// Configures the payload models to be dispatched to the topic named <param name="topicName"></param>.
+        /// </summary>
+        /// <param name="topicName">The name of the topic that will dispatch the messages</param>
+        /// <param name="settings">A callback to configure the payloads</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public void ToTopic(string topicName, Action<DispatchRegistrationBuilder> settings)
         {
             if (topicName == null)

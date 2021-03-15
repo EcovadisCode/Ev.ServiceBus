@@ -14,24 +14,31 @@ namespace Ev.ServiceBus
             ClientType = queue;
         }
 
+        /// <inheritdoc />
         public string Name { get; }
+
+        /// <inheritdoc />
         public ClientType ClientType { get; }
 
+        /// <inheritdoc />
         public Task SendAsync(Message message)
         {
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc />
         public Task SendAsync(IList<Message> messageList)
         {
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc />
         public Task<long> ScheduleMessageAsync(Message message, DateTimeOffset scheduleEnqueueTimeUtc)
         {
             return Task.FromResult((long)1);
         }
 
+        /// <inheritdoc />
         public Task CancelScheduledMessageAsync(long sequenceNumber)
         {
             return Task.CompletedTask;

@@ -24,27 +24,34 @@ namespace Ev.ServiceBus
             ClientType = clientType;
         }
 
+        /// <inheritdoc />
         public string Name { get; }
+
+        /// <inheritdoc />
         public ClientType ClientType { get; }
 
+        /// <inheritdoc />
         public Task SendAsync(Message message)
         {
             _logger.LogInformation($"[Ev.ServiceBus] Sending a message to {ClientType} {Name}");
             return _client.SendAsync(message);
         }
 
+        /// <inheritdoc />
         public Task SendAsync(IList<Message> messageList)
         {
             _logger.LogInformation($"[Ev.ServiceBus] Sending {messageList.Count()} messages to {ClientType} {Name}");
             return _client.SendAsync(messageList);
         }
 
+        /// <inheritdoc />
         public Task<long> ScheduleMessageAsync(Message message, DateTimeOffset scheduleEnqueueTimeUtc)
         {
             _logger.LogInformation($"[Ev.ServiceBus] Scheduling a message to {ClientType} {Name} to be executed at {scheduleEnqueueTimeUtc:O}");
             return _client.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc);
         }
 
+        /// <inheritdoc />
         public Task CancelScheduledMessageAsync(long sequenceNumber)
         {
             _logger.LogInformation($"[Ev.ServiceBus] Cancelling a scheduled message {ClientType} {Name}");

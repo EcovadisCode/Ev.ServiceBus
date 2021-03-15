@@ -605,7 +605,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(_ => {});
+            services.AddServiceBus<PayloadSerializer>(_ => {});
 
             Assert.Throws<ArgumentNullException>(() =>
             {
@@ -620,7 +620,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(_ => {});
+            services.AddServiceBus<PayloadSerializer>(_ => {});
 
             Assert.Throws<ArgumentNullException>(() =>
             {

@@ -14,19 +14,19 @@ namespace Ev.ServiceBus.Reception
     {
         private readonly MethodInfo _callHandlerInfo;
         private readonly ILogger<MessageReceptionHandler> _logger;
-        private readonly IMessagePayloadParser _messagePayloadParser;
+        private readonly IMessagePayloadSerializer _messagePayloadSerializer;
         private readonly IServiceProvider _provider;
         private readonly ReceptionRegistry _registry;
 
         public MessageReceptionHandler(IServiceProvider provider,
             ReceptionRegistry registry,
             ILogger<MessageReceptionHandler> logger,
-            IMessagePayloadParser messagePayloadParser)
+            IMessagePayloadSerializer messagePayloadSerializer)
         {
             _provider = provider;
             _registry = registry;
             _logger = logger;
-            _messagePayloadParser = messagePayloadParser;
+            _messagePayloadSerializer = messagePayloadSerializer;
             _callHandlerInfo =
                 GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
         }
@@ -54,7 +54,7 @@ namespace Ev.ServiceBus.Reception
                 return;
             }
 
-            var @event = _messagePayloadParser.DeSerializeBody(context.Message.Body, receptionRegistration.PayloadType);
+            var @event = _messagePayloadSerializer.DeSerializeBody(context.Message.Body, receptionRegistration.PayloadType);
             var methodInfo = _callHandlerInfo.MakeGenericMethod(receptionRegistration.PayloadType);
             var scopeValues = new Dictionary<string, string>
             {

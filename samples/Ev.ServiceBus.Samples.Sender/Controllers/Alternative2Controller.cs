@@ -35,11 +35,11 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
                 .ToArray();
 
             // Messages here are sent right away
-            await _sender.SendEvents(new []{forecasts});
+            await _sender.SendDispatches(new []{forecasts});
 
             foreach (var forecast in forecasts)
             {
-                await _sender.SendEvents(new []{forecast});
+                await _sender.SendDispatches(new []{forecast});
             }
         }
     }
