@@ -1,0 +1,34 @@
+name: publish NuGet packages
+on:
+  create:
+    tags:
+      - [0-9]+.[0-9]+.[0-9]+*
+jobs:
+  publish:
+    name: build, pack & publish
+    runs-on: windows-latest
+    steps:
+      - name: Get the version 
+        id: get_version 
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+      - uses: actions/checkout@v2
+      - name: Setup .NET 2.1
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 2.1.813
+      - name: Setup .NET Core 3.1
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.406
+      - name: Setup .NET Core 5
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.102
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -p:Version=${{steps.get_version.outputs.VERSION}}
+      - name: Pack
+        run: dotnet pack --no-build --no-restore -v normal -o ./nupkgs -p:Version=${{steps.get_version.outputs.VERSION}}
+#      - name: Push
+#        run: dotnet nuget push ./nupkgs -k ${{secrets.NUGET_API_KEY}} -s https://api.nuget.org --skip-duplicate -n 

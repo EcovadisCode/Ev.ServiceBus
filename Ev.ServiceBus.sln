@@ -39,6 +39,7 @@ ProjectSection(SolutionItems) = preProject
 	.github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml = .github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml
 	.github\workflows\pr-gate.yml = .github\workflows\pr-gate.yml
 	.github\workflows\publish-nugets.yml = .github\workflows\publish-nugets.yml
+	.github\workflows\publish-nugets-preview.yml = .github\workflows\publish-nugets-preview.yml
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.Receiver", "samples\Ev.ServiceBus.Samples.Receiver\Ev.ServiceBus.Samples.Receiver.csproj", "{71B77C77-BF1D-4D00-99FF-ABB6441822C8}"
