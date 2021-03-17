@@ -1,4 +1,4 @@
-name: publish NuGet packages
+name: publish NuGet packages by tag
 on:
   create:
     tags:
