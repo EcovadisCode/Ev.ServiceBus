@@ -2,7 +2,7 @@ name: publish NuGet packages by tag
 on:
   create:
     tags:
-      - [0-9]+.[0-9]+.[0-9]+-?[0-9a-z]*
+      - v[0-9]+.[0-9]+.[0-9]+-?[0-9a-z]*
 jobs:
   publish:
     name: build, pack & publish
@@ -12,8 +12,8 @@ jobs:
         shell: bash
         id: get_version
         run: |
-          echo Publishing version ${GITHUB_REF#refs/tags/} of packages
-          echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+          echo Publishing version ${GITHUB_REF#refs/tags/v} of packages
+          echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
       - uses: actions/checkout@v2
       - name: Setup .NET 2.1
         uses: actions/setup-dotnet@v1
