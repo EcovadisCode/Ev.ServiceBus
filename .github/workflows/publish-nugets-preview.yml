@@ -46,8 +46,8 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release --no-restore -p:Version=${{steps.get_version.outputs.VERSION}}
+        run: dotnet build --configuration Release --no-restore -p:Version=${{steps.get_version.outputs.match}}
       - name: Pack
-        run: dotnet pack --configuration Release --no-build --no-restore -v normal -o ./nupkgs -p:Version=${{steps.get_version.outputs.VERSION}}
+        run: dotnet pack --configuration Release --no-build --no-restore -v normal -o ./nupkgs -p:Version=${{steps.get_version.outputs.match}}
 #      - name: Push
 #        run: dotnet nuget push ./nupkgs -k ${{secrets.NUGET_API_KEY}} -s https://api.nuget.org --skip-duplicate -n 
