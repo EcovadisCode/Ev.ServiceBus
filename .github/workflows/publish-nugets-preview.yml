@@ -20,7 +20,7 @@ jobs:
       - name: Check version or Exit
         id: check-version
         shell: bash
-        if: steps.get_version.match == null
+        if: steps.get_version.outputs.match == null
         run: |
           echo Version number extracted from ${GITHUB_REF} is invalid
           exit 1
