@@ -2,18 +2,23 @@ name: publish NuGet packages by tag
 on:
   create:
     tags:
-      - v[0-9]+.[0-9]+.[0-9]+-?[0-9a-z]*
+      - '*'
 jobs:
   publish:
     name: build, pack & publish
     runs-on: windows-latest
     steps:
-      - name: Get the version
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: regex-match
+        with:
+          text: ${{ github.ref }}
+          regex: '/[0-9]+.[0-9]+.[0-9]+-?[0-9a-z]*/'
+      - name: Get the version from ${{ github.ref }}
         shell: bash
         id: get_version
         run: |
-          echo Publishing version ${GITHUB_REF#refs/tags/v} of packages
-          echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+          echo Publishing version ${GITHUB_REF#refs/tags/} of packages
+          echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
       - uses: actions/checkout@v2
       - name: Setup .NET 2.1
         uses: actions/setup-dotnet@v1
