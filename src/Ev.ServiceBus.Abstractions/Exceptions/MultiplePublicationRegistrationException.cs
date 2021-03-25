@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Ev.ServiceBus.Abstractions.Exceptions
+namespace Ev.ServiceBus.Abstractions
 {
     [Serializable]
     public class MultiplePublicationRegistrationException : Exception
