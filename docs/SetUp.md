@@ -3,7 +3,7 @@
 ## .Net Core Web Project
 You will need to do two things to setup the NuGet :
 1. Implement a class inheriting from `IMessagePayloadSerializer`.
-2. Call `service.AddService<>()` method.
+2. Call `service.AddServiceBus<>()` method.
 
 ```csharp
 public class PayloadSerializer : IMessagePayloadSerializer
