@@ -41,4 +41,5 @@ jobs:
       - name: Pack
         run: dotnet pack --configuration Release --no-build --no-restore -v normal -o ./nupkgs -p:Version=${{steps.get_version.outputs.match}}
       - name: Push
-        run: dotnet nuget push ./nupkgs -k ${{secrets.NUGET_API_KEY}} -s https://api.nuget.org --skip-duplicate -n 
+        run: dotnet nuget push *.nupkg -k ${{secrets.NUGET_API_KEY}} -s https://api.nuget.org/v3/index.json --skip-duplicate -n true
+        working-directory: ./nupkgs
