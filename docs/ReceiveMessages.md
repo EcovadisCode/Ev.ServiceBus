@@ -8,60 +8,81 @@ The registration process is very simple:
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus(settings => {
-        settings.WithConnection(serviceBusConnectionString);
+    // Initialize serviceBus
+
+    services.RegisterServiceBusReception().FromQueue("myqueue", builder =>
+    {
+        builder.RegisterReception<WeatherForecast[], WeatherMessageHandler>();
     });
 
-    options.RegisterServiceBusSubscription("TopicName", "SubscriptionName")
-        .WithCustomMessageHandler<SubscriptionHandler>(/*options*/);
-
-    options.RegisterServiceBusQueue("QueueName")
-        .WithCustomMessageHandler<QueueHandler>(/*options*/);
+    services.RegisterServiceBusReception().FromSubscription("mytopic", "mysubscription", builder =>
+    {
+        builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
+    });
 }
 ```
 The above example is the minimum to register for receiving messages.
-You need to add names (`TopicName` and `SubscriptionName` or `QueueName`), the connection string to the service bus you created in the Azure
-and the class implementing the `IMessageHandler` interface.
+The provided names (`myqueue` and `mytopic` or `mysubscription`) must be the names of resources present on your [Azure Service Bus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview#namespaces).
 
-### Handling messages
+> You cannot register the same reception object twice throughout the entire application.
+> A message that is received will always be processed by one and only one handler.
 
-To handle messages you need to implement the `IMessageHandler`:
+For each reception registration, you must implement two classes :
+- The deserialized payload that will be received from the resource
+- The handler that will receive said deserialized payload, inheriting from `IMessageReceptionHandler`.
+
 ```csharp
-public class SubscriptionHandler : IMessageHandler
+[Serializable]
+public class WeatherForecast
 {
-    public async Task HandleMessageAsync(MessageContext context)
+    public DateTime Date { get; set; }
+
+    public int TemperatureC { get; set; }
+
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+
+    public string Summary { get; set; } = "";
+}
+
+public class WeatherEventHandler : IMessageReceptionHandler<WeatherForecast>
+{
+    private readonly ILogger<WeatherEventHandler> _logger;
+
+    public WeatherEventHandler(ILogger<WeatherEventHandler> logger)
     {
-        var message = context.Message; // Microsoft.Azure.ServiceBus.Message
-        /*        Parse a message code        */
-        if (!ok)
-            throw new InvalidOperationException();
+        _logger = logger;
+    }
+
+    public Task Handle(WeatherForecast weather, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation($"Received from 1st subscription : {weather.Date}: {weather.Summary}");
+
+        return Task.CompletedTask;
     }
 }
 ```
-To read more about the `Message` class [check here](https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.servicebus.message?view=azure-dotnet).
+This service is registered in the IOC container as scoped and will be resolved once for every received message.
 
+### Advanced features
 
-### Handling exceptions
-To handle exceptions you need to register it first:
+#### Customizing the PayloadTypeId
+
+> Reminder: the PayloadTypeId is a user property on the service bus message itself. 
+> During reception, it determines which object should the message be deserialized into.
+
+By default, the PayloadTypeId is set automatically to be the name of the type that will be sent.
+If you are not satisfied with that naming, you can call `.CustomizePayloadTypeId()`:
+
 ```csharp
-options.RegisterServiceBusQueue("QueueName")
-       .WithCustomExceptionHandler<ExceptionHandler>();
-
-```
-The `ExceptionHandler` class must implement the `IExceptionHandler` interface:
-
-```csharp
-public class QueueMessageErrorHandler : IExceptionHandler
+public void ConfigureServices(IServiceCollection services)
 {
-    public Task HandleExceptionAsync(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
+    // Initialize serviceBus
+    
+    services.RegisterServiceBusReception().FromSubscription("mytopic", "mysubscription", builder =>
     {
-        /* Code */
-    }
+        // The default name for this dispatch is "WeatherForecast"
+        builder.RegisterReception<WeatherForecast, WeatherEventHandler>()
+               .CustomizePayloadTypeId("Forecast");
+    });
 }
 ```
-About the `ExceptionReceivedEventArgs` you can read [here](https://docs.microsoft.com/en-us/dotnet/api/microsoft.servicebus.messaging.exceptionreceivedeventargs?view=azure-dotnet).
-
-### Read More
-Official Microsoft tutorials:
-- [Receiving Messages from a Queue](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues#receive-messages-from-the-queue)
-- [Receiving Messages from a Subscription](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-how-to-use-topics-subscriptions#receive-messages-from-the-subscription)

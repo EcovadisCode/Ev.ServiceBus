@@ -236,7 +236,7 @@ namespace Ev.ServiceBus.UnitTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus<PayloadParser>(
+            services.AddServiceBus<PayloadSerializer>(
                 settings =>
                 {
                     settings.Enabled = false;

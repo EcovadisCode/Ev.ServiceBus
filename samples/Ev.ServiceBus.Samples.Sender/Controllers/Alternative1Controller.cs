@@ -46,8 +46,8 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
                 _publisher.Publish(forecast);
             }
 
-            // Messages are sent in batch when you call _dispatcher.DispatchEvents()
-            await _dispatcher.DispatchEvents();
+            // Messages are sent in batch when you call _dispatcher.ExecuteDispatches()
+            await _dispatcher.ExecuteDispatches();
         }
     }
 }

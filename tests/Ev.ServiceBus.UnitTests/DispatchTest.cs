@@ -104,7 +104,7 @@ namespace Ev.ServiceBus.UnitTests
                     SomeString = "hello"
                 });
 
-                await eventDispatcher.DispatchEvents();
+                await eventDispatcher.ExecuteDispatches();
             }
         }
 
@@ -201,7 +201,7 @@ namespace Ev.ServiceBus.UnitTests
         public void SendEventsDoesntAcceptNulls()
         {
             var services = new ServiceCollection();
-            services.AddServiceBus<PayloadParser>(settings => {});
+            services.AddServiceBus<PayloadSerializer>(settings => {});
             var provider = services.BuildServiceProvider();
 
             using (var scope = provider.CreateScope())
@@ -210,7 +210,7 @@ namespace Ev.ServiceBus.UnitTests
                 Assert.ThrowsAsync<ArgumentNullException>(
                     async () =>
                     {
-                        await eventPublisher.SendEvents(null!);
+                        await eventPublisher.SendDispatches(null!);
                     });
             }
         }

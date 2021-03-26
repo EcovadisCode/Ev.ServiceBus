@@ -16,10 +16,20 @@ namespace Ev.ServiceBus.Abstractions
             _services = services;
         }
 
-        public Type? MessageHandlerType { get; internal set; }
-        public Action<MessageHandlerOptions>? MessageHandlerConfig { get; internal set; }
-        public Type? ExceptionHandlerType { get; internal set; }
+        /// <inheritdoc />
+        public Type? MessageHandlerType { get; private set; }
 
+        /// <inheritdoc />
+        public Action<MessageHandlerOptions>? MessageHandlerConfig { get; private set; }
+
+        /// <inheritdoc />
+        public Type? ExceptionHandlerType { get; private set; }
+
+        /// <summary>
+        /// Defines a message handler for the current receiver.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <typeparam name="TMessageHandler"></typeparam>
         public void WithCustomMessageHandler<TMessageHandler>(Action<MessageHandlerOptions>? config = null)
             where TMessageHandler : class, IMessageHandler
         {
@@ -28,6 +38,10 @@ namespace Ev.ServiceBus.Abstractions
             MessageHandlerConfig = config;
         }
 
+        /// <summary>
+        /// Defines an exception handler for the current receiver.
+        /// </summary>
+        /// <typeparam name="TExceptionHandler"></typeparam>
         public void WithCustomExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IExceptionHandler
         {

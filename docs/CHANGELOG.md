@@ -10,6 +10,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 3.0.0
+
+
+
+### Added
+
+- The main Api has been redesigned to reduce the number of lines of code necessary to configure it.
+  
+  Example of old API :
+```csharp
+services.ConfigureServiceBus(options =>
+{
+  options.RegisterSubscription("mytopic", "mysubscription")
+         .WithConnectionString(serviceBusConnectionString)
+         .ToIntegrationEventHandling();
+});
+
+services.RegisterIntegrationEventSubscription<MyEvent1, MyEvent1Handler>(builder =>
+{
+    builder.EventTypeId = "MyEvent1";
+    builder.ReceiveFromSubscription("mytopic", "mysubscription");
+});
+
+services.RegisterIntegrationEventSubscription<MyEvent2, MyEvent2Handler>(builder =>
+{
+    builder.EventTypeId = "MyEvent2";
+    builder.ReceiveFromSubscription("mytopic", "mysubscription");
+});
+
+services.RegisterIntegrationEventSubscription<MyEvent3, MyEvent3Handler>(builder =>
+{
+    builder.EventTypeId = "MyEvent3";
+    builder.ReceiveFromSubscription("mytopic", "mysubscription");
+});
+```
+  Example of new API :
+```csharp
+services.RegisterServiceBusReception().FromSubscription("mytopic", "mysubscription", builder => {
+  builder.RegisterReception<MyEvent1, MyEvent1Handler>();
+  builder.RegisterReception<MyEvent2, MyEvent2Handler>();
+  builder.RegisterReception<MyEvent3, MyEvent3Handler>();
+});
+```
+- Added the ability to automatically serialize objects into messages and send them to a topic or queue depending on configuration.
+- Added the ability to automatically deserialize messages into objects that are received and process them into specific handlers depending on configuration.
+- The PayloadTypeId is now automatically generated and uses the type's simple name.
+- Queue are now fully supported for message reception.
+- Registration of underlying senders/receivers is now automatic.
+- The NuGet packages now properly target multiple frameworks including net5
+- The protocol now uses the user property named 'PayloadTypeId' instead of 'EventTypeId' to resolve routing (The old user property is still provided for retro-compatibility purposes).
+- Added logging messages when a message is sent.
+- Upon reception of a message, a log scope is now created to pass useful information (such as the name of the resource the received message is coming from)
+- Added Ev.ServiceBus.HealthChecks NuGet package : it's goal is to automatically register Ev.ServiceBus registrations as healthCheck registrations.
+- Added Ev.ServiceBus.Mvc NuGet package : it's goal is to better integrate Ev.ServiceBus with MVC components of Asp.Net Core
+  
 ## 2.0.0 - 2021-01-07
 - The method `services.ConfigureServiceBus()` has been replaced:
   ```csharp

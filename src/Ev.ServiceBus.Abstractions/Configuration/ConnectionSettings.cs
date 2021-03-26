@@ -4,7 +4,7 @@ namespace Ev.ServiceBus.Abstractions
 {
     public class ConnectionSettings
     {
-        public ConnectionSettings(
+        internal ConnectionSettings(
             ServiceBusConnection serviceBusConnection,
             ReceiveMode receiveMode,
             RetryPolicy? retryPolicy)
@@ -14,7 +14,7 @@ namespace Ev.ServiceBus.Abstractions
             RetryPolicy = retryPolicy;
         }
 
-        public ConnectionSettings(
+        internal ConnectionSettings(
             ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder,
             ReceiveMode receiveMode,
             RetryPolicy? retryPolicy)
@@ -24,7 +24,7 @@ namespace Ev.ServiceBus.Abstractions
             RetryPolicy = retryPolicy;
         }
 
-        public ConnectionSettings(string connectionString, ReceiveMode receiveMode, RetryPolicy? retryPolicy)
+        internal ConnectionSettings(string connectionString, ReceiveMode receiveMode, RetryPolicy? retryPolicy)
         {
             ConnectionString = connectionString;
             ReceiveMode = receiveMode;

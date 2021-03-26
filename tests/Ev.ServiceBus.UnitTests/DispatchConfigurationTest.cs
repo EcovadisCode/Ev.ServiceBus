@@ -53,7 +53,7 @@ namespace Ev.ServiceBus.UnitTests
             var sender = composer.Provider.GetRequiredService<IDispatchSender>();
             await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
             {
-                await sender.SendEvents(new[] { new PublishedEvent() });
+                await sender.SendDispatches(new[] { new PublishedEvent() });
             });
         }
 
@@ -70,7 +70,7 @@ namespace Ev.ServiceBus.UnitTests
             publisher.Publish(new PublishedEvent());
             await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
             {
-                await dispatcher.DispatchEvents();
+                await dispatcher.ExecuteDispatches();
             });
         }
 
@@ -476,7 +476,7 @@ namespace Ev.ServiceBus.UnitTests
                 eventPublisher.Publish(new TestEvent() {EventRootId = i});
             }
 
-            await eventDispatcher.DispatchEvents();
+            await eventDispatcher.ExecuteDispatches();
 
             // Assert
             Assert.All(customizedMessage, Assert.NotNull);
@@ -524,7 +524,7 @@ namespace Ev.ServiceBus.UnitTests
                 eventPublisher.Publish(new TestEvent() {EventRootId = i});
             }
 
-            await eventDispatcher.DispatchEvents();
+            await eventDispatcher.ExecuteDispatches();
 
             // Assert
             Assert.Empty(customizedMessage);
@@ -536,7 +536,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(_ => {});
+            services.AddServiceBus<PayloadSerializer>(_ => {});
 
             Assert.Throws<ArgumentNullException>(() =>
             {
@@ -549,7 +549,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadParser>(_ => {});
+            services.AddServiceBus<PayloadSerializer>(_ => {});
 
             Assert.Throws<ArgumentNullException>(() =>
             {

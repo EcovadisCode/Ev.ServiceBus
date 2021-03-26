@@ -25,8 +25,7 @@ namespace Ev.ServiceBus.HealthChecks
             var resources = _serviceBusOptions.Value.Receivers.Union(_serviceBusOptions.Value.Senders).Distinct()
                 .ToArray();
 
-            foreach (var resourceGroup in resources
-                .GroupBy(o => o.ConnectionSettings, new ConnectionSettingsComparer()))
+            foreach (var resourceGroup in resources.GroupBy(o => o.ConnectionSettings, new ConnectionSettingsComparer()))
             {
                 var connectionString = resourceGroup.Key?.ConnectionString ?? commonConnectionString;
                 if (connectionString == null)
@@ -43,7 +42,7 @@ namespace Ev.ServiceBus.HealthChecks
                         null, tags, null));
                 }
 
-                var topics = resources.Where(o => o is TopicOptions).Cast<TopicOptions>().GroupBy(o => o.TopicName);
+                var topics = resourceGroup.Where(o => o is TopicOptions).Cast<TopicOptions>().GroupBy(o => o.TopicName);
                 foreach (var group in topics)
                 {
                     _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "topic", group.Key);
@@ -52,7 +51,7 @@ namespace Ev.ServiceBus.HealthChecks
                         null, tags, null));
                 }
 
-                var subscriptions = resources
+                var subscriptions = resourceGroup
                     .Where(o => o is SubscriptionOptions)
                     .Cast<SubscriptionOptions>()
                     .GroupBy(o => new { o.TopicName, o.SubscriptionName });

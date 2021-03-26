@@ -13,6 +13,12 @@ namespace Ev.ServiceBus.Reception
             _services = services;
         }
 
+        /// <summary>
+        /// Configures the payload models to be received from the queue named <param name="queueName"></param>.
+        /// </summary>
+        /// <param name="queueName">The name of the queue that will receive the messages</param>
+        /// <param name="settings">A callback to configure the payloads</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public void FromQueue(string queueName, Action<ReceptionRegistrationBuilder> settings)
         {
             if (queueName == null)
@@ -31,6 +37,14 @@ namespace Ev.ServiceBus.Reception
             settings(builder);
         }
 
+        /// <summary>
+        /// Configures the payload models to be received from the subscription named <param name="subscriptionName"></param>
+        /// and coming from the topic <param name="topicName"></param>.
+        /// </summary>
+        /// <param name="topicName">The name of the related topic</param>
+        /// <param name="subscriptionName">The name of the subscription that will receive the messages</param>
+        /// <param name="settings">A callback to configure the payloads</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public void FromSubscription(
             string topicName,
             string subscriptionName,

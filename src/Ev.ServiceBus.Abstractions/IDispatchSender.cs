@@ -5,6 +5,12 @@ namespace Ev.ServiceBus.Abstractions
 {
     public interface IDispatchSender
     {
-        Task SendEvents(IEnumerable<object> messagePayloads);
+        /// <summary>
+        /// Immediately serializes object to messages and sends them through ServiceBus.
+        /// (This is used internally by <see cref="IMessageDispatcher.ExecuteDispatches"/>)
+        /// </summary>
+        /// <param name="messagePayloads"></param>
+        /// <returns></returns>
+        Task SendDispatches(IEnumerable<object> messagePayloads);
     }
 }

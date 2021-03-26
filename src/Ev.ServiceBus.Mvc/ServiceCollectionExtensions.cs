@@ -6,6 +6,11 @@ namespace Ev.ServiceBus.Mvc
 {
     public static class ServiceCollectionExtensions
     {
+        /// <summary>
+        /// Sets up integration services with Ev.ServiceBus for MVC components
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
         public static IMvcBuilder AddServiceBusMvcIntegration(this IMvcBuilder builder)
         {
             builder.Services.AddScoped<ServiceBusDispatcherFilter>();

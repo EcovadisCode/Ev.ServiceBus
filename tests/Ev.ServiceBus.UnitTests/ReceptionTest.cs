@@ -237,7 +237,7 @@ namespace Ev.ServiceBus.UnitTests
             SubscriptionClientMock client,
             CancellationToken? cancellationToken = null)
         {
-            var parser = new PayloadParser();
+            var parser = new PayloadSerializer();
             var result = parser.SerializeBody(
                 new
                 {

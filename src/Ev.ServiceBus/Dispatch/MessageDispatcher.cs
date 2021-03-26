@@ -17,16 +17,18 @@ namespace Ev.ServiceBus.Dispatch
             _eventsToSend = new List<object>();
         }
 
-        public async Task DispatchEvents()
+        /// <inheritdoc />
+        public async Task ExecuteDispatches()
         {
             if (_eventsToSend.Any())
             {
-                await _sender.SendEvents(_eventsToSend).ConfigureAwait(false);
+                await _sender.SendDispatches(_eventsToSend).ConfigureAwait(false);
 
                 _eventsToSend.Clear();
             }
         }
 
+        /// <inheritdoc />
         public void Publish<TMessageDto>(TMessageDto messageDto)
         {
             if (messageDto == null)

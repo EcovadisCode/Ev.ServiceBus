@@ -25,7 +25,7 @@ namespace Ev.ServiceBus
             var message = new Message(body)
             {
                 ContentType = contentType,
-                Label = $"An integration event of type '{payloadTypeId}'",
+                Label = $"An Ev.ServiceBus message of type '{payloadTypeId}'",
                 UserProperties =
                 {
                     {UserProperties.MessageTypeProperty, "IntegrationEvent"},

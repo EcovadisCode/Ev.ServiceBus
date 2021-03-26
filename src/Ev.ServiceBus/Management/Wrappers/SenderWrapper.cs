@@ -45,13 +45,13 @@ namespace Ev.ServiceBus
 
         public void Initialize()
         {
-            _logger.LogInformation($"[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Start.");
+            _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Start", ResourceId);
             if (_parentOptions.Settings.Enabled == false)
             {
                 Sender = new DeactivatedSender(ResourceId, ClientType);
 
                 _logger.LogInformation(
-                    $"[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Client deactivated through configuration.");
+                    "[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Client deactivated through configuration", ResourceId);
                 return;
             }
 
@@ -73,12 +73,12 @@ namespace Ev.ServiceBus
                         break;
                 }
 
-                _logger.LogInformation($"[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Success.");
+                _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Success", ResourceId);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    $"[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Failed.");
+                    "[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Failed", ResourceId);
             }
         }
 

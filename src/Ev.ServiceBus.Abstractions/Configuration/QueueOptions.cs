@@ -11,6 +11,9 @@ namespace Ev.ServiceBus.Abstractions
             QueueName = queueName;
         }
 
+        /// <summary>
+        /// The name of the queue.
+        /// </summary>
         public string QueueName { get; }
     }
 }

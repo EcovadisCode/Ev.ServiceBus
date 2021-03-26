@@ -17,7 +17,7 @@ namespace Ev.ServiceBus.Mvc
         public async Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next)
         {
             await next();
-            await _dispatcher.DispatchEvents();
+            await _dispatcher.ExecuteDispatches();
         }
     }
 }

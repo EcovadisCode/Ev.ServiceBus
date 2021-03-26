@@ -7,7 +7,7 @@ using Newtonsoft.Json.Serialization;
 
 namespace Ev.ServiceBus.UnitTests.Helpers
 {
-    public class PayloadParser : IMessagePayloadParser
+    public class PayloadSerializer : IMessagePayloadSerializer
     {
         internal static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
         {

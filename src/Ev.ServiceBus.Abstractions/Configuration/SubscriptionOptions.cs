@@ -24,7 +24,14 @@ namespace Ev.ServiceBus.Abstractions
             TopicName = topicName;
         }
 
+        /// <summary>
+        /// The name of the subscription.
+        /// </summary>
         public string SubscriptionName { get; }
+
+        /// <summary>
+        /// The name of the topic.
+        /// </summary>
         public string TopicName { get; }
     }
 }

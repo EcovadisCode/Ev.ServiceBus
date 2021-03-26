@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 
@@ -19,11 +20,32 @@ namespace Ev.ServiceBus.Dispatch
             _outgoingCustomizers = new List<Action<Message, object>>();
         }
 
+        /// <summary>
+        /// Settings of the underlying resource that will receive the messages.
+        /// </summary>
         internal ClientOptions Options { get; }
+
+        /// <summary>
+        /// Callbacks called each time a message is sent.
+        /// </summary>
         internal IReadOnlyList<Action<Message, object>> OutgoingMessageCustomizers => _outgoingCustomizers;
+
+        /// <summary>
+        /// The unique identifier of this payload's type.
+        /// </summary>
         public string PayloadTypeId { get; private set; }
+
+        /// <summary>
+        /// The type the receiving message wil be deserialized into.
+        /// </summary>
         public Type PayloadType { get; }
 
+        /// <summary>
+        /// Sets the PayloadTypeId (by default it will take the <see cref="MemberInfo.Name"/> of the payload <see cref="Type"/> object)
+        /// </summary>
+        /// <param name="payloadId"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public MessageDispatchRegistration CustomizePayloadTypeId(string payloadId)
         {
             if (payloadId == null)
@@ -35,8 +57,12 @@ namespace Ev.ServiceBus.Dispatch
             return this;
         }
 
-        public MessageDispatchRegistration CustomizeOutgoingMessage(
-            Action<Message, object> messageCustomizer)
+        /// <summary>
+        /// This method give you the possibility to customize outgoing messages right before they are dispatched.
+        /// </summary>
+        /// <param name="messageCustomizer"></param>
+        /// <returns></returns>
+        public MessageDispatchRegistration CustomizeOutgoingMessage(Action<Message, object> messageCustomizer)
         {
             _outgoingCustomizers.Add(messageCustomizer);
             return this;

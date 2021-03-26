@@ -18,24 +18,30 @@ namespace Ev.ServiceBus
             ClientType = clientType;
         }
 
+        /// <inheritdoc />
         public string Name { get; }
+        /// <inheritdoc />
         public ClientType ClientType { get; }
 
+        /// <inheritdoc />
         public async Task CompleteAsync(string lockToken)
         {
             await Client.CompleteAsync(lockToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task AbandonAsync(string lockToken, IDictionary<string, object>? propertiesToModify = null)
         {
             await Client.AbandonAsync(lockToken, propertiesToModify).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task DeadLetterAsync(string lockToken, IDictionary<string, object>? propertiesToModify = null)
         {
             await Client.DeadLetterAsync(lockToken, propertiesToModify).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task DeadLetterAsync(
             string lockToken,
             string deadLetterReason,
