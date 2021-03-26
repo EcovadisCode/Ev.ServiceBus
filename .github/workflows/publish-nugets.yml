@@ -1,13 +1,26 @@
 name: publish NuGet packages
 on:
-  push:
-    branches:
-      - master # Default release branch
+  create:
+    tags:
+      - '*'
 jobs:
   publish:
     name: build, pack & publish
     runs-on: windows-latest
     steps:
+      - name: Retrieve version number
+        uses: actions-ecosystem/action-regex-match@v2
+        id: get_version
+        with:
+          text: ${{ github.ref }}
+          regex: '[0-9]+.[0-9]+.[0-9]+-?[0-9a-z]*'
+      - name: Check version or exit
+        id: check-version
+        shell: bash
+        if: steps.get_version.outputs.match == null
+        run: |
+          echo Version number extracted from ${GITHUB_REF} is invalid
+          exit 1
       - uses: actions/checkout@v2
       - name: Setup .NET 2.1
         uses: actions/setup-dotnet@v1
@@ -24,8 +37,8 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore -p:Version=${{steps.get_version.outputs.match}}
       - name: Pack
-        run: dotnet pack --no-build --no-restore -v normal -o ./nupkgs
+        run: dotnet pack --configuration Release --no-build --no-restore -v normal -o ./nupkgs -p:Version=${{steps.get_version.outputs.match}}
       - name: Push
         run: dotnet nuget push ./nupkgs -k ${{secrets.NUGET_API_KEY}} -s https://api.nuget.org --skip-duplicate -n 
