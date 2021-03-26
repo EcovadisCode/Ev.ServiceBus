@@ -14,10 +14,27 @@ Its goal to is make it the easiest possible to connect and handle an Azure Servi
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.1.1" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' or '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
   </ItemGroup>
-
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netstandard2.1' ">
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.12" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.12" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.12" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ev.ServiceBus.Abstractions\Ev.ServiceBus.Abstractions.csproj" />
   </ItemGroup>

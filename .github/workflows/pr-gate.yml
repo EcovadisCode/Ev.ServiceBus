@@ -7,18 +7,27 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core
+    - name: Setup .NET 2.1
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.813
+    - name: Setup .NET Core 3.1
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.406
+    - name: Setup .NET Core 5
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.102
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build --configuration Debug --no-restore
     - name: Test
-      run: dotnet test --no-restore --verbosity normal
+      run: dotnet test --configuration Debug --no-build --no-restore -v normal
+    - name: Pack
+      run: dotnet pack --configuration Debug --no-build --no-restore -v normal

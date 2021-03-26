@@ -2,6 +2,9 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Dispatch;
+using Ev.ServiceBus.Management;
+using Ev.ServiceBus.Reception;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,17 +16,20 @@ namespace Ev.ServiceBus
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        ///     Registers basic services for using ServiceBus.
+        /// Registers basic services for using ServiceBus.
         /// </summary>
         /// <param name="services"></param>
         /// <param name="config">Lambda expression to configure Service Bus</param>
+        /// <typeparam name="TMessagePayloadSerializer">Type of the serializer to use.</typeparam>
         /// <returns></returns>
-        public static IServiceCollection AddServiceBus(
+        public static IServiceCollection AddServiceBus<TMessagePayloadSerializer>(
             this IServiceCollection services,
             Action<ServiceBusSettings> config)
+            where TMessagePayloadSerializer : class, IMessagePayloadSerializer
         {
             RegisterBaseServices(services);
 
+            services.TryAddSingleton<IMessagePayloadSerializer, TMessagePayloadSerializer>();
             services.Configure<ServiceBusOptions>(
                 options =>
                 {
@@ -35,12 +41,40 @@ namespace Ev.ServiceBus
 
         private static void RegisterBaseServices(IServiceCollection services)
         {
+            services.AddLogging();
+
+            RegisterResourceManagementServices(services);
+
+            RegisterMessageDispatchServices(services);
+
+            RegisterMessageReceptionServices(services);
+
+        }
+
+        private static void RegisterMessageReceptionServices(IServiceCollection services)
+        {
+            services.TryAddSingleton<ReceptionRegistry>();
+            services.TryAddScoped<MessageReceptionHandler>();
+        }
+
+        private static void RegisterMessageDispatchServices(IServiceCollection services)
+        {
+            services.TryAddSingleton<DispatchRegistry>();
+            services.TryAddScoped<MessageDispatcher>();
+            services.TryAddScoped<IMessagePublisher>(provider => provider.GetRequiredService<MessageDispatcher>());
+            services.TryAddScoped<IMessageDispatcher>(provider => provider.GetRequiredService<MessageDispatcher>());
+            services.TryAddSingleton<IDispatchSender, DispatchSender>();
+        }
+
+        private static void RegisterResourceManagementServices(IServiceCollection services)
+        {
             services.TryAddSingleton<ServiceBusRegistry>();
             if (services.Any(o => o.ServiceType == typeof(IServiceBusRegistry)) == false)
             {
-                services.AddSingleton<IServiceBusRegistry, ServiceBusRegistry>(
-                    provider => provider.GetRequiredService<ServiceBusRegistry>());
+                services.AddSingleton<IServiceBusRegistry, ServiceBusRegistry>(provider =>
+                    provider.GetRequiredService<ServiceBusRegistry>());
             }
+
             services.TryAddSingleton<ServiceBusEngine>();
 
             services.TryAddSingleton<IClientFactory<QueueOptions, IQueueClient>, QueueClientFactory>();
@@ -54,6 +88,55 @@ namespace Ev.ServiceBus
         }
 
         /// <summary>
+        /// Define that messages received by the receiver will go to the <see cref="MessageReceptionHandler"/> handler.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="maxConcurrentCalls">The number of messages that can be executed concurrently.</param>
+        /// <param name="maxAutoRenewDuration">The maximum period of time that a message's processing can take</param>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <returns></returns>
+        public static TOptions ToMessageReceptionHandling<TOptions>(
+            this TOptions options,
+            int maxConcurrentCalls = 1,
+            TimeSpan? maxAutoRenewDuration = null)
+            where TOptions : ReceiverOptions
+        {
+            options.WithCustomMessageHandler<MessageReceptionHandler>(
+                config =>
+                {
+                    config.AutoComplete = true;
+                    config.MaxConcurrentCalls = maxConcurrentCalls;
+                    if (maxAutoRenewDuration != null)
+                    {
+                        config.MaxAutoRenewDuration = maxAutoRenewDuration.Value;
+                    }
+                });
+            return options;
+        }
+
+        /// <summary>
+        /// The start of the registration process for message reception
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static ReceptionBuilder RegisterServiceBusReception(this IServiceCollection services)
+        {
+            RegisterBaseServices(services);
+            return new(services);
+        }
+
+        /// <summary>
+        /// The start of the registration process for message dispatch
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static DispatchBuilder RegisterServiceBusDispatch(this IServiceCollection services)
+        {
+            RegisterBaseServices(services);
+            return new(services);
+        }
+
+        /// <summary>
         /// Register a queue to be used by the application
         /// </summary>
         /// <param name="services"></param>
@@ -63,7 +146,7 @@ namespace Ev.ServiceBus
         {
             RegisterBaseServices(services);
 
-            var queue = new QueueOptions(services, queueName);
+            var queue = new QueueOptions(services, queueName, true);
             services.Configure<ServiceBusOptions>(
                 options =>
                 {
@@ -82,7 +165,7 @@ namespace Ev.ServiceBus
         {
             RegisterBaseServices(services);
 
-            var topic = new TopicOptions(topicName);
+            var topic = new TopicOptions(topicName, true);
             services.Configure<ServiceBusOptions>(
                 options =>
                 {
@@ -102,7 +185,7 @@ namespace Ev.ServiceBus
         {
             RegisterBaseServices(services);
 
-            var subscriptionOptions = new SubscriptionOptions(services, topicName, subscriptionName);
+            var subscriptionOptions = new SubscriptionOptions(services, topicName, subscriptionName, true);
             services.Configure<ServiceBusOptions>(
                 options =>
                 {

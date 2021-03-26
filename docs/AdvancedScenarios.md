@@ -15,7 +15,7 @@ examples :
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus(settings => {
+    services.AddServiceBus<PayloadSerializer>(settings => {
         settings.WithConnection(serviceBusConnectionString, ReceiveMode.ReceiveAndDelete);
         settings.WithConnection(new ServiceBusConnection(), ReceiveMode.PeekLock, new CustomRetryPolicy());
         settings.WithConnection(new ServiceBusConnectionStringBuilder());
@@ -36,7 +36,29 @@ public void ConfigureServices(IServiceCollection services)
         settings.WithConnection(serviceBusConnectionString);
     });
 
-    options.RegisterServiceBusQueue("QueueName")
-        .WithConnection(anotherServiceBusConnectionString);
+    services.RegisterServiceBusDispatch().ToQueue("myqueue", builder =>
+    {
+        builder.CustomizeConnection(ConnectionString2);
+        builder.RegisterDispatch<WeatherForecast[]>();
+    });
+
+    services.RegisterServiceBusDispatch().ToTopic("mytopic", builder =>
+    {
+        builder.CustomizeConnection(ConnectionString3);
+        builder.RegisterDispatch<WeatherForecast>();
+    });
+    
+    services.RegisterServiceBusReception().FromQueue("myqueue", builder =>
+    {
+        builder.CustomizeConnection(ConnectionString4);
+        builder.RegisterReception<WeatherForecast[], WeatherMessageHandler>();
+    });
+
+    services.RegisterServiceBusReception().FromSubscription("mytopic", "mysubscription",
+        builder =>
+        {
+            builder.CustomizeConnection(ConnectionString5);
+            builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
+        });
 }
 ```

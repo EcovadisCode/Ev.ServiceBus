@@ -1,7 +1,9 @@
-﻿using System.Net.Sockets;
+﻿using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
@@ -16,7 +18,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task ClosesTheQueueClientsProperlyOnShutdown()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -25,9 +27,9 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusQueue("testQueue3").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
-            var factory = provider.GetRequiredService<FakeClientFactory>();
+            var factory = provider.GetRequiredService<FakeQueueClientFactory>();
             var clientMocks = factory.GetAllRegisteredQueueClients();
 
             foreach (var clientMock in clientMocks)
@@ -46,7 +48,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task FailsSilentlyIfAQueueClientDoesNotCloseProperlyOnShutdown()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -55,9 +57,9 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusQueue("testQueue3").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
-            var factory = provider.GetRequiredService<FakeClientFactory>();
+            var factory = provider.GetRequiredService<FakeQueueClientFactory>();
             var clientMocks = factory.GetAllRegisteredQueueClients();
 
             clientMocks[0].Mock.Setup(o => o.CloseAsync()).Returns(Task.CompletedTask).Verifiable();
@@ -75,7 +77,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task DontCallCloseWhenTheQueueClientIsAlreadyClosing()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
@@ -84,9 +86,9 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusQueue("testQueue3").WithConnection("testConnectionString3");
             });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
-            var factory = provider.GetRequiredService<FakeClientFactory>();
+            var factory = provider.GetRequiredService<FakeQueueClientFactory>();
             var clientMocks = factory.GetAllRegisteredQueueClients();
 
             foreach (var clientMock in clientMocks)
@@ -106,7 +108,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CustomMessageHandlerCanReceiveMessages()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var mock = new Mock<IMessageHandler>();
             mock.Setup(o => o.HandleMessageAsync(It.IsAny<MessageContext>()))
@@ -122,7 +124,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var clientMock = provider.GetQueueClientMock("testQueue");
 
@@ -147,7 +149,7 @@ namespace Ev.ServiceBus.UnitTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.AddServiceBus(
+            services.AddServiceBus<PayloadSerializer>(
                 settings =>
                 {
                     settings.ReceiveMessages = false;
@@ -165,29 +167,29 @@ namespace Ev.ServiceBus.UnitTests
             var provider = services.BuildServiceProvider();
             await provider.SimulateStartHost(token: new CancellationToken());
 
-            var clientMock = provider.GetQueueClientMock("testQueue");
+            var factory = provider.GetRequiredService<FakeQueueClientFactory>();
+            var receivers = factory.GetAllRegisteredQueueClients().Where(o => o.IsReceiver).ToArray();
+            receivers.Length.Should().Be(0);
 
-            var sentMessage = new Message();
-            var sentToken = new CancellationToken();
-            await clientMock.TriggerMessageReception(sentMessage, sentToken);
+            var senders = factory.GetAllRegisteredQueueClients().Where(o => o.IsReceiver == false).ToArray();
+            foreach (var sender in senders)
+            {
+                var sentMessage = new Message();
+                var sentToken = new CancellationToken();
+                await sender.TriggerMessageReception(sentMessage, sentToken);
+            }
 
-            mock
-                .Verify(
-                    o => o.HandleMessageAsync(
-                        It.Is<MessageContext>(
-                            context => context.Message == sentMessage
-                                       && context.Receiver.Name == "testQueue"
-                                       && context.Receiver.ClientType == ClientType.Queue
-                                       && context.Token == sentToken)),
+            mock.Verify(
+                    o => o.HandleMessageAsync(It.IsAny<MessageContext>()),
                     Times.Never);
         }
 
         [Fact]
         public async Task ThrowsExceptionWhenAQueueSenderIsNotFound()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var registry = provider.GetService<IServiceBusRegistry>();
 

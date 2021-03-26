@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution 
 		Directory.Build.props = Directory.Build.props
 		README.md = README.md
 		.gitignore = .gitignore
+		StyleCop.ruleset = StyleCop.ruleset
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{15791C07-761C-4CDD-A77D-F0F1DFA606AF}"
@@ -20,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{15791C07-7
 		docs\SendMessages.md = docs\SendMessages.md
 		docs\SetUp.md = docs\SetUp.md
 		docs\AdvancedScenarios.md = docs\AdvancedScenarios.md
+		docs\Ev.ServiceBus.HealthChecks.md = docs\Ev.ServiceBus.HealthChecks.md
+		docs\Ev.ServiceBus.Mvc.md = docs\Ev.ServiceBus.Mvc.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8EC286EB-A71F-4431-ACA4-E92C79975817}"
@@ -28,14 +31,27 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C4692485
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.AspNetCoreWeb", "samples\Ev.ServiceBus.Samples.AspNetCoreWeb\Ev.ServiceBus.Samples.AspNetCoreWeb.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.Sender", "samples\Ev.ServiceBus.Samples.Sender\Ev.ServiceBus.Samples.Sender.csproj", "{B5847D1C-1135-4D4F-9A57-472D5D9B0505}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{CCDE7DC7-6FBB-4595-9FBB-CA663DFC9F39}"
 ProjectSection(SolutionItems) = preProject
-	.github\workflows\publish-nugets-Ev-ServiceBus.yml = .github\workflows\publish-nugets-Ev-ServiceBus.yml
-	.github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml = .github\workflows\publish-nugets-Ev-ServiceBus-Abstractions.yml
-	.github\workflows\dotnet-core-5-0.yml = .github\workflows\dotnet-core-5-0.yml
+	.github\workflows\pr-gate.yml = .github\workflows\pr-gate.yml
+	.github\workflows\publish-nugets.yml = .github\workflows\publish-nugets.yml
 EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Samples.Receiver", "samples\Ev.ServiceBus.Samples.Receiver\Ev.ServiceBus.Samples.Receiver.csproj", "{71B77C77-BF1D-4D00-99FF-ABB6441822C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Sample.Contracts", "samples\Ev.ServiceBus.Sample.Contracts\Ev.ServiceBus.Sample.Contracts.csproj", "{BDA83E88-DB4F-4918-978C-833721A4ED10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.HealthChecks", "src\Ev.ServiceBus.HealthChecks\Ev.ServiceBus.HealthChecks.csproj", "{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.HealthChecks.UnitTests", "tests\Ev.ServiceBus.HealthChecks.UnitTests\Ev.ServiceBus.HealthChecks.UnitTests.csproj", "{CA4191AC-5278-43D1-A811-6C31BB902556}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Mvc", "src\Ev.ServiceBus.Mvc\Ev.ServiceBus.Mvc.csproj", "{4210BD43-86F2-4C80-BB7B-C582030AC770}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.Mvc.UnitTests", "tests\Ev.ServiceBus.Mvc.UnitTests\Ev.ServiceBus.Mvc.UnitTests.csproj", "{FECE7F48-3543-432E-8F55-6DE743CD1DB0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.ServiceBus.TestHelpers", "tests\Ev.ServiceBus.TestHelpers\Ev.ServiceBus.TestHelpers.csproj", "{C174493E-8890-4C67-8C77-971DE935AD17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +75,34 @@ Global
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDA83E88-DB4F-4918-978C-833721A4ED10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA4191AC-5278-43D1-A811-6C31BB902556}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4210BD43-86F2-4C80-BB7B-C582030AC770}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C174493E-8890-4C67-8C77-971DE935AD17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4C7DEB15-4C1B-4534-AE17-94E8515EB7EC} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
@@ -66,5 +110,12 @@ Global
 		{24F5D12F-F45F-4C1E-B8F6-A92205F3063D} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
 		{B5847D1C-1135-4D4F-9A57-472D5D9B0505} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
 		{CCDE7DC7-6FBB-4595-9FBB-CA663DFC9F39} = {61CAB7C6-2637-4F75-82F2-348AE7878671}
+		{71B77C77-BF1D-4D00-99FF-ABB6441822C8} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
+		{BDA83E88-DB4F-4918-978C-833721A4ED10} = {AACDCEE1-FA17-45DD-AD68-5A4CC989C6F5}
+		{DB530CEB-EDC7-4ED4-813E-AC9C5028EE04} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
+		{CA4191AC-5278-43D1-A811-6C31BB902556} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
+		{4210BD43-86F2-4C80-BB7B-C582030AC770} = {8EC286EB-A71F-4431-ACA4-E92C79975817}
+		{FECE7F48-3543-432E-8F55-6DE743CD1DB0} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
+		{C174493E-8890-4C67-8C77-971DE935AD17} = {C4692485-7C68-42B7-A35E-601EBFCE3725}
 	EndGlobalSection
 EndGlobal

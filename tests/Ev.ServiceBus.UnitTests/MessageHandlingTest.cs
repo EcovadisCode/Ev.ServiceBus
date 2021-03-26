@@ -17,7 +17,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task AScopeIsCreatedForEachMessageReceived()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             composer.WithAdditionalServices(
                 services =>
@@ -32,7 +32,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<InstanceCounterMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var clientMock = provider.GetQueueClientMock("testQueue");
 
@@ -55,7 +55,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task CustomExceptionHandlerIsCalledWhenExceptionOccurs()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var mock = new Mock<IMessageHandler>();
 
@@ -70,13 +70,13 @@ namespace Ev.ServiceBus.UnitTests
                     services.AddSingleton(mock);
                     services.AddSingleton(exceptionMock);
 
-                    services.RegisterServiceBusQueue("testQueue")
-                        .WithConnection("connectionStringTest")
-                        .WithCustomMessageHandler<FakeMessageHandler>()
-                        .WithCustomExceptionHandler<FakeExceptionHandler>();
+                    var queue = services.RegisterServiceBusQueue("testQueue")
+                        .WithConnection("connectionStringTest");
+                    queue.WithCustomMessageHandler<FakeMessageHandler>();
+                    queue.WithCustomExceptionHandler<FakeExceptionHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var clientMock = provider.GetQueueClientMock("testQueue");
 
@@ -91,7 +91,7 @@ namespace Ev.ServiceBus.UnitTests
         [Fact]
         public async Task WontFailWhenNoCustomExceptionHandlerIsSetAndExceptionOccurs()
         {
-            var composer = new ServiceBusComposer();
+            var composer = new Composer();
 
             var mock = new Mock<IMessageHandler>();
 
@@ -105,7 +105,7 @@ namespace Ev.ServiceBus.UnitTests
                         .WithCustomMessageHandler<FakeMessageHandler>();
                 });
 
-            var provider = await composer.ComposeAndSimulateStartup();
+            var provider = await composer.Compose();
 
             var clientMock = provider.GetQueueClientMock("testQueue");
 

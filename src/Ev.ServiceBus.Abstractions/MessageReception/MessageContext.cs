@@ -16,8 +16,21 @@ namespace Ev.ServiceBus.Abstractions
             Receiver = receiver;
         }
 
+        /// <summary>
+        /// the received message
+        /// </summary>
         public Message Message { get; }
+
+        /// <summary>
+        /// The resource that received the message
+        /// </summary>
         public IMessageReceiver Receiver { get; }
+
+        /// <summary>
+        /// The cancellation token for the whole execution of the message.
+        /// Generally this token is cancelled when you are in 'peekLock' mode (this is the default mode)
+        /// and the execution reached the maximum of time allowed to be processed and is abandoned.
+        /// </summary>
         public CancellationToken Token { get; }
     }
 }
