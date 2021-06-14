@@ -85,12 +85,7 @@ namespace Ev.ServiceBus.UnitTests
 
             var message = new Message
             {
-                UserProperties =
-                {
-                    {
-                        "wrongProperty", "wrongValue"
-                    }
-                }
+                UserProperties = { { "wrongProperty", "wrongValue" } }
             };
 
             // Necessary to simulate the reception of the message
@@ -277,12 +272,8 @@ namespace Ev.ServiceBus.UnitTests
                 Label = "An integration event of type 'MyEvent'",
                 UserProperties =
                 {
-                    {
-                        UserProperties.MessageTypeProperty, "IntegrationEvent"
-                    },
-                    {
-                        UserProperties.EventTypeIdProperty, "MyEvent"
-                    }
+                    { UserProperties.MessageTypeProperty, "IntegrationEvent" },
+                    { UserProperties.EventTypeIdProperty, "MyEvent" }
                 }
             };
 
@@ -298,9 +289,7 @@ namespace Ev.ServiceBus.UnitTests
 
         public class SubscribedPayloadHandler : StoringPayloadHandler<SubscribedEvent>
         {
-            public SubscribedPayloadHandler(EventStore store) : base(store)
-            {
-            }
+            public SubscribedPayloadHandler(EventStore store) : base(store) { }
         }
 
         public class FailingEventHandler : IMessageReceptionHandler<SubscribedEvent>
