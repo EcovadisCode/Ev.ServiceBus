@@ -12,84 +12,17 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
-using Composer = Ev.ServiceBus.UnitTests.Helpers.Composer;
 
 namespace Ev.ServiceBus.UnitTests
 {
-    public class SubscriptionTest : IDisposable
+    public class ReceptionTest
     {
-        private readonly Composer _composer;
-        private readonly EventStore _eventStore;
-
-        public SubscriptionTest()
-        {
-            _eventStore = new EventStore();
-            _composer = new Composer();
-
-            _composer.WithAdditionalServices(
-                services =>
-                {
-                    services.RegisterServiceBusReception()
-                        .FromSubscription(
-                            "testTopic",
-                            "testSubscription",
-                        builder =>
-                        {
-                            builder.RegisterReception<SubscribedEvent, SubscribedPayloadHandler>()
-                                .CustomizePayloadTypeId("MyEvent");
-                        });
-
-                    services.RegisterServiceBusReception()
-                        .FromSubscription("testTopic", "SubscriptionWithNoHandlers", builder => {});
-
-                    services.RegisterServiceBusReception()
-                        .FromSubscription(
-                            "testTopic",
-                            "SubscriptionWithFailingHandler",
-                            builder =>
-                            {
-                                builder.RegisterReception<SubscribedEvent, FailingEventHandler>()
-                                    .CustomizePayloadTypeId("MyEvent");
-                            });
-
-                    // noise
-                    services.RegisterServiceBusSubscription("testTopic", "testSubscription2")
-                        .ToMessageReceptionHandling();
-
-                    services.RegisterServiceBusReception()
-                        .FromSubscription(
-                            "testTopic2",
-                            "testSubscription3",
-                            builder =>
-                            {
-                                builder.RegisterReception<NoiseEvent, NoiseHandler>()
-                                    .CustomizePayloadTypeId("MyEvent2");
-                            });
-
-                    services.AddSingleton(_eventStore);
-                });
-
-            _composer.Compose().GetAwaiter().GetResult();
-
-            var clients = _composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
-
-            SimulateEventReception(clients.First(o => o.ClientName == "testSubscription")).GetAwaiter().GetResult();
-            SimulateEventReception(clients.First(o => o.ClientName == "SubscriptionWithFailingHandler"))
-                .GetAwaiter()
-                .GetResult();
-        }
-
-        public void Dispose()
-        {
-            _composer?.Dispose();
-        }
-
         [Fact]
-        public void TheProperEventHasBeenReceived()
+        public async Task TheProperEventHasBeenReceived()
         {
-            var @event = _eventStore.Events.FirstOrDefault(o => o.HandlerType == typeof(SubscribedPayloadHandler));
+            var composer = await InitSimpleTest();
+            var eventStore = composer.Provider.GetService<EventStore>();
+            var @event = eventStore.Events.FirstOrDefault(o => o.HandlerType == typeof(SubscribedPayloadHandler));
             Assert.NotNull(@event);
             Assert.IsType<SubscribedEvent>(@event.Event);
             Assert.Equal("hello", ((SubscribedEvent) @event.Event).SomeString);
@@ -97,17 +30,35 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
-        public void TheProperHandlerHasReceivedTheEvent()
+        public async Task TheProperHandlerHasReceivedTheEvent()
         {
-            var @event = _eventStore.Events.FirstOrDefault(o => o.HandlerType == typeof(SubscribedPayloadHandler));
+            var composer = await InitSimpleTest();
+            var eventStore = composer.Provider.GetService<EventStore>();
+            var @event = eventStore.Events.FirstOrDefault(o => o.HandlerType == typeof(SubscribedPayloadHandler));
             Assert.NotNull(@event);
             Assert.Equal(typeof(SubscribedPayloadHandler), @event.HandlerType);
         }
 
         [Fact]
-        public async Task FailsSilentlyWhenReceivedMessageHasNoPayloadTypeId()
+        public async Task FailsWhenHandlerThrowsException()
+        {
+            var composer = await InitSimpleTest();
+            var clients = composer
+                .SubscriptionFactory
+                .GetAllRegisteredClients();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                async () =>
+                {
+                    await SimulateEventReception(clients.First(o => o.ClientName == "SubscriptionWithFailingHandler"));
+                });
+        }
+
+        [Fact]
+        public async Task FailsWhenReceivedMessageHasNoPayloadTypeId()
         {
             var composer = new Composer();
+            var eventStore = new EventStore();
             var logger = new Mock<ILogger<ReceiverWrapper>>();
             composer.WithAdditionalServices(
                 services =>
@@ -123,7 +74,7 @@ namespace Ev.ServiceBus.UnitTests
                                     .CustomizePayloadTypeId("MyEvent");
                             });
 
-                    services.AddSingleton(_eventStore);
+                    services.AddSingleton(eventStore);
                 });
 
             await composer.Compose();
@@ -132,9 +83,9 @@ namespace Ev.ServiceBus.UnitTests
                 .GetAllRegisteredClients();
             var client = clients.First(o => o.ClientName == "testSubscription");
 
-            var message = new Message()
+            var message = new Message
             {
-                UserProperties = { {"wrongProperty", "wrongValue"} }
+                UserProperties = { { "wrongProperty", "wrongValue" } }
             };
 
             // Necessary to simulate the reception of the message
@@ -144,7 +95,11 @@ namespace Ev.ServiceBus.UnitTests
                 propertyInfo.SetValue(message.SystemProperties, 1, null);
             }
 
-            await client.TriggerMessageReception(message, CancellationToken.None);
+            await Assert.ThrowsAsync<MessageIsMissingPayloadTypeIdException>(
+                async () =>
+                {
+                    await client.TriggerMessageReception(message, CancellationToken.None);
+                });
             logger.Verify(
                 x => x.Log(
                     LogLevel.Error,
@@ -159,6 +114,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task WontFailIfMessageIsReceivedAndNoHandlersAreSet()
         {
             var composer = new Composer();
+            var eventStore = new EventStore();
 
             composer.WithAdditionalServices(
                 services =>
@@ -167,9 +123,11 @@ namespace Ev.ServiceBus.UnitTests
                         .FromSubscription(
                             "testTopic",
                             "SubscriptionWithNoHandlers",
-                            builder => { });
+                            builder =>
+                            {
+                            });
 
-                    services.AddSingleton(_eventStore);
+                    services.AddSingleton(eventStore);
                 });
 
             await composer.Compose();
@@ -184,6 +142,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task CancellationTokenIsPassedDownToHandlers()
         {
             var composer = new Composer();
+            var eventStore = new EventStore();
 
             composer.WithAdditionalServices(
                 services =>
@@ -198,7 +157,7 @@ namespace Ev.ServiceBus.UnitTests
                                     .CustomizePayloadTypeId("MyEvent");
                             });
 
-                    services.AddSingleton(_eventStore);
+                    services.AddSingleton(eventStore);
                 });
 
             await composer.Compose();
@@ -233,6 +192,69 @@ namespace Ev.ServiceBus.UnitTests
             messageHandlerOptions.MaxAutoRenewDuration.Should().Be(TimeSpan.FromMinutes(20));
         }
 
+                private async Task<Composer> InitSimpleTest()
+        {
+            var eventStore = new EventStore();
+            var composer = new Composer();
+
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "testSubscription",
+                            builder =>
+                            {
+                                builder.RegisterReception<SubscribedEvent, SubscribedPayloadHandler>()
+                                    .CustomizePayloadTypeId("MyEvent");
+                            });
+
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "SubscriptionWithNoHandlers",
+                            builder =>
+                            {
+                            });
+
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "SubscriptionWithFailingHandler",
+                            builder =>
+                            {
+                                builder.RegisterReception<SubscribedEvent, FailingEventHandler>()
+                                    .CustomizePayloadTypeId("MyEvent");
+                            });
+
+                    // noise
+                    services.RegisterServiceBusSubscription("testTopic", "testSubscription2")
+                        .ToMessageReceptionHandling();
+
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic2",
+                            "testSubscription3",
+                            builder =>
+                            {
+                                builder.RegisterReception<NoiseEvent, NoiseHandler>()
+                                    .CustomizePayloadTypeId("MyEvent2");
+                            });
+
+                    services.AddSingleton(eventStore);
+                });
+
+            await composer.Compose();
+
+            var clients = composer
+                .SubscriptionFactory
+                .GetAllRegisteredClients();
+
+            await SimulateEventReception(clients.First(o => o.ClientName == "testSubscription"));
+            return composer;
+        }
+
         private async Task SimulateEventReception(
             SubscriptionClientMock client,
             CancellationToken? cancellationToken = null)
@@ -241,17 +263,18 @@ namespace Ev.ServiceBus.UnitTests
             var result = parser.SerializeBody(
                 new
                 {
-                    SomeString = "hello", SomeNumber = 36
+                    SomeString = "hello",
+                    SomeNumber = 36
                 });
             var message = new Message(result.Body)
             {
                 ContentType = result.ContentType,
-                Label = $"An integration event of type 'MyEvent'",
+                Label = "An integration event of type 'MyEvent'",
                 UserProperties =
                 {
-                    {UserProperties.MessageTypeProperty, "IntegrationEvent"},
-                    {UserProperties.EventTypeIdProperty, "MyEvent"}
-                },
+                    { UserProperties.MessageTypeProperty, "IntegrationEvent" },
+                    { UserProperties.EventTypeIdProperty, "MyEvent" }
+                }
             };
 
             // Necessary to simulate the reception of the message

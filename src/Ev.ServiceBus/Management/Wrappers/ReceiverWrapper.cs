@@ -152,7 +152,10 @@ namespace Ev.ServiceBus
                     var context = new MessageContext(message, _receiver!, cancellationToken);
                     await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (LogError(ex)) { }
+                catch (Exception ex) when (LogError(ex))
+                {
+                    throw;
+                }
                 finally
                 {
                     sw.Stop();
