@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 3.1.0
+
+- Add custom tags for health check
+
 ## 3.0.1
 
 - Fixed an issue where messages were not sent anymore on the dead letter queue
