@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Ev.ServiceBus.Abstractions;
 using HealthChecks.AzureServiceBus;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,7 +21,6 @@ namespace Ev.ServiceBus.HealthChecks
 
         public void Configure(HealthCheckServiceOptions options)
         {
-            var tags = new[] { "Ev.ServiceBus" };
             var commonConnectionString = _serviceBusOptions.Value.Settings.ConnectionSettings?.ConnectionString;
             var resources = _serviceBusOptions.Value.Receivers.Union(_serviceBusOptions.Value.Senders).Distinct()
                 .ToArray();
@@ -39,7 +39,7 @@ namespace Ev.ServiceBus.HealthChecks
                     _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "queue", group.Key);
                     options.Registrations.Add(new HealthCheckRegistration($"Queue:{group.Key}",
                         sp => (IHealthCheck) new AzureServiceBusQueueHealthCheck(connectionString, group.Key),
-                        null, tags, null));
+                        null, HealthChecksBuilderExtensions.HealthCheckTags, null));
                 }
 
                 var topics = resourceGroup.Where(o => o is TopicOptions).Cast<TopicOptions>().GroupBy(o => o.TopicName);
@@ -48,7 +48,7 @@ namespace Ev.ServiceBus.HealthChecks
                     _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "topic", group.Key);
                     options.Registrations.Add(new HealthCheckRegistration($"Topic:{group.Key}",
                         sp => (IHealthCheck) new AzureServiceBusTopicHealthCheck(connectionString, group.Key),
-                        null, tags, null));
+                        null, HealthChecksBuilderExtensions.HealthCheckTags, null));
                 }
 
                 var subscriptions = resourceGroup
@@ -61,7 +61,7 @@ namespace Ev.ServiceBus.HealthChecks
                     options.Registrations.Add(new HealthCheckRegistration($"Subscription:{group.Key.TopicName}/Subscriptions/{group.Key.SubscriptionName}",
                         sp => (IHealthCheck) new AzureServiceBusSubscriptionHealthCheck(connectionString,
                             group.Key.TopicName, group.Key.SubscriptionName),
-                        null, tags, null));
+                        null, HealthChecksBuilderExtensions.HealthCheckTags, null));
                 }
             }
         }

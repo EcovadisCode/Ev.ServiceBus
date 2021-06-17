@@ -11,6 +11,9 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
 {
     public class TopicChecksTest
     {
+        private const string TagOne = nameof(TagOne);
+        private const string TagTwo = nameof(TagTwo);
+
         [Fact]
         public void TopicWithNoConnectionStringWillBeIgnored_case1()
         {
@@ -92,7 +95,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
                 settings.WithConnection("testConnectionString");
             });
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
+            services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
 
             services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
             {
@@ -106,7 +109,10 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
             healthOptions.Value.Registrations.Count.Should().Be(1);
             var reg = healthOptions.Value.Registrations.First();
             reg.Name.Should().Be("Topic:topic");
+            reg.Tags.Should().HaveCount(3);
             reg.Tags.Should().Contain("Ev.ServiceBus");
+            reg.Tags.Should().Contain(TagOne);
+            reg.Tags.Should().Contain(TagTwo);
         }
 
         [Fact]
@@ -118,7 +124,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
             {
             });
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
+            services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
 
             services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
             {
@@ -133,7 +139,10 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
             healthOptions.Value.Registrations.Count.Should().Be(1);
             var reg = healthOptions.Value.Registrations.First();
             reg.Name.Should().Be("Topic:topic");
+            reg.Tags.Should().HaveCount(3);
             reg.Tags.Should().Contain("Ev.ServiceBus");
+            reg.Tags.Should().Contain(TagOne);
+            reg.Tags.Should().Contain(TagTwo);
         }
 
         [Fact]
@@ -145,7 +154,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
             {
             });
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
+            services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
 
             services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
             {
@@ -166,7 +175,10 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
             healthOptions.Value.Registrations.Count.Should().Be(1);
             var reg = healthOptions.Value.Registrations.First();
             reg.Name.Should().Be("Topic:topic");
+            reg.Tags.Should().HaveCount(3);
             reg.Tags.Should().Contain("Ev.ServiceBus");
+            reg.Tags.Should().Contain(TagOne);
+            reg.Tags.Should().Contain(TagTwo);
         }
     }
 }

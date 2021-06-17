@@ -14,6 +14,6 @@ public void ConfigureServices(IServiceCollection services)
     
     // Setup health checks
     services.AddHealthChecks()
-        .AddEvServiceBusChecks();
+        .AddEvServiceBusChecks("Custom tag 1", "Custom Tag 2");
 }
 ```
