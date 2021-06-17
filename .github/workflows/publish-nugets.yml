@@ -1,13 +1,24 @@
 name: publish NuGet packages
 on:
-  create:
-    tags:
-      - '*'
+  create
 jobs:
   publish:
     name: build, pack & publish
     runs-on: windows-latest
     steps:
+      - name: Check tag
+        uses: actions-ecosystem/action-regex-match@v2
+        id: check_tag
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs\/tags\/.*$'
+      - name: Exit if not a tag
+        id: check_tag2
+        shell: bash
+        if: steps.check_tag.outputs.match == null
+        run: |
+          echo ${GITHUB_REF} is not a tag reference
+          exit 1
       - name: Retrieve version number
         uses: actions-ecosystem/action-regex-match@v2
         id: get_version
