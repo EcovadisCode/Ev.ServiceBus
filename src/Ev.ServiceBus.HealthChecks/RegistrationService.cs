@@ -27,6 +27,7 @@ namespace Ev.ServiceBus.HealthChecks
 
             foreach (var resourceGroup in resources.GroupBy(o => o.ConnectionSettings, new ConnectionSettingsComparer()))
             {
+
                 var connectionString = resourceGroup.Key?.ConnectionString ?? commonConnectionString;
                 if (connectionString == null)
                 {
