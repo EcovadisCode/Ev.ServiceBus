@@ -30,6 +30,15 @@ namespace Ev.ServiceBus
         {
             _logger.LogInformation("[Ev.ServiceBus] Starting azure service bus clients");
 
+            if (_options.Value.Settings.Enabled == false)
+            {
+                _logger.LogInformation("[Ev.ServiceBus] Reception and dispatch of messages have been deactivated through configuration.");
+            }
+            if (_options.Value.Settings.Enabled && _options.Value.Settings.ReceiveMessages == false)
+            {
+                _logger.LogInformation("[Ev.ServiceBus] Reception of messages have been deactivated through configuration.");
+            }
+
             BuildSenders();
             BuildReceivers();
         }
