@@ -14,8 +14,4 @@
       <ProjectReference Include="..\Ev.ServiceBus.TestHelpers\Ev.ServiceBus.TestHelpers.csproj" />
     </ItemGroup>
     
-    <ItemGroup>
-      <Folder Include="Helpers" />
-    </ItemGroup>
-
 </Project>
