@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 
-namespace Ev.ServiceBus.Dispatch
+namespace Ev.ServiceBus.Abstractions
 {
     public class MessageDispatchRegistration
     {

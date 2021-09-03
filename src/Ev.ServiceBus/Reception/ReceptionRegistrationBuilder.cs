@@ -51,7 +51,10 @@ namespace Ev.ServiceBus.Reception
         {
             _services.TryAddScoped<THandler>();
             var builder = new MessageReceptionRegistration(_options, typeof(TReceptionModel), typeof(THandler));
-            _services.AddSingleton(builder);
+            _services.Configure<ServiceBusOptions>(options =>
+            {
+                options.RegisterReception(builder);
+            });
             return builder;
         }
     }

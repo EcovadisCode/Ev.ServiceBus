@@ -429,11 +429,9 @@ namespace Ev.ServiceBus.UnitTests
                 });
             });
 
-            await composer.Compose();
-
-            var exception = Assert.Throws<MultiplePublicationRegistrationException>(() =>
+            var exception = await Assert.ThrowsAsync<MultiplePublicationRegistrationException>(async () =>
             {
-                composer.Provider.GetService(typeof(DispatchRegistry));
+                await composer.Compose();
             });
             exception.Message.Should().Contain("PublishedEvent|Queue|queueName");
         }

@@ -53,13 +53,11 @@ namespace Ev.ServiceBus
 
         private static void RegisterMessageReceptionServices(IServiceCollection services)
         {
-            services.TryAddSingleton<ReceptionRegistry>();
             services.TryAddScoped<MessageReceptionHandler>();
         }
 
         private static void RegisterMessageDispatchServices(IServiceCollection services)
         {
-            services.TryAddSingleton<DispatchRegistry>();
             services.TryAddScoped<MessageDispatcher>();
             services.TryAddScoped<IMessagePublisher>(provider => provider.GetRequiredService<MessageDispatcher>());
             services.TryAddScoped<IMessageDispatcher>(provider => provider.GetRequiredService<MessageDispatcher>());
