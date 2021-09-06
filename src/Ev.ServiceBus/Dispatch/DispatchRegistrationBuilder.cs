@@ -37,7 +37,10 @@ namespace Ev.ServiceBus.Dispatch
         public MessageDispatchRegistration RegisterDispatch<TDispatchModel>()
         {
             var builder = new MessageDispatchRegistration(_options, typeof(TDispatchModel));
-            _services.AddSingleton(builder);
+            _services.Configure<ServiceBusOptions>(options =>
+            {
+                options.RegisterDispatch(builder);
+            });
             return builder;
         }
     }

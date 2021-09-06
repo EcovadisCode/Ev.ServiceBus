@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using Ev.ServiceBus.Abstractions;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus")]
 
@@ -10,6 +11,8 @@ namespace Ev.ServiceBus.Abstractions
     {
         private readonly List<ClientOptions> _senders;
         private readonly List<ReceiverOptions> _receivers;
+        private readonly List<MessageReceptionRegistration> _receptionRegistrations;
+        private readonly List<MessageDispatchRegistration> _dispatchRegistrations;
 
         public ServiceBusOptions()
         {
@@ -18,6 +21,10 @@ namespace Ev.ServiceBus.Abstractions
             Senders = new ReadOnlyCollection<ClientOptions>(_senders);
             _receivers = new List<ReceiverOptions>();
             Receivers = new ReadOnlyCollection<ReceiverOptions>(_receivers);
+            _receptionRegistrations = new List<MessageReceptionRegistration>();
+            ReceptionRegistrations = new ReadOnlyCollection<MessageReceptionRegistration>(_receptionRegistrations);
+            _dispatchRegistrations = new List<MessageDispatchRegistration>();
+            DispatchRegistrations = new ReadOnlyCollection<MessageDispatchRegistration>(_dispatchRegistrations);
         }
 
         /// <summary>
@@ -34,6 +41,16 @@ namespace Ev.ServiceBus.Abstractions
         /// The list of registered receivers.
         /// </summary>
         public ReadOnlyCollection<ReceiverOptions> Receivers { get; }
+
+        /// <summary>
+        /// The list of reception registration.
+        /// </summary>
+        public ReadOnlyCollection<MessageReceptionRegistration> ReceptionRegistrations { get; }
+
+        /// <summary>
+        /// The list of dispatch registrations.
+        /// </summary>
+        public ReadOnlyCollection<MessageDispatchRegistration> DispatchRegistrations { get; }
 
         /// <summary>
         ///     Registers a queue that can be used to send or receive messages.
@@ -61,6 +78,16 @@ namespace Ev.ServiceBus.Abstractions
         internal void RegisterSubscription(SubscriptionOptions subscription)
         {
             _receivers.Add(subscription);
+        }
+
+        internal void RegisterReception(MessageReceptionRegistration reception)
+        {
+            _receptionRegistrations.Add(reception);
+        }
+
+        internal void RegisterDispatch(MessageDispatchRegistration dispatch)
+        {
+            _dispatchRegistrations.Add(dispatch);
         }
     }
 }
