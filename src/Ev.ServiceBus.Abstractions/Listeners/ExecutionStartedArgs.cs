@@ -5,7 +5,7 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.Abstractions
 {
-    public class ExecutionStartedArgs : BaseArgs
+    public class ExecutionStartedArgs : ExecutionBaseArgs
     {
         public ExecutionStartedArgs(
             ClientType clientType,

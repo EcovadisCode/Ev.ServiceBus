@@ -5,9 +5,9 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.Abstractions
 {
-    public class BaseArgs
+    public abstract class ExecutionBaseArgs
     {
-        public BaseArgs(
+        protected ExecutionBaseArgs(
             ClientType clientType,
             string resourceId,
             Type messageHandlerType,

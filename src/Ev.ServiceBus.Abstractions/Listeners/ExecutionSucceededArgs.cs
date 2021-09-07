@@ -3,7 +3,7 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.Abstractions
 {
-    public class ExecutionSucceededArgs : BaseArgs
+    public class ExecutionSucceededArgs : ExecutionBaseArgs
     {
         public ExecutionSucceededArgs(
             ClientType clientType,
