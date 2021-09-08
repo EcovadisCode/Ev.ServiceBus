@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-using Ev.ServiceBus.Abstractions;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus")]
 

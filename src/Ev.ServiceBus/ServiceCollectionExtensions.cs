@@ -22,7 +22,7 @@ namespace Ev.ServiceBus
         /// <param name="config">Lambda expression to configure Service Bus</param>
         /// <typeparam name="TMessagePayloadSerializer">Type of the serializer to use.</typeparam>
         /// <returns></returns>
-        public static IServiceCollection AddServiceBus<TMessagePayloadSerializer>(
+        public static ServiceBusBuilder AddServiceBus<TMessagePayloadSerializer>(
             this IServiceCollection services,
             Action<ServiceBusSettings> config)
             where TMessagePayloadSerializer : class, IMessagePayloadSerializer
@@ -36,7 +36,7 @@ namespace Ev.ServiceBus
                     config(options.Settings);
                 });
 
-            return services;
+            return new ServiceBusBuilder(services);
         }
 
         private static void RegisterBaseServices(IServiceCollection services)

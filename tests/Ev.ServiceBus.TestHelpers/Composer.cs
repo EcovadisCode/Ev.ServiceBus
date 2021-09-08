@@ -17,12 +17,14 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         private readonly List<Action<IServiceCollection>> _additionalServices;
         private Action<IServiceCollection> _overrideFactory;
         private Action<ServiceBusSettings> _defaultSettings;
+        private Action<ServiceBusBuilder> _additionalOptions;
 
         public Composer()
         {
             _additionalServices = new List<Action<IServiceCollection>>(5);
             _overrideFactory = s => s.OverrideClientFactories();
             _defaultSettings = settings => { settings.WithConnection("testConnectionString"); };
+            _additionalOptions = _ => { };
         }
 
         private readonly List<KeyValuePair<SenderType, string>> _listOfDispatchSenders = new List<KeyValuePair<SenderType, string>>(5);
@@ -64,6 +66,11 @@ namespace Ev.ServiceBus.UnitTests.Helpers
             _defaultSettings = defaultSettings;
         }
 
+        public void WithAdditionalOptions(Action<ServiceBusBuilder> options)
+        {
+            _additionalOptions = options;
+        }
+
         private void ComposeSenders(IServiceCollection services)
         {
             if (_listOfDispatchSenders.Count == 0)
@@ -95,7 +102,8 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         {
             var services = new ServiceCollection();
 
-            services.AddServiceBus<PayloadSerializer>(_defaultSettings);
+            var builder = services.AddServiceBus<PayloadSerializer>(_defaultSettings);
+            _additionalOptions(builder);
 
             ComposeSenders(services);
 

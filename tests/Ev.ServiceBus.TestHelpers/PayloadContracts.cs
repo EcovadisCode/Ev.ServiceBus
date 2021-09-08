@@ -1,6 +1,8 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Reception;
+using Ev.ServiceBus.TestHelpers;
 
 namespace Ev.ServiceBus.UnitTests.Helpers
 {
@@ -23,7 +25,17 @@ namespace Ev.ServiceBus.UnitTests.Helpers
     {
         public Task Handle(SubscribedEvent @event, CancellationToken cancellationToken)
         {
+            Thread.Sleep(1);
             return Task.CompletedTask;
+        }
+    }
+
+    public class SubscribedEventThrowingHandler : IMessageReceptionHandler<SubscribedEvent>
+    {
+        public Task Handle(SubscribedEvent @event, CancellationToken cancellationToken)
+        {
+            Thread.Sleep(1);
+            throw new ArgumentOutOfRangeException();
         }
     }
 }

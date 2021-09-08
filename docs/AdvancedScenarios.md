@@ -32,7 +32,7 @@ you can override the default connection by calling `.WithConnection()` on the re
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus(settings => {
+    services.AddServiceBus<PayloadSerializer>(settings => {
         settings.WithConnection(serviceBusConnectionString);
     });
 
@@ -60,5 +60,37 @@ public void ConfigureServices(IServiceCollection services)
             builder.CustomizeConnection(ConnectionString5);
             builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
         });
+}
+```
+
+## Listening to internal events
+
+You can register a listener class that will be called every time the execution of a message starts, is successful and/or has failed. 
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddServiceBus<PayloadSerializer>(settings => {
+        settings.WithConnection(serviceBusConnectionString);
+    })
+    .RegisterEventListener<ServiceBusEventListener>();
+}
+
+public class ServiceBusEventListener : IServiceBusEventListener
+{
+    public Task OnExecutionStart(ExecutionStartedArgs args)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task OnExecutionSuccess(ExecutionSucceededArgs args)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task OnExecutionFailed(ExecutionFailedArgs args)
+    {
+        return Task.CompletedTask;
+    }
 }
 ```
