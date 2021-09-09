@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -16,10 +17,10 @@ namespace Ev.ServiceBus.Reception
         private readonly ILogger<MessageReceptionHandler> _logger;
         private readonly IMessagePayloadSerializer _messagePayloadSerializer;
         private readonly IServiceProvider _provider;
-        private readonly ReceptionRegistry _registry;
+        private readonly ServiceBusRegistry _registry;
 
         public MessageReceptionHandler(IServiceProvider provider,
-            ReceptionRegistry registry,
+            ServiceBusRegistry registry,
             ILogger<MessageReceptionHandler> logger,
             IMessagePayloadSerializer messagePayloadSerializer)
         {
@@ -39,7 +40,7 @@ namespace Ev.ServiceBus.Reception
                 throw new MessageIsMissingPayloadTypeIdException(context);
             }
 
-            var receptionRegistration = _registry.GetRegistration(payloadTypeId,
+            var receptionRegistration = _registry.GetReceptionRegistration(payloadTypeId,
                 context.Receiver.Name,
                 context.Receiver.ClientType);
 

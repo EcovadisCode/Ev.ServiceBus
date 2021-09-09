@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Reflection;
-using Ev.ServiceBus.Abstractions;
 
-namespace Ev.ServiceBus.Reception
+namespace Ev.ServiceBus.Abstractions
 {
     public class MessageReceptionRegistration
     {

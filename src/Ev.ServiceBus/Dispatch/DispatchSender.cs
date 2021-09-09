@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Management;
 using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.Dispatch
@@ -11,13 +12,13 @@ namespace Ev.ServiceBus.Dispatch
     {
         private const int MaxMessagePerSend = 100;
         private readonly IMessagePayloadSerializer _messagePayloadSerializer;
-        private readonly DispatchRegistry _dispatchRegistry;
+        private readonly ServiceBusRegistry _dispatchRegistry;
         private readonly IServiceBusRegistry _registry;
 
         public DispatchSender(
             IServiceBusRegistry registry,
             IMessagePayloadSerializer messagePayloadSerializer,
-            DispatchRegistry dispatchRegistry)
+            ServiceBusRegistry dispatchRegistry)
         {
             _registry = registry;
             _messagePayloadSerializer = messagePayloadSerializer;
@@ -35,7 +36,7 @@ namespace Ev.ServiceBus.Dispatch
                 (
                     from dto in messagePayloads
                     // the same dto can be published to several senders
-                    let registrations = _dispatchRegistry.GetRegistrations(dto.GetType())
+                    let registrations = _dispatchRegistry.GetDispatchRegistrations(dto.GetType())
                     from eventPublicationRegistration in registrations
                     let message = CreateMessage(eventPublicationRegistration, dto)
                     select new Dispatch(message, eventPublicationRegistration))

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Management;
+using Ev.ServiceBus.Reception;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -30,8 +31,57 @@ namespace Ev.ServiceBus
         {
             _logger.LogInformation("[Ev.ServiceBus] Starting azure service bus clients");
 
+            if (_options.Value.Settings.Enabled == false)
+            {
+                _logger.LogInformation("[Ev.ServiceBus] Reception and dispatch of messages have been deactivated through configuration.");
+            }
+            if (_options.Value.Settings.Enabled && _options.Value.Settings.ReceiveMessages == false)
+            {
+                _logger.LogInformation("[Ev.ServiceBus] Reception of messages have been deactivated through configuration.");
+            }
+
             BuildSenders();
             BuildReceivers();
+            BuildReceptions();
+            BuildDispatches();
+        }
+
+        private void BuildDispatches()
+        {
+            var doubleRegistrations = _options.Value.DispatchRegistrations.GroupBy(o => o).Where(o => o.Count() > 1).ToArray();
+            if (doubleRegistrations.Any())
+            {
+                throw new MultiplePublicationRegistrationException(doubleRegistrations.Select(o => o.Key.ToString()).ToArray());
+            }
+
+            foreach (var group in _options.Value.DispatchRegistrations.GroupBy(o => o.PayloadType))
+            {
+                _registry.Register(group.Key, group.ToArray());
+            }
+        }
+
+        private void BuildReceptions()
+        {
+            var regs = _options.Value.ReceptionRegistrations.ToArray();
+
+            var duplicatedHandlers = regs.GroupBy(o => new { o.Options.ClientType,
+                o.Options.ResourceId, o.HandlerType }).Where(o => o.Count() > 1).ToArray();
+            if (duplicatedHandlers.Any())
+            {
+                throw new DuplicateSubscriptionHandlerDeclarationException(duplicatedHandlers.SelectMany(o => o).ToArray());
+            }
+
+            var duplicateEvenTypeIds = regs.GroupBy(o => new {o.Options.ClientType,
+                o.Options.ResourceId, EventTypeId = o.PayloadTypeId}).Where(o => o.Count() > 1).ToArray();
+            if (duplicateEvenTypeIds.Any())
+            {
+                throw new DuplicateEvenTypeIdDeclarationException(duplicateEvenTypeIds.SelectMany(o => o).ToArray());
+            }
+
+            foreach (var registration in regs)
+            {
+                _registry.Register(registration);
+            }
         }
 
         private void BuildReceivers()

@@ -62,26 +62,12 @@ namespace Ev.ServiceBus.UnitTests
                         });
             });
 
-            await composer.Compose();
-
-            var exception = Assert.Throws<DuplicateSubscriptionHandlerDeclarationException>(() =>
+            var exception = await Assert.ThrowsAsync<DuplicateSubscriptionHandlerDeclarationException>(async () =>
             {
-                composer.Provider.GetService(typeof(ReceptionRegistry));
+                await composer.Compose();
             });
             exception.Message.Should().NotBeNull();
-            exception.Duplicates.Should()
-                .SatisfyRespectively(ev =>
-                    {
-                        ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
-                        ev.Options.ClientType.Should().Be(ClientType.Subscription);
-                        ev.PayloadTypeId.Should().Be("SubscribedEvent");
-                    },
-                    ev =>
-                    {
-                        ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
-                        ev.Options.ClientType.Should().Be(ClientType.Subscription);
-                        ev.PayloadTypeId.Should().Be("SubscribedEvent");
-                    });
+            exception.Message.Should().ContainAll("SubscribedEvent", "Subscription", "SubscribedEventHandler");
         }
 
         [Fact]
@@ -538,26 +524,12 @@ namespace Ev.ServiceBus.UnitTests
                         });
             });
 
-            await composer.Compose();
-
-            var exception = Assert.Throws<DuplicateSubscriptionHandlerDeclarationException>(() =>
+            var exception = await Assert.ThrowsAsync<DuplicateSubscriptionHandlerDeclarationException>(async () =>
             {
-                composer.Provider.GetService(typeof(ReceptionRegistry));
+                await composer.Compose();
             });
             exception.Message.Should().NotBeNull();
-            exception.Duplicates.Should()
-                .SatisfyRespectively(ev =>
-                    {
-                        ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
-                        ev.Options.ClientType.Should().Be(ClientType.Queue);
-                        ev.PayloadTypeId.Should().Be("SubscribedEvent");
-                    },
-                    ev =>
-                    {
-                        ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
-                        ev.Options.ClientType.Should().Be(ClientType.Queue);
-                        ev.PayloadTypeId.Should().Be("SubscribedEvent");
-                    });
+            exception.Message.Should().ContainAll("Queue", "SubscribedEvent", "SubscribedEventHandler");
         }
 
         [Fact]
@@ -578,26 +550,12 @@ namespace Ev.ServiceBus.UnitTests
                         });
             });
 
-            await composer.Compose();
-
-            var exception = Assert.Throws<DuplicateEvenTypeIdDeclarationException>(() =>
+            var exception = await Assert.ThrowsAsync<DuplicateEvenTypeIdDeclarationException>(async () =>
             {
-                composer.Provider.GetService(typeof(ReceptionRegistry));
+                await composer.Compose();
             });
             exception.Message.Should().NotBeNull();
-            exception.Duplicates.Should()
-                .SatisfyRespectively(ev =>
-                    {
-                        ev.HandlerType.Should().Be(typeof(SubscribedEventHandler));
-                        ev.Options.ClientType.Should().Be(ClientType.Queue);
-                        ev.PayloadTypeId.Should().Be("testEvent");
-                    },
-                    ev =>
-                    {
-                        ev.HandlerType.Should().Be(typeof(SubscribedEventHandler2));
-                        ev.Options.ClientType.Should().Be(ClientType.Queue);
-                        ev.PayloadTypeId.Should().Be("testEvent");
-                    });
+            exception.Message.Should().ContainAll("Queue", "SubscribedEventHandler", "SubscribedEventHandler2", "testEvent");
         }
 
         [Fact]

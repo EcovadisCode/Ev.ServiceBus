@@ -1,8 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Reception;
+using Ev.ServiceBus.UnitTests.Helpers;
 
-namespace Ev.ServiceBus.UnitTests.Helpers
+namespace Ev.ServiceBus.TestHelpers
 {
     public class StoringPayloadHandler<TEvent> : IMessageReceptionHandler<TEvent>
     {

@@ -143,7 +143,13 @@ namespace Ev.ServiceBus
             using (_logger.BeginScope(scopeValues))
             using (var scope = _provider.CreateScope())
             {
-                _logger.LogInformation("[Ev.ServiceBus] New message received from {EVSB_Client} '{EVSB_ResourceId}' : {EVSB_MessageLabel}", ClientType, ResourceId,message.Label);
+                var listeners = scope.ServiceProvider.GetRequiredService<IEnumerable<IServiceBusEventListener>>();
+                var executionStartedArgs = new ExecutionStartedArgs(ClientType, ResourceId, _messageHandlerType, message);
+                foreach (var listener in listeners)
+                {
+                    await listener.OnExecutionStart(executionStartedArgs);
+                }
+                _logger.LogInformation("[Ev.ServiceBus] New message received from {EVSB_Client} '{EVSB_ResourceId}' : {EVSB_MessageLabel}", ClientType, ResourceId, message.Label);
 
                 var messageHandler = (IMessageHandler) scope.ServiceProvider.GetRequiredService(_messageHandlerType);
                 sw.Start();
@@ -154,11 +160,21 @@ namespace Ev.ServiceBus
                 }
                 catch (Exception ex) when (LogError(ex))
                 {
+                    var executionFailedArgs = new ExecutionFailedArgs(ClientType, ResourceId, _messageHandlerType, message, ex);
+                    foreach (var listener in listeners)
+                    {
+                        await listener.OnExecutionFailed(executionFailedArgs);
+                    }
                     throw;
                 }
                 finally
                 {
                     sw.Stop();
+                }
+                var executionSucceededArgs = new ExecutionSucceededArgs(ClientType, ResourceId, _messageHandlerType, message, sw.ElapsedMilliseconds);
+                foreach (var listener in listeners)
+                {
+                    await listener.OnExecutionSuccess(executionSucceededArgs);
                 }
                 _logger.LogInformation("[Ev.ServiceBus] Message finished execution in {EVSB_Duration} milliseconds", sw.ElapsedMilliseconds);
             }
