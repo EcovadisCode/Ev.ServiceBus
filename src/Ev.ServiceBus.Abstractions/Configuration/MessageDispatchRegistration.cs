@@ -22,7 +22,7 @@ namespace Ev.ServiceBus.Abstractions
         /// <summary>
         /// Settings of the underlying resource that will receive the messages.
         /// </summary>
-        internal ClientOptions Options { get; }
+        public ClientOptions Options { get; }
 
         /// <summary>
         /// Callbacks called each time a message is sent.

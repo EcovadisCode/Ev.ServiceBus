@@ -1,3 +1,4 @@
+using Ev.ServiceBus.AsyncApi;
 using Ev.ServiceBus.Sample.Contracts;
 using Ev.ServiceBus.Samples.Receiver.ServiceBus;
 using Microsoft.AspNetCore.Builder;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Saunter;
 
 namespace Ev.ServiceBus.Samples.Receiver
 {
@@ -28,6 +30,13 @@ namespace Ev.ServiceBus.Samples.Receiver
                 })
                 // Enables you to execute code whenever execution of a message starts, succeeded or failed
                 .RegisterEventListener<ServiceBusEventListener>();
+
+
+            services.AddAsyncApiSchemaGeneration(
+                options =>
+                {
+                    options.AddDocumentFilter<DocumentFilter>();
+                });
 
             // For this sample to work, you need have an Azure service bus namespace created with the following resources:
             // - A queue named "myqueue"

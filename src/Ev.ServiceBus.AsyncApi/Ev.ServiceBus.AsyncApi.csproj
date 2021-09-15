@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <IsPackable>true</IsPackable>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Description>This package helps you generate an Async API Schema.
+            Resources registered in Ev.ServiceBus will be automatically added to the schema.</Description>
+        <PackageProjectUrl>https://github.com/EcovadisCode/Ev.ServiceBus</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/EcovadisCode/Ev.ServiceBus</RepositoryUrl>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Ev.ServiceBus\Ev.ServiceBus.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Saunter" Version="0.8.0" />
+    </ItemGroup>
+
+</Project>
