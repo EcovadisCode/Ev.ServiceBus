@@ -6,6 +6,9 @@ using Microsoft.Extensions.Options;
 using Saunter.AsyncApiSchema.v2;
 using Saunter.AsyncApiSchema.v2.Bindings;
 using Saunter.AsyncApiSchema.v2.Bindings.Amqp;
+using Saunter.AsyncApiSchema.v2.Bindings.Http;
+using Saunter.AsyncApiSchema.v2.Bindings.Kafka;
+using Saunter.AsyncApiSchema.v2.Bindings.Mqtt;
 using Saunter.Generation.Filters;
 
 namespace Ev.ServiceBus.AsyncApi
@@ -57,6 +60,16 @@ namespace Ev.ServiceBus.AsyncApi
 
         private void ProcessReception(MessageReceptionRegistration reception, AsyncApiDocument document)
         {
+            var channelName = reception.Options.OriginalResourceId + "/" + reception.PayloadTypeId;
+            var channel = GetOrCreateChannel(document, channelName);
+
+            channel.Subscribe = new Operation()
+            {
+                Bindings = new OperationBindings()
+                {
+                },
+                
+            }
         }
 
         private void ProcessDispatch(MessageDispatchRegistration dispatch, AsyncApiDocument document)
