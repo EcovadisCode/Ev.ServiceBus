@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Saunter;
+using Saunter.AsyncApiSchema.v2;
 
 namespace Ev.ServiceBus.Samples.Receiver
 {
@@ -23,20 +24,28 @@ namespace Ev.ServiceBus.Samples.Receiver
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddServiceBus<MessagePayloadSerializer>(
-                settings =>
-                {
-                    settings.WithConnection(""); // Provide a connection string here!
-                })
-                // Enables you to execute code whenever execution of a message starts, succeeded or failed
-                .RegisterEventListener<ServiceBusEventListener>();
-
 
             services.AddAsyncApiSchemaGeneration(
                 options =>
                 {
+                    options.AsyncApi = new AsyncApiDocument()
+                    {
+                        Info = new Info("Receiver API", "1.0.0")
+                        {
+                            Description = "Sample receiver project"
+                        }
+                    };
                     options.AddDocumentFilter<DocumentFilter>();
                 });
+            services.AddSingleton<DocumentFilter>();
+
+            services.AddServiceBus<MessagePayloadSerializer>(
+                    settings =>
+                    {
+                        settings.WithConnection("Endpoint=sb://evservicebus.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ae6pTuOBAFDHy27xJJf9BFubZGxMXToN6B9NiVgLnbQ="); // Provide a connection string here!
+                    })
+                // Enables you to execute code whenever execution of a message starts, succeeded or failed
+                .RegisterEventListener<ServiceBusEventListener>();
 
             // For this sample to work, you need have an Azure service bus namespace created with the following resources:
             // - A queue named "myqueue"
@@ -81,6 +90,8 @@ namespace Ev.ServiceBus.Samples.Receiver
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapAsyncApiDocuments();
+                endpoints.MapAsyncApiUi();
             });
         }
     }

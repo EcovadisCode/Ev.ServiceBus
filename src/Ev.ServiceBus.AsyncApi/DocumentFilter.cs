@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Options;
+using Namotion.Reflection;
+using NJsonSchema;
 using Saunter.AsyncApiSchema.v2;
 using Saunter.AsyncApiSchema.v2.Bindings;
 using Saunter.AsyncApiSchema.v2.Bindings.Amqp;
-using Saunter.AsyncApiSchema.v2.Bindings.Http;
-using Saunter.AsyncApiSchema.v2.Bindings.Kafka;
-using Saunter.AsyncApiSchema.v2.Bindings.Mqtt;
+using Saunter.AsyncApiSchema.v2.Traits;
 using Saunter.Generation.Filters;
 
 namespace Ev.ServiceBus.AsyncApi
@@ -54,22 +55,65 @@ namespace Ev.ServiceBus.AsyncApi
 
             foreach (var reception in _options.Value.ReceptionRegistrations)
             {
-                ProcessReception(reception, document);
+                ProcessReception(reception, document, context);
             }
         }
 
-        private void ProcessReception(MessageReceptionRegistration reception, AsyncApiDocument document)
+        private void ProcessReception(MessageReceptionRegistration reception, AsyncApiDocument document, DocumentFilterContext context)
         {
             var channelName = reception.Options.OriginalResourceId + "/" + reception.PayloadTypeId;
             var channel = GetOrCreateChannel(document, channelName);
 
+            JsonSchema schema = null;
+            if (context.SchemaResolver.Schemas.Any(o => o.Title == reception.PayloadType.Name))
+            {
+                schema = context.SchemaResolver.GetSchema(reception.PayloadType, reception.PayloadType.IsEnum);
+            }
+            else
+            {
+                schema = context.SchemaGenerator.Generate(reception.PayloadType);
+                context.SchemaResolver.AddSchema(reception.PayloadType, reception.PayloadType.IsEnum, schema);
+            }
+
+
             channel.Subscribe = new Operation()
             {
+                OperationId = reception.PayloadTypeId,
                 Bindings = new OperationBindings()
                 {
+                    Amqp = new AmqpOperationBinding()
+                    {
+                    }
                 },
-                
-            }
+                Message = new Saunter.AsyncApiSchema.v2.Message()
+                {
+                     Description = "",
+                     Examples = new List<MessageExample>()
+                     {
+                         new MessageExample()
+                         {
+                             Payload = context.SchemaGenerator.GenerateExample(reception.PayloadType.ToContextualType())
+                         }
+                     },
+                     Name = "",
+                     Payload = schema,
+                     Headers = new JsonSchema(),
+                     Bindings = new MessageBindings()
+                     {
+                         Amqp = new AmqpMessageBinding()
+                         {
+                         }
+                     },
+                     Summary = "",
+                     ContentType = "application/json",
+                     Title = ""
+                },
+                Description = "",
+                Summary = "",
+                Tags = new HashSet<Tag>(),
+                Traits = new List<IOperationTrait>(),
+                ExternalDocs = new ExternalDocumentation("")
+            };
         }
 
         private void ProcessDispatch(MessageDispatchRegistration dispatch, AsyncApiDocument document)
@@ -80,7 +124,6 @@ namespace Ev.ServiceBus.AsyncApi
         {
             ProcessConnectionSettings(options.ConnectionSettings, document);
             var channel = GetOrCreateChannel(document, $"{options.TopicName}/{options.SubscriptionName}");
-            channel.
         }
 
         private void ProcessQueueReceiver(QueueOptions options, AsyncApiDocument document)
@@ -153,7 +196,7 @@ namespace Ev.ServiceBus.AsyncApi
                 return;
             }
 
-            if (document.Servers.Any(o => o.Value.Url == endpoint))
+            if (endpoint == null || document.Servers.Any(o => o.Value.Url == endpoint))
             {
                 return;
             }
