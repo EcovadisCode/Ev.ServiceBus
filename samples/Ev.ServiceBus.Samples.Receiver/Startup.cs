@@ -35,9 +35,7 @@ namespace Ev.ServiceBus.Samples.Receiver
                             Description = "Sample receiver project"
                         }
                     };
-                    options.AddDocumentFilter<DocumentFilter>();
                 });
-            services.AddSingleton<DocumentFilter>();
 
             services.AddServiceBus<MessagePayloadSerializer>(
                     settings =>
@@ -45,7 +43,8 @@ namespace Ev.ServiceBus.Samples.Receiver
                         settings.WithConnection("Endpoint=sb://evservicebus.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ae6pTuOBAFDHy27xJJf9BFubZGxMXToN6B9NiVgLnbQ="); // Provide a connection string here!
                     })
                 // Enables you to execute code whenever execution of a message starts, succeeded or failed
-                .RegisterEventListener<ServiceBusEventListener>();
+                .RegisterEventListener<ServiceBusEventListener>()
+                .PopulateAsyncApiSchemaWithEvServiceBus();
 
             // For this sample to work, you need have an Azure service bus namespace created with the following resources:
             // - A queue named "myqueue"
@@ -71,6 +70,16 @@ namespace Ev.ServiceBus.Samples.Receiver
                 {
                     builder.RegisterReception<WeatherForecast, SecondaryWeatherEventHandler>();
                 });
+
+            services.RegisterServiceBusDispatch().ToQueue(ServiceBusResources.MyQueue, builder =>
+            {
+                builder.RegisterDispatch<WeatherForecast[]>();
+            });
+
+            services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
+            {
+                builder.RegisterDispatch<WeatherForecast>();
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

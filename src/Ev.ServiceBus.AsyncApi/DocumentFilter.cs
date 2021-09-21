@@ -4,13 +4,12 @@ using System.Linq;
 using Ev.ServiceBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Options;
-using Namotion.Reflection;
 using NJsonSchema;
 using Saunter.AsyncApiSchema.v2;
 using Saunter.AsyncApiSchema.v2.Bindings;
 using Saunter.AsyncApiSchema.v2.Bindings.Amqp;
-using Saunter.AsyncApiSchema.v2.Traits;
 using Saunter.Generation.Filters;
+using Saunter.Generation.SchemaGeneration;
 
 namespace Ev.ServiceBus.AsyncApi
 {
@@ -25,8 +24,14 @@ namespace Ev.ServiceBus.AsyncApi
 
         public void Apply(AsyncApiDocument document, DocumentFilterContext context)
         {
+            var resolver = (AsyncApiSchemaResolver)context.SchemaResolver;
             document.DefaultContentType = "application/json";
             ProcessConnectionSettings(_options.Value.Settings.ConnectionSettings, document);
+
+            document.Components.CorrelationIds.Add("default", new CorrelationId("$message.header#/correlationId")
+            {
+                Description = "Default Correlation ID"
+            });
 
             foreach (var sender in _options.Value.Senders)
             {
@@ -50,74 +55,45 @@ namespace Ev.ServiceBus.AsyncApi
 
             foreach (var dispatch in _options.Value.DispatchRegistrations)
             {
-                ProcessDispatch(dispatch, document);
+                ProcessDispatch(dispatch, document, context, resolver);
             }
 
             foreach (var reception in _options.Value.ReceptionRegistrations)
             {
-                ProcessReception(reception, document, context);
+                ProcessReception(reception, document, context, resolver);
             }
         }
 
-        private void ProcessReception(MessageReceptionRegistration reception, AsyncApiDocument document, DocumentFilterContext context)
+        private void ProcessReception(MessageReceptionRegistration reg, AsyncApiDocument document, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
         {
-            var channelName = reception.Options.OriginalResourceId + "/" + reception.PayloadTypeId;
+            var channelName = reg.Options.OriginalResourceId + "/" + reg.PayloadTypeId;
             var channel = GetOrCreateChannel(document, channelName);
 
-            JsonSchema schema = null;
-            if (context.SchemaResolver.Schemas.Any(o => o.Title == reception.PayloadType.Name))
+            channel.Subscribe = new Operation
             {
-                schema = context.SchemaResolver.GetSchema(reception.PayloadType, reception.PayloadType.IsEnum);
-            }
-            else
-            {
-                schema = context.SchemaGenerator.Generate(reception.PayloadType);
-                context.SchemaResolver.AddSchema(reception.PayloadType, reception.PayloadType.IsEnum, schema);
-            }
-
-
-            channel.Subscribe = new Operation()
-            {
-                OperationId = reception.PayloadTypeId,
-                Bindings = new OperationBindings()
-                {
-                    Amqp = new AmqpOperationBinding()
-                    {
-                    }
-                },
-                Message = new Saunter.AsyncApiSchema.v2.Message()
-                {
-                     Description = "",
-                     Examples = new List<MessageExample>()
-                     {
-                         new MessageExample()
-                         {
-                             Payload = context.SchemaGenerator.GenerateExample(reception.PayloadType.ToContextualType())
-                         }
-                     },
-                     Name = "",
-                     Payload = schema,
-                     Headers = new JsonSchema(),
-                     Bindings = new MessageBindings()
-                     {
-                         Amqp = new AmqpMessageBinding()
-                         {
-                         }
-                     },
-                     Summary = "",
-                     ContentType = "application/json",
-                     Title = ""
-                },
-                Description = "",
-                Summary = "",
-                Tags = new HashSet<Tag>(),
-                Traits = new List<IOperationTrait>(),
-                ExternalDocs = new ExternalDocumentation("")
+                OperationId = "sub/" + channelName,
+                Description = $"Reception of {reg.PayloadTypeId} message through {reg.Options.OriginalResourceId}",
+                Summary = $"{reg.PayloadTypeId} => {reg.Options.OriginalResourceId}",
+                Tags = GetOperationTags(reg.Options),
+                Message = GenerateMessage(reg.PayloadTypeId, reg.PayloadType, context, asyncApiSchemaResolver)
             };
         }
 
-        private void ProcessDispatch(MessageDispatchRegistration dispatch, AsyncApiDocument document)
+        private void ProcessDispatch(MessageDispatchRegistration reg, AsyncApiDocument document, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
         {
+            var message = GenerateMessage(reg.PayloadTypeId, reg.PayloadType, context, asyncApiSchemaResolver);
+
+            var channelName = reg.Options.OriginalResourceId + "/" + reg.PayloadTypeId;
+            var channel = GetOrCreateChannel(document, channelName);
+
+            channel.Publish = new Operation
+            {
+                OperationId = "pub/" + channelName,
+                Description = $"Dispatch of {reg.PayloadTypeId} message through {reg.Options.OriginalResourceId}",
+                Summary = $"{reg.Options.OriginalResourceId} => {reg.PayloadTypeId}",
+                Tags = GetOperationTags(reg.Options),
+                Message = message
+            };
         }
 
         private void ProcessSubscriptionReceiver(SubscriptionOptions options, AsyncApiDocument document)
@@ -144,6 +120,75 @@ namespace Ev.ServiceBus.AsyncApi
             var channel = GetOrCreateChannel(document, options.QueueName);
         }
 
+        private static IMessage GenerateMessage(string payloadTypeId, Type payloadType, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
+        {
+            var message = new Saunter.AsyncApiSchema.v2.Message()
+            {
+                Name = payloadTypeId,
+                Payload = GetOrCreatePayloadSchema(payloadType, context),
+                ContentType = "application/json",
+                Title = payloadTypeId,
+                Tags = new HashSet<Tag>()
+                {
+                    GetEvServiceBusTag()
+                },
+                CorrelationId = new CorrelationIdReference("default"),
+                Bindings = new MessageBindings()
+                {
+                    Amqp = new AmqpMessageBinding()
+                    {
+                        ContentEncoding = "UTF-8",
+                        MessageType = payloadTypeId
+                    }
+                }
+            };
+            return asyncApiSchemaResolver.GetMessageOrReference(message);
+        }
+
+        private static JsonSchema GetOrCreatePayloadSchema(Type payloadType, DocumentFilterContext context)
+        {
+            JsonSchema schema;
+            if (context.SchemaResolver.Schemas.Any(o => o.Title == payloadType.Name))
+            {
+                schema = context.SchemaResolver.GetSchema(payloadType, payloadType.IsEnum);
+            }
+            else
+            {
+                schema = context.SchemaGenerator.Generate(payloadType);
+                context.SchemaResolver.AddSchema(payloadType, payloadType.IsEnum, schema);
+            }
+
+            return schema;
+        }
+
+        private ISet<Tag> GetOperationTags(ClientOptions clientOptions)
+        {
+            var tags = new HashSet<Tag>();
+
+            tags.Add(new Tag(clientOptions.ClientType.ToString())
+            {
+                Description = "The type of client",
+                ExternalDocs = new ExternalDocumentation("https://github.com/EcovadisCode/Ev.ServiceBus")
+                {
+                    Description = "Ev.ServiceBus repository"
+                }
+            });
+            tags.Add(GetEvServiceBusTag());
+            return tags;
+        }
+
+        private static Tag GetEvServiceBusTag()
+        {
+            return new Tag("Ev.ServiceBus")
+            {
+                Description = "Generated by Ev.ServiceBus",
+                ExternalDocs = new ExternalDocumentation("https://github.com/EcovadisCode/Ev.ServiceBus")
+                {
+                    Description = "Ev.ServiceBus repository"
+                }
+            };
+        }
+
         private ChannelItem GetOrCreateChannel(AsyncApiDocument document, string name)
         {
             if (document.Channels.ContainsKey(name))
@@ -151,7 +196,10 @@ namespace Ev.ServiceBus.AsyncApi
                 return document.Channels[name];
             }
 
-            var channel = new ChannelItem();
+            var channel = new ChannelItem()
+            {
+                Description = "test description channel"
+            };
             channel.Bindings = new ChannelBindings()
             {
                 Amqp = new AmqpChannelBinding()
