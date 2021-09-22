@@ -66,34 +66,61 @@ namespace Ev.ServiceBus.AsyncApi
 
         private void ProcessReception(MessageReceptionRegistration reg, AsyncApiDocument document, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
         {
-            var channelName = reg.Options.OriginalResourceId + "/" + reg.PayloadTypeId;
+            var channelName = reg.Options.OriginalResourceId;
             var channel = GetOrCreateChannel(document, channelName);
 
-            channel.Subscribe = new Operation
+            if (channel.Subscribe == null)
+            {
+                channel.Subscribe = CreateSubscribeOperation(channelName, reg.Options);
+            }
+
+            if (channel.Subscribe.Message == null)
+            {
+                channel.Subscribe.Message = new Messages();
+            }
+            ((Messages)channel.Subscribe.Message).OneOf.Add(GenerateMessage(reg.PayloadTypeId, reg.PayloadType, context, asyncApiSchemaResolver));
+        }
+
+        private Operation CreateSubscribeOperation(string channelName, ClientOptions options)
+        {
+            var operation = new Operation()
             {
                 OperationId = "sub/" + channelName,
-                Description = $"Reception of {reg.PayloadTypeId} message through {reg.Options.OriginalResourceId}",
-                Summary = $"{reg.PayloadTypeId} => {reg.Options.OriginalResourceId}",
-                Tags = GetOperationTags(reg.Options),
-                Message = GenerateMessage(reg.PayloadTypeId, reg.PayloadType, context, asyncApiSchemaResolver)
+                Description = $"Reception of messages through the {options.OriginalResourceId} {options.ClientType}",
+                Summary = $"{options.OriginalResourceId}",
+                Tags = GetOperationTags(options)
             };
+            return operation;
         }
 
         private void ProcessDispatch(MessageDispatchRegistration reg, AsyncApiDocument document, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
         {
-            var message = GenerateMessage(reg.PayloadTypeId, reg.PayloadType, context, asyncApiSchemaResolver);
-
             var channelName = reg.Options.OriginalResourceId + "/" + reg.PayloadTypeId;
             var channel = GetOrCreateChannel(document, channelName);
 
-            channel.Publish = new Operation
+            if (channel.Publish == null)
+            {
+                channel.Publish = CreatePublishOperation(channelName, reg.Options);
+            }
+
+            if (channel.Publish.Message == null)
+            {
+                channel.Publish.Message = new Messages();
+            }
+
+            ((Messages)channel.Publish.Message).OneOf.Add(GenerateMessage(reg.PayloadTypeId, reg.PayloadType, context, asyncApiSchemaResolver));
+        }
+
+        private Operation CreatePublishOperation(string channelName, ClientOptions options)
+        {
+            var operation = new Operation()
             {
                 OperationId = "pub/" + channelName,
-                Description = $"Dispatch of {reg.PayloadTypeId} message through {reg.Options.OriginalResourceId}",
-                Summary = $"{reg.Options.OriginalResourceId} => {reg.PayloadTypeId}",
-                Tags = GetOperationTags(reg.Options),
-                Message = message
+                Description = $"Dispatch of messages through the {options.OriginalResourceId} {options.ClientType}",
+                Summary = $"{options.OriginalResourceId}",
+                Tags = GetOperationTags(options)
             };
+            return operation;
         }
 
         private void ProcessSubscriptionReceiver(SubscriptionOptions options, AsyncApiDocument document)

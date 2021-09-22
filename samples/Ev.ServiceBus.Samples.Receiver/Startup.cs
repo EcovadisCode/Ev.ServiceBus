@@ -1,4 +1,7 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Ev.ServiceBus.AsyncApi;
+using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.Sample.Contracts;
 using Ev.ServiceBus.Samples.Receiver.ServiceBus;
 using Microsoft.AspNetCore.Builder;
@@ -32,7 +35,7 @@ namespace Ev.ServiceBus.Samples.Receiver
                     {
                         Info = new Info("Receiver API", "1.0.0")
                         {
-                            Description = "Sample receiver project"
+                            Description = "Sample receiver project",
                         }
                     };
                 });
@@ -62,6 +65,8 @@ namespace Ev.ServiceBus.Samples.Receiver
                 builder =>
                 {
                     builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
+                    builder.RegisterReception<UserCreated, UserCreatedHandler>();
+                    builder.RegisterReception<UserPreferencesUpdated, UserPreferencesUpdatedHandler>();
                 });
             services.RegisterServiceBusReception().FromSubscription(
                 ServiceBusResources.MyTopic,
