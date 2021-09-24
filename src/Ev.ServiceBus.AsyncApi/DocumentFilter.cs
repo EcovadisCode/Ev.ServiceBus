@@ -159,7 +159,7 @@ namespace Ev.ServiceBus.AsyncApi
                 {
                     GetEvServiceBusTag()
                 },
-                CorrelationId = new CorrelationIdReference("default"),
+                // CorrelationId = new CorrelationIdReference("default"),
                 Bindings = new MessageBindings()
                 {
                     Amqp = new AmqpMessageBinding()
@@ -197,7 +197,7 @@ namespace Ev.ServiceBus.AsyncApi
                 Description = "The type of client",
                 ExternalDocs = new ExternalDocumentation("https://github.com/EcovadisCode/Ev.ServiceBus")
                 {
-                    Description = "Ev.ServiceBus repository"
+                    // Description = "Ev.ServiceBus repository"
                 }
             });
             tags.Add(GetEvServiceBusTag());
@@ -223,10 +223,7 @@ namespace Ev.ServiceBus.AsyncApi
                 return document.Channels[name];
             }
 
-            var channel = new ChannelItem()
-            {
-                Description = "test description channel"
-            };
+            var channel = new ChannelItem();
             channel.Bindings = new ChannelBindings()
             {
                 Amqp = new AmqpChannelBinding()

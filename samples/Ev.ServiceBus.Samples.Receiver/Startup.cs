@@ -43,7 +43,8 @@ namespace Ev.ServiceBus.Samples.Receiver
             services.AddServiceBus<MessagePayloadSerializer>(
                     settings =>
                     {
-                        settings.WithConnection("Endpoint=sb://evservicebus.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=ae6pTuOBAFDHy27xJJf9BFubZGxMXToN6B9NiVgLnbQ="); // Provide a connection string here!
+                        // Provide a connection string here !
+                        settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=");
                     })
                 // Enables you to execute code whenever execution of a message starts, succeeded or failed
                 .RegisterEventListener<ServiceBusEventListener>()
@@ -75,16 +76,6 @@ namespace Ev.ServiceBus.Samples.Receiver
                 {
                     builder.RegisterReception<WeatherForecast, SecondaryWeatherEventHandler>();
                 });
-
-            services.RegisterServiceBusDispatch().ToQueue(ServiceBusResources.MyQueue, builder =>
-            {
-                builder.RegisterDispatch<WeatherForecast[]>();
-            });
-
-            services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
-            {
-                builder.RegisterDispatch<WeatherForecast>();
-            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
         <IsPackable>true</IsPackable>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>This package helps you generate an Async API Schema.
