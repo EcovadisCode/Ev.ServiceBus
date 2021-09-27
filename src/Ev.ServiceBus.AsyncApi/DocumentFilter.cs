@@ -175,7 +175,7 @@ namespace Ev.ServiceBus.AsyncApi
         private static JsonSchema GetOrCreatePayloadSchema(Type payloadType, DocumentFilterContext context)
         {
             JsonSchema schema;
-            if (context.SchemaResolver.Schemas.Any(o => o.Title == payloadType.Name))
+            if (context.SchemaResolver.HasSchema(payloadType, payloadType.IsEnum))
             {
                 schema = context.SchemaResolver.GetSchema(payloadType, payloadType.IsEnum);
             }
