@@ -1,3 +1,7 @@
+using System.Threading;
+using System.Threading.Tasks;
+using Ev.ServiceBus.AsyncApi;
+using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.Sample.Contracts;
 using Ev.ServiceBus.Samples.Receiver.ServiceBus;
 using Microsoft.AspNetCore.Builder;
@@ -5,6 +9,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Saunter;
+using Saunter.AsyncApiSchema.v2;
 
 namespace Ev.ServiceBus.Samples.Receiver
 {
@@ -21,13 +27,28 @@ namespace Ev.ServiceBus.Samples.Receiver
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddServiceBus<MessagePayloadSerializer>(
-                settings =>
+
+            services.AddAsyncApiSchemaGeneration(
+                options =>
                 {
-                    settings.WithConnection(""); // Provide a connection string here!
-                })
+                    options.AsyncApi = new AsyncApiDocument()
+                    {
+                        Info = new Info("Receiver API", "1.0.0")
+                        {
+                            Description = "Sample receiver project",
+                        }
+                    };
+                });
+
+            services.AddServiceBus<MessagePayloadSerializer>(
+                    settings =>
+                    {
+                        // Provide a connection string here !
+                        settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=");
+                    })
                 // Enables you to execute code whenever execution of a message starts, succeeded or failed
-                .RegisterEventListener<ServiceBusEventListener>();
+                .RegisterEventListener<ServiceBusEventListener>()
+                .PopulateAsyncApiSchemaWithEvServiceBus();
 
             // For this sample to work, you need have an Azure service bus namespace created with the following resources:
             // - A queue named "myqueue"
@@ -45,6 +66,8 @@ namespace Ev.ServiceBus.Samples.Receiver
                 builder =>
                 {
                     builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
+                    builder.RegisterReception<UserCreated, UserCreatedHandler>();
+                    builder.RegisterReception<UserPreferencesUpdated, UserPreferencesUpdatedHandler>();
                 });
             services.RegisterServiceBusReception().FromSubscription(
                 ServiceBusResources.MyTopic,
@@ -72,6 +95,8 @@ namespace Ev.ServiceBus.Samples.Receiver
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapAsyncApiDocuments();
+                endpoints.MapAsyncApiUi();
             });
         }
     }
