@@ -8,7 +8,7 @@ namespace Ev.ServiceBus.AsyncApi.UnitTests
     public class DocumentFilterTest
     {
         [Fact]
-        public async Task Test1()
+        public async Task CheckStateOfSenderApp()
         {
             var factory = new SenderAppFactory();
             var client = factory.CreateClient();
@@ -22,7 +22,7 @@ namespace Ev.ServiceBus.AsyncApi.UnitTests
         }
 
         [Fact]
-        public async Task Test2()
+        public async Task CheckStateOfReceiverApp()
         {
             var factory = new ReceiverAppFactory();
             var client = factory.CreateClient();

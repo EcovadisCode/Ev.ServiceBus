@@ -197,7 +197,7 @@ namespace Ev.ServiceBus.AsyncApi
                 Description = "The type of client",
                 ExternalDocs = new ExternalDocumentation("https://github.com/EcovadisCode/Ev.ServiceBus")
                 {
-                    // Description = "Ev.ServiceBus repository"
+                    Description = "Ev.ServiceBus repository"
                 }
             });
             tags.Add(GetEvServiceBusTag());
