@@ -35,22 +35,12 @@ namespace Ev.ServiceBus.AsyncApi
 
             foreach (var sender in _options.Value.Senders)
             {
-                switch (sender.ClientType)
-                {
-                    case ClientType.Queue: ProcessQueueSender((QueueOptions)sender, document); break;
-                    case ClientType.Topic: ProcessTopicSender((TopicOptions)sender, document); break;
-                    default: throw new ArgumentOutOfRangeException();
-                }
+                ProcessConnectionSettings(sender.ConnectionSettings, document);
             }
 
             foreach (var receiver in _options.Value.Receivers)
             {
-                switch (receiver.ClientType)
-                {
-                    case ClientType.Queue: ProcessQueueReceiver((QueueOptions)receiver, document); break;
-                    case ClientType.Subscription: ProcessSubscriptionReceiver((SubscriptionOptions)receiver, document); break;
-                    default: throw new ArgumentOutOfRangeException();
-                }
+                ProcessConnectionSettings(receiver.ConnectionSettings, document);
             }
 
             foreach (var dispatch in _options.Value.DispatchRegistrations)
@@ -95,7 +85,7 @@ namespace Ev.ServiceBus.AsyncApi
 
         private void ProcessDispatch(MessageDispatchRegistration reg, AsyncApiDocument document, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
         {
-            var channelName = reg.Options.OriginalResourceId + "/" + reg.PayloadTypeId;
+            var channelName = reg.Options.OriginalResourceId;
             var channel = GetOrCreateChannel(document, channelName);
 
             if (channel.Publish == null)
@@ -121,30 +111,6 @@ namespace Ev.ServiceBus.AsyncApi
                 Tags = GetOperationTags(options)
             };
             return operation;
-        }
-
-        private void ProcessSubscriptionReceiver(SubscriptionOptions options, AsyncApiDocument document)
-        {
-            ProcessConnectionSettings(options.ConnectionSettings, document);
-            var channel = GetOrCreateChannel(document, $"{options.TopicName}/{options.SubscriptionName}");
-        }
-
-        private void ProcessQueueReceiver(QueueOptions options, AsyncApiDocument document)
-        {
-            ProcessConnectionSettings(options.ConnectionSettings, document);
-            var channel = GetOrCreateChannel(document, options.QueueName);
-        }
-
-        private void ProcessTopicSender(TopicOptions options, AsyncApiDocument document)
-        {
-            ProcessConnectionSettings(options.ConnectionSettings, document);
-            var channel = GetOrCreateChannel(document, options.TopicName);
-        }
-
-        private void ProcessQueueSender(QueueOptions options, AsyncApiDocument document)
-        {
-            ProcessConnectionSettings(options.ConnectionSettings, document);
-            var channel = GetOrCreateChannel(document, options.QueueName);
         }
 
         private static IMessage GenerateMessage(string payloadTypeId, Type payloadType, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
