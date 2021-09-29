@@ -94,3 +94,40 @@ public class ServiceBusEventListener : IServiceBusEventListener
     }
 }
 ```
+
+## Async Api schema generation with Saunter
+
+With `Ev.ServiceBus.AsyncApi` package, you can populate your AsyncApi schema 
+with resources and models registered by `Ev.ServiceBus`. 
+You can visit [Saunter](https://github.com/tehmantra/saunter) or [asyncapi.com](https://www.asyncapi.com/) 
+for more information about Async Api specifications.
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddAsyncApiSchemaGeneration(options => {
+        options.AsyncApi = new AsyncApiDocument()
+        {
+            Info = new Info("Receiver API", "1.0.0")
+            {
+                Description = "Sample receiver project",
+            }
+        };
+    });
+
+    services.AddServiceBus<MessagePayloadSerializer>(settings => {
+        settings.WithConnection(serviceBusConnectionString);
+    })
+    .PopulateAsyncApiSchemaWithEvServiceBus();
+}
+
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllers();
+        endpoints.MapAsyncApiDocuments();
+        endpoints.MapAsyncApiUi();
+    });
+}
+```

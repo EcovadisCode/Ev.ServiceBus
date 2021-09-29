@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 3.3.0
+- Added `Ev.ServiceBus.AsyncApi` package. It helps you generate an AsyncApi schema with Ev.ServiceBus registrations. 
+
 ## 3.2.0
 - Added log messages that tells if Ev.ServiceBus is deactivated or if only reception is deactivated.
 - Ev.ServiceBus.HealthChecks is now compatible with netcore3.1
