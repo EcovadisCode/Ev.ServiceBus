@@ -1,3 +1,4 @@
+using Ev.ServiceBus.AsyncApi;
 using Ev.ServiceBus.HealthChecks;
 using Ev.ServiceBus.Mvc;
 using Ev.ServiceBus.Sample.Contracts;
@@ -6,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Saunter;
+using Saunter.AsyncApiSchema.v2;
 
 namespace Ev.ServiceBus.Samples.Sender
 {
@@ -24,12 +27,26 @@ namespace Ev.ServiceBus.Samples.Sender
             services.AddMvc()
                 .AddServiceBusMvcIntegration();
 
+            services.AddAsyncApiSchemaGeneration(
+                options =>
+                {
+                    options.AsyncApi = new AsyncApiDocument()
+                    {
+                        Info = new Info("Receiver API", "1.0.0")
+                        {
+                            Description = "Sample sender project",
+                        }
+                    };
+                });
+
             services.AddControllers();
             services.AddServiceBus<MessagePayloadSerializer>(
                 settings =>
                 {
-                    settings.WithConnection(""); // Provide a connection string here!
-                });
+                    // Provide a connection string here !
+                    settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=");
+                })
+                .PopulateAsyncApiSchemaWithEvServiceBus();
 
             // For this sample to work, you need have an Azure service bus namespace created with the following resources:
             // - A queue named "myqueue"
@@ -67,6 +84,8 @@ namespace Ev.ServiceBus.Samples.Sender
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapAsyncApiDocuments();
+                endpoints.MapAsyncApiUi();
             });
         }
     }

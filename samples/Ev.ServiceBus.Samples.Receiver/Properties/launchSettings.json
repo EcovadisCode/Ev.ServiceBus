@@ -20,7 +20,7 @@
     "Ev.ServiceBus.Samples.Receiver": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "weatherforecast/pushWeather",
+      "launchUrl": "asyncapi/ui/index.html",
       "applicationUrl": "https://localhost:6001;http://localhost:6000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

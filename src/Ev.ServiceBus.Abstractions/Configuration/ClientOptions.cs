@@ -6,6 +6,7 @@ namespace Ev.ServiceBus.Abstractions
     {
         protected ClientOptions(string resourceId, ClientType clientType, bool strictMode)
         {
+            OriginalResourceId = resourceId;
             ResourceId = resourceId;
             ClientType = clientType;
             StrictMode = strictMode;
@@ -19,6 +20,8 @@ namespace Ev.ServiceBus.Abstractions
 
         /// <inheritdoc />
         public string ResourceId { get; private set; }
+
+        public string OriginalResourceId { get; }
 
         internal void UpdateResourceId(string resourceId)
         {
