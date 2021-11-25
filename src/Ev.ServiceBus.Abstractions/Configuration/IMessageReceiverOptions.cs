@@ -22,5 +22,10 @@ namespace Ev.ServiceBus.Abstractions
         /// (Only system exception will end up here)
         /// </summary>
         Type? ExceptionHandlerType { get; }
+
+        /// <summary>
+        /// Settings specific to this reception handler
+        /// </summary>
+        Action<SessionHandlerOptions>? SessionHandlerConfig { get; }
     }
 }

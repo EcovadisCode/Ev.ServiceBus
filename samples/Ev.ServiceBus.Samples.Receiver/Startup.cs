@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Saunter;
 using Saunter.AsyncApiSchema.v2;
 
@@ -65,6 +66,7 @@ namespace Ev.ServiceBus.Samples.Receiver
                 ServiceBusResources.MySubscription,
                 builder =>
                 {
+                    builder.EnableSessionHandling(options =>{ });
                     builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
                     builder.RegisterReception<UserCreated, UserCreatedHandler>();
                     builder.RegisterReception<UserPreferencesUpdated, UserPreferencesUpdatedHandler>();

@@ -57,5 +57,10 @@ namespace Ev.ServiceBus.Reception
             });
             return builder;
         }
+
+        public void EnableSessionHandling(int maxConcurrentCalls = 1, TimeSpan? maxAutoRenewDuration = null)
+        {
+            _options.SessionHandlerConfig
+        }
     }
 }

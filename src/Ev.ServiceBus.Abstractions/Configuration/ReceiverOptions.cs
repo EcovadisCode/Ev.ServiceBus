@@ -25,6 +25,8 @@ namespace Ev.ServiceBus.Abstractions
         /// <inheritdoc />
         public Type? ExceptionHandlerType { get; private set; }
 
+        public Action<SessionHandlerOptions>? SessionHandlerConfig { get; }
+
         /// <summary>
         /// Defines a message handler for the current receiver.
         /// </summary>

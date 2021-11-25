@@ -120,6 +120,22 @@ namespace Ev.ServiceBus
                 config!(messageHandlerOptions);
             }
 
+            if (receiverOptions.Where(o => o.SessionHandlerConfig != null).Any())
+            {
+                var sessionHandlerOptions = new SessionHandlerOptions(OnExceptionOccured);
+
+                switch (ClientType)
+                {
+                    case ClientType.Queue:
+                        ((IQueueClient)receiver.Client).RegisterSessionHandler(
+                            async (session, message, arg3) => { await OnMessageReceived(message, arg3);}, sessionHandlerOptions);
+                        break;
+                    case ClientType.Subscription:
+                        ((ISubscriptionClient)receiver.Client).RegisterSessionHandler(async(session, message, arg3) => {await OnMessageReceived(message, arg3);}, sessionHandlerOptions);
+                        break;
+                }
+            }
+
             receiver.Client.RegisterMessageHandler(OnMessageReceived, messageHandlerOptions);
         }
 
