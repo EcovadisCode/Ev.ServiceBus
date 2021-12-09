@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 3.4.0
+- Added net6.0 as target framework.
+- Added IMessageMetadataAccessor service that allows you to access data like correlationId 
+or user properties of the underlying message. 
+
 ## 3.3.0
 - Added `Ev.ServiceBus.AsyncApi` package. It helps you generate an AsyncApi schema with Ev.ServiceBus registrations. 
 
