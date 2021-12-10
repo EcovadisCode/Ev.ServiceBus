@@ -193,7 +193,7 @@ namespace Ev.ServiceBus.UnitTests
             messageHandlerOptions.MaxAutoRenewDuration.Should().Be(TimeSpan.FromMinutes(20));
         }
 
-                private async Task<Composer> InitSimpleTest()
+        private async Task<Composer> InitSimpleTest()
         {
             var eventStore = new EventStore();
             var composer = new Composer();
