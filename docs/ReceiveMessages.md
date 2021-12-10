@@ -86,3 +86,30 @@ public void ConfigureServices(IServiceCollection services)
     });
 }
 ```
+
+#### Access the correlation Id and other metadata of the message
+
+You can use the `IMessageMetadataAccessor` interface to access the metadatas of your received message.
+You just need to inject the interface into one of your service currently executing a message.
+
+```csharp
+public class WeatherEventHandler : IMessageReceptionHandler<WeatherForecast>
+{
+    private readonly ILogger<WeatherEventHandler> _logger;
+    private readonly IMessageMetadataAccessor _metadataAccessor;
+
+    public WeatherEventHandler(ILogger<WeatherEventHandler> logger, IMessageMetadataAccessor metadataAccessor)
+    {
+        _logger = logger;
+        _metadataAccessor = metadataAccessor;
+    }
+
+    public Task Handle(WeatherForecast weather, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation($"Received from 1st subscription : {weather.Date}: {weather.Summary}");
+        _logger.LogInformation($"CorrelationId is : {_metadataAccessor.Metadata.CorrelationId}");
+
+        return Task.CompletedTask;
+    }
+}
+```
