@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.MessageReception;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -159,6 +160,8 @@ namespace Ev.ServiceBus
             using (_logger.BeginScope(scopeValues))
             using (var scope = _provider.CreateScope())
             {
+                var metadataAccessor = (MessageMetadataAccessor)scope.ServiceProvider.GetRequiredService<IMessageMetadataAccessor>();
+                metadataAccessor.SetData(message, cancellationToken);
                 var listeners = scope.ServiceProvider.GetRequiredService<IEnumerable<IServiceBusEventListener>>();
                 var executionStartedArgs = new ExecutionStartedArgs(ClientType, ResourceId, _messageHandlerType, message);
                 foreach (var listener in listeners)

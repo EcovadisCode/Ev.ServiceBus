@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Dispatch;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
@@ -54,6 +55,7 @@ namespace Ev.ServiceBus
         private static void RegisterMessageReceptionServices(IServiceCollection services)
         {
             services.TryAddScoped<MessageReceptionHandler>();
+            services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
         private static void RegisterMessageDispatchServices(IServiceCollection services)
