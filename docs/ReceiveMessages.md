@@ -113,3 +113,25 @@ public class WeatherEventHandler : IMessageReceptionHandler<WeatherForecast>
     }
 }
 ```
+
+#### Enable session handling
+
+Queues and subscriptions can be set to use sessions (more information in this feature [here](https://docs.microsoft.com/en-us/azure/service-bus-messaging/message-sessions)).
+To use this feature with Ev.ServiceBus, you need to call `.EnableSessionHandling()` when registering your receptions. 
+You can access the session id of the message through the `IMessageMetadataAccessor` service.
+
+> Be aware. Session mode must be enabled when you create the queue/subscription through the azure portal for the session handling feature to work.
+> If session mode is not set, the queue/subscription client you have declared will not receive any message and will throw exceptions upon application start. 
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Initialize serviceBus
+    
+    services.RegisterServiceBusReception().FromSubscription("mytopic", "mysubscription", builder =>
+    {
+        builder.EnableSessionHandling();
+        builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
+    });
+}
+```

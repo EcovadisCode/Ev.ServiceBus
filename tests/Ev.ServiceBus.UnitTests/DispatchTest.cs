@@ -66,7 +66,7 @@ namespace Ev.ServiceBus.UnitTests
                     _sentMessagesToTopic.AddRange(messages);
                 });
 
-            var queueClient = _composer.QueueFactory.GetAllRegisteredQueueClients().First();
+            var queueClient = _composer.QueueFactory.GetAllRegisteredClients().First();
             queueClient.Mock
                 .Setup(o => o.SendAsync(It.IsAny<Message>()))
                 .Returns(Task.CompletedTask)

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 ### Changed
 ### Removed
+## 3.5.0
+- Clients can now receive message in session mode.
 
 ## 3.4.0
 - Added net6.0 as target framework.

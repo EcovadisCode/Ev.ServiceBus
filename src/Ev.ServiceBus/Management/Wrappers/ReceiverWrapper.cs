@@ -113,31 +113,35 @@ namespace Ev.ServiceBus
                 _onExceptionReceivedHandler = CallDefinedExceptionHandler;
             }
 
-            var messageHandlerOptions = new MessageHandlerOptions(OnExceptionOccured);
-
-            foreach (var config in receiverOptions.Where(o => o.MessageHandlerConfig != null)
-                .Select(o => o.MessageHandlerConfig))
-            {
-                config!(messageHandlerOptions);
-            }
-
-            if (receiverOptions.Where(o => o.SessionHandlerConfig != null).Any())
+            if (receiverOptions.Any(o => o.SessionHandlerConfig != null))
             {
                 var sessionHandlerOptions = new SessionHandlerOptions(OnExceptionOccured);
+
+                var options = receiverOptions.Where(o => o.SessionHandlerConfig != null).Select(o => o.SessionHandlerConfig).First();
+                options!(sessionHandlerOptions);
 
                 switch (ClientType)
                 {
                     case ClientType.Queue:
-                        ((IQueueClient)receiver.Client).RegisterSessionHandler(
-                            async (session, message, arg3) => { await OnMessageReceived(message, arg3);}, sessionHandlerOptions);
+                        ((IQueueClient)receiver.Client).RegisterSessionHandler(async (session, message, cancellationToken) => { await OnMessageReceived(message, cancellationToken); }, sessionHandlerOptions);
                         break;
                     case ClientType.Subscription:
-                        ((ISubscriptionClient)receiver.Client).RegisterSessionHandler(async(session, message, arg3) => {await OnMessageReceived(message, arg3);}, sessionHandlerOptions);
+                        ((ISubscriptionClient)receiver.Client).RegisterSessionHandler(async(session, message, cancellationToken) => { await OnMessageReceived(message, cancellationToken); }, sessionHandlerOptions);
                         break;
                 }
             }
+            else
+            {
+                var messageHandlerOptions = new MessageHandlerOptions(OnExceptionOccured);
 
-            receiver.Client.RegisterMessageHandler(OnMessageReceived, messageHandlerOptions);
+                foreach (var config in receiverOptions.Where(o => o.MessageHandlerConfig != null)
+                             .Select(o => o.MessageHandlerConfig))
+                {
+                    config!(messageHandlerOptions);
+                }
+
+                receiver.Client.RegisterMessageHandler(OnMessageReceived, messageHandlerOptions);
+            }
         }
 
         /// <summary>

@@ -17,10 +17,10 @@ namespace Ev.ServiceBus.TestHelpers
 
         public QueueClientMock GetAssociatedMock(string name, bool isReceiver = false)
         {
-            return _registeredClients.FirstOrDefault(o => o.QueueName == name && o.IsReceiver == isReceiver);
+            return _registeredClients.FirstOrDefault(o => o.ClientName == name && o.IsReceiver == isReceiver);
         }
 
-        public QueueClientMock[] GetAllRegisteredQueueClients()
+        public QueueClientMock[] GetAllRegisteredClients()
         {
             return _registeredClients.ToArray();
         }
