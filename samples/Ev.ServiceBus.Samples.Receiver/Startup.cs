@@ -66,7 +66,6 @@ namespace Ev.ServiceBus.Samples.Receiver
                 ServiceBusResources.MySubscription,
                 builder =>
                 {
-                    builder.EnableSessionHandling(options =>{ });
                     builder.RegisterReception<WeatherForecast, WeatherEventHandler>();
                     builder.RegisterReception<UserCreated, UserCreatedHandler>();
                     builder.RegisterReception<UserPreferencesUpdated, UserPreferencesUpdatedHandler>();
