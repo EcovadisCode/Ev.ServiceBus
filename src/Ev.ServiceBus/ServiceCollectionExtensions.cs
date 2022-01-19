@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus.UnitTests")]
+[assembly: InternalsVisibleTo("Ev.ServiceBus.TestHelpers")]
 
 namespace Ev.ServiceBus
 {

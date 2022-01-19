@@ -11,6 +11,8 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         private readonly Mock<IQueueClient> _client;
         private Func<ExceptionReceivedEventArgs, Task> _triggerExceptionOccured = (args) => Task.CompletedTask;
         private Func<Message, CancellationToken, Task> _triggerMessageReception = (m, t) => Task.CompletedTask;
+        private Func<ExceptionReceivedEventArgs, Task> _triggerSessionExceptionOccured = args => Task.CompletedTask;
+        private Func<IMessageSession, Message, CancellationToken, Task> _triggerSessionMessageReception = (s, m, t) => Task.CompletedTask;
 
         public QueueClientMock(string name)
         {
@@ -23,13 +25,21 @@ namespace Ev.ServiceBus.UnitTests.Helpers
                    _triggerMessageReception = messageHandler;
                    _triggerExceptionOccured = options.ExceptionReceivedHandler;
                 });
+            _client
+                .Setup(o => o.RegisterSessionHandler(It.IsAny<Func<IMessageSession, Message, CancellationToken, Task>>(), It.IsAny<SessionHandlerOptions>()))
+                .Callback((Func<IMessageSession, Message, CancellationToken, Task> messageHandler, SessionHandlerOptions options) =>
+                {
+                    IsReceiver = true;
+                    _triggerSessionMessageReception = messageHandler;
+                    _triggerSessionExceptionOccured = options.ExceptionReceivedHandler;
+                });
             _client.SetupGet(o => o.QueueName).Returns(name);
-            QueueName = name;
+            ClientName = name;
         }
 
         public bool IsReceiver { get; private set; }
 
-        public string QueueName { get; }
+        public string ClientName { get; }
         public IQueueClient QueueClient => _client.Object;
         public Mock<IQueueClient> Mock => _client;
 
@@ -41,6 +51,16 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         public Task TriggerExceptionOccured(ExceptionReceivedEventArgs args)
         {
             return _triggerExceptionOccured(args);
+        }
+
+        public Task TriggerSessionMessageReception(Message message, CancellationToken token)
+        {
+            return _triggerSessionMessageReception(null, message, token);
+        }
+
+        public Task TriggerSessionExceptionOccured(ExceptionReceivedEventArgs args)
+        {
+            return _triggerSessionExceptionOccured(args);
         }
     }
 
@@ -64,6 +84,8 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         private readonly Mock<ISubscriptionClient> _client;
         private Func<ExceptionReceivedEventArgs, Task> _triggerExceptionOccured = args => Task.CompletedTask;
         private Func<Message, CancellationToken, Task> _triggerMessageReception = (m, t) => Task.CompletedTask;
+        private Func<ExceptionReceivedEventArgs, Task> _triggerSessionExceptionOccured = args => Task.CompletedTask;
+        private Func<IMessageSession, Message, CancellationToken, Task> _triggerSessionMessageReception = (s, m, t) => Task.CompletedTask;
 
         public SubscriptionClientMock(string name)
         {
@@ -75,6 +97,13 @@ namespace Ev.ServiceBus.UnitTests.Helpers
                 {
                     _triggerMessageReception = messageHandler;
                     _triggerExceptionOccured = options.ExceptionReceivedHandler;
+                });
+            _client
+                .Setup(o => o.RegisterSessionHandler(It.IsAny<Func<IMessageSession, Message, CancellationToken, Task>>(), It.IsAny<SessionHandlerOptions>()))
+                .Callback((Func<IMessageSession, Message, CancellationToken, Task> messageHandler, SessionHandlerOptions options) =>
+                {
+                    _triggerSessionMessageReception = messageHandler;
+                    _triggerSessionExceptionOccured = options.ExceptionReceivedHandler;
                 });
 
             ClientName = name;
@@ -92,6 +121,16 @@ namespace Ev.ServiceBus.UnitTests.Helpers
         public Task TriggerExceptionOccured(ExceptionReceivedEventArgs args)
         {
             return _triggerExceptionOccured(args);
+        }
+
+        public Task TriggerSessionMessageReception(Message message, CancellationToken token)
+        {
+            return _triggerSessionMessageReception(null, message, token);
+        }
+
+        public Task TriggerSessionExceptionOccured(ExceptionReceivedEventArgs args)
+        {
+            return _triggerSessionExceptionOccured(args);
         }
 
     }

@@ -113,15 +113,35 @@ namespace Ev.ServiceBus
                 _onExceptionReceivedHandler = CallDefinedExceptionHandler;
             }
 
-            var messageHandlerOptions = new MessageHandlerOptions(OnExceptionOccured);
-
-            foreach (var config in receiverOptions.Where(o => o.MessageHandlerConfig != null)
-                .Select(o => o.MessageHandlerConfig))
+            if (receiverOptions.Any(o => o.SessionHandlerConfig != null))
             {
-                config!(messageHandlerOptions);
-            }
+                var sessionHandlerOptions = new SessionHandlerOptions(OnExceptionOccured);
 
-            receiver.Client.RegisterMessageHandler(OnMessageReceived, messageHandlerOptions);
+                var options = receiverOptions.Where(o => o.SessionHandlerConfig != null).Select(o => o.SessionHandlerConfig).First();
+                options!(sessionHandlerOptions);
+
+                switch (ClientType)
+                {
+                    case ClientType.Queue:
+                        ((IQueueClient)receiver.Client).RegisterSessionHandler(async (session, message, cancellationToken) => { await OnMessageReceived(message, cancellationToken); }, sessionHandlerOptions);
+                        break;
+                    case ClientType.Subscription:
+                        ((ISubscriptionClient)receiver.Client).RegisterSessionHandler(async(session, message, cancellationToken) => { await OnMessageReceived(message, cancellationToken); }, sessionHandlerOptions);
+                        break;
+                }
+            }
+            else
+            {
+                var messageHandlerOptions = new MessageHandlerOptions(OnExceptionOccured);
+
+                foreach (var config in receiverOptions.Where(o => o.MessageHandlerConfig != null)
+                             .Select(o => o.MessageHandlerConfig))
+                {
+                    config!(messageHandlerOptions);
+                }
+
+                receiver.Client.RegisterMessageHandler(OnMessageReceived, messageHandlerOptions);
+            }
         }
 
         /// <summary>

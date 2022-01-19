@@ -25,6 +25,8 @@ namespace Ev.ServiceBus.Abstractions
         /// <inheritdoc />
         public Type? ExceptionHandlerType { get; private set; }
 
+        public Action<SessionHandlerOptions>? SessionHandlerConfig { get; private set; }
+
         /// <summary>
         /// Defines a message handler for the current receiver.
         /// </summary>
@@ -47,6 +49,23 @@ namespace Ev.ServiceBus.Abstractions
         {
             _services.TryAddScoped<TExceptionHandler>();
             ExceptionHandlerType = typeof(TExceptionHandler);
+        }
+
+        /// <summary>
+        /// Activates session handling for the current receiver.
+        /// </summary>
+        /// <param name="maxConcurrentSessions"></param>
+        /// <param name="maxAutoRenewDuration"></param>
+        public void EnableSessionHandling(int maxConcurrentSessions, TimeSpan? maxAutoRenewDuration)
+        {
+            SessionHandlerConfig = options =>
+            {
+                options.MaxConcurrentSessions = maxConcurrentSessions;
+                if (maxAutoRenewDuration.HasValue)
+                {
+                    options.MaxAutoRenewDuration = maxAutoRenewDuration.Value;
+                }
+            };
         }
     }
 }

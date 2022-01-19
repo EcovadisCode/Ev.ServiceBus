@@ -30,7 +30,7 @@ namespace Ev.ServiceBus.UnitTests
             var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeQueueClientFactory>();
-            var clientMocks = factory.GetAllRegisteredQueueClients();
+            var clientMocks = factory.GetAllRegisteredClients();
 
             foreach (var clientMock in clientMocks)
             {
@@ -60,7 +60,7 @@ namespace Ev.ServiceBus.UnitTests
             var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeQueueClientFactory>();
-            var clientMocks = factory.GetAllRegisteredQueueClients();
+            var clientMocks = factory.GetAllRegisteredClients();
 
             clientMocks[0].Mock.Setup(o => o.CloseAsync()).Returns(Task.CompletedTask).Verifiable();
             clientMocks[1].Mock.Setup(o => o.CloseAsync()).Throws<SocketException>().Verifiable();
@@ -89,7 +89,7 @@ namespace Ev.ServiceBus.UnitTests
             var provider = await composer.Compose();
 
             var factory = provider.GetRequiredService<FakeQueueClientFactory>();
-            var clientMocks = factory.GetAllRegisteredQueueClients();
+            var clientMocks = factory.GetAllRegisteredClients();
 
             foreach (var clientMock in clientMocks)
             {
@@ -168,10 +168,10 @@ namespace Ev.ServiceBus.UnitTests
             await provider.SimulateStartHost(token: new CancellationToken());
 
             var factory = provider.GetRequiredService<FakeQueueClientFactory>();
-            var receivers = factory.GetAllRegisteredQueueClients().Where(o => o.IsReceiver).ToArray();
+            var receivers = factory.GetAllRegisteredClients().Where(o => o.IsReceiver).ToArray();
             receivers.Length.Should().Be(0);
 
-            var senders = factory.GetAllRegisteredQueueClients().Where(o => o.IsReceiver == false).ToArray();
+            var senders = factory.GetAllRegisteredClients().Where(o => o.IsReceiver == false).ToArray();
             foreach (var sender in senders)
             {
                 var sentMessage = new Message();
