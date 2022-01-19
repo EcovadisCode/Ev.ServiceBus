@@ -120,6 +120,9 @@ Queues and subscriptions can be set to use sessions (more information in this fe
 To use this feature with Ev.ServiceBus, you need to call `.EnableSessionHandling()` when registering your receptions. 
 You can access the session id of the message through the `IMessageMetadataAccessor` service.
 
+> Be aware. Session mode must be enabled when you create the queue/subscription through the azure portal for the session handling feature to work.
+> If session mode is not set, the queue/subscription client you have declared will not receive any message and will throw exceptions upon application start.
+
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
@@ -141,6 +144,3 @@ public void ConfigureServices(IServiceCollection services)
     });
 }
 ```
-
-> Be aware. Session mode must be enabled when you create the queue/subscription through the azure portal for the session handling feature to work.
-> If session mode is not set, the queue/subscription client you have declared will not receive any message and will throw exceptions upon application start. 
