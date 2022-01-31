@@ -49,7 +49,7 @@ namespace Ev.ServiceBus.Dispatch
                 (
                     from dispatch in messagePayloads
                     // the same dispatch can be published to several senders
-                    let registrations = _dispatchRegistry.GetDispatchRegistrations(dispatch.GetType())
+                    let registrations = _dispatchRegistry.GetDispatchRegistrations(dispatch.Payload.GetType())
                     from eventPublicationRegistration in registrations
                     let message = CreateMessage(eventPublicationRegistration, dispatch)
                     select new
