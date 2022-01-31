@@ -25,7 +25,20 @@ namespace Ev.ServiceBus.Dispatch
             _dispatchRegistry = dispatchRegistry;
         }
 
+        /// <inheritdoc />
         public async Task SendDispatches(IEnumerable<object> messagePayloads)
+        {
+            if (messagePayloads == null)
+            {
+                throw new ArgumentNullException(nameof(messagePayloads));
+            }
+
+            var dispatches = messagePayloads.Select(o => new Abstractions.Dispatch(o)).ToArray();
+            await SendDispatches(dispatches);
+        }
+
+        /// <inheritdoc />
+        public async Task SendDispatches(IEnumerable<Abstractions.Dispatch> messagePayloads)
         {
             if (messagePayloads == null)
             {
@@ -34,12 +47,16 @@ namespace Ev.ServiceBus.Dispatch
 
             var dispatches =
                 (
-                    from dto in messagePayloads
-                    // the same dto can be published to several senders
-                    let registrations = _dispatchRegistry.GetDispatchRegistrations(dto.GetType())
+                    from dispatch in messagePayloads
+                    // the same dispatch can be published to several senders
+                    let registrations = _dispatchRegistry.GetDispatchRegistrations(dispatch.GetType())
                     from eventPublicationRegistration in registrations
-                    let message = CreateMessage(eventPublicationRegistration, dto)
-                    select new Dispatch(message, eventPublicationRegistration))
+                    let message = CreateMessage(eventPublicationRegistration, dispatch)
+                    select new
+                    {
+                        Message = message,
+                        Registration = eventPublicationRegistration
+                    })
                 .ToArray();
 
             foreach (var groupedDispatch in dispatches
@@ -61,28 +78,18 @@ namespace Ev.ServiceBus.Dispatch
             }
         }
 
-        private Message CreateMessage(MessageDispatchRegistration registration, object dto)
+        private Message CreateMessage(MessageDispatchRegistration registration, Abstractions.Dispatch dispatch)
         {
-            var result = _messagePayloadSerializer.SerializeBody(dto);
+            var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
+            message.SessionId = dispatch.SessionId;
             foreach (var customizer in registration.OutgoingMessageCustomizers)
             {
-                customizer?.Invoke(message, dto);
+                customizer?.Invoke(message, dispatch.Payload);
             }
 
             return message;
         }
 
-        private class Dispatch
-        {
-            public Dispatch(Message message, MessageDispatchRegistration registration)
-            {
-                this.Message = message;
-                this.Registration = registration;
-            }
-
-            public Message Message { get; }
-            public MessageDispatchRegistration Registration { get; }
-        }
     }
 }
