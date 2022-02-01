@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
+using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -19,11 +20,13 @@ namespace Ev.ServiceBus.UnitTests
         private readonly Composer _composer;
         private readonly List<Message> _sentMessagesToTopic;
         private readonly List<Message> _sentMessagesToQueue;
+        private readonly List<Message> _sentMessagesToQueueSession;
 
         public DispatchTest()
         {
             _sentMessagesToTopic = new List<Message>();
             _sentMessagesToQueue = new List<Message>();
+            _sentMessagesToQueueSession = new List<Message>();
             _composer = new Composer();
 
             _composer.WithAdditionalServices(services =>
@@ -38,6 +41,11 @@ namespace Ev.ServiceBus.UnitTests
                 services.RegisterServiceBusDispatch().ToQueue("testQueue", builder =>
                 {
                     builder.RegisterDispatch<PublishedThroughQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
+                });
+
+                services.RegisterServiceBusDispatch().ToQueue("testQueueSession", builder =>
+                {
+                    builder.RegisterDispatch<PublishedThroughSessionQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
                 });
 
                 // noise
@@ -66,7 +74,7 @@ namespace Ev.ServiceBus.UnitTests
                     _sentMessagesToTopic.AddRange(messages);
                 });
 
-            var queueClient = _composer.QueueFactory.GetAllRegisteredClients().First();
+            var queueClient = _composer.QueueFactory.GetAssociatedMock("testQueue");
             queueClient.Mock
                 .Setup(o => o.SendAsync(It.IsAny<Message>()))
                 .Returns(Task.CompletedTask)
@@ -81,6 +89,22 @@ namespace Ev.ServiceBus.UnitTests
                 .Callback((IList<Message> messages) =>
                 {
                     _sentMessagesToQueue.AddRange(messages);
+                });
+            var queueClientSession = _composer.QueueFactory.GetAssociatedMock("testQueueSession");
+            queueClientSession.Mock
+                .Setup(o => o.SendAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask)
+                .Callback((Message message) =>
+                {
+                    _sentMessagesToQueueSession.Add(message);
+                });
+
+            queueClientSession.Mock
+                .Setup(o => o.SendAsync(It.IsAny<IList<Message>>()))
+                .Returns(Task.CompletedTask)
+                .Callback((IList<Message> messages) =>
+                {
+                    _sentMessagesToQueueSession.AddRange(messages);
                 });
 
             SimulatePublication().GetAwaiter().GetResult();
@@ -103,6 +127,11 @@ namespace Ev.ServiceBus.UnitTests
                     SomeNumber = 36,
                     SomeString = "hello"
                 });
+                eventPublisher.Publish(new PublishedThroughSessionQueueEvent()
+                {
+                    SomeNumber = 36,
+                    SomeString = "hello"
+                }, "SomeSessionId");
 
                 await eventDispatcher.ExecuteDispatches();
             }
@@ -115,6 +144,7 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         public class PublishedThroughQueueEvent : PublishedEvent { }
+        public class PublishedThroughSessionQueueEvent : PublishedEvent { }
 
         public class PublishedEvent2 { }
         public class PublishedEvent3 { }
@@ -152,6 +182,7 @@ namespace Ev.ServiceBus.UnitTests
         [Theory]
         [InlineData("topic")]
         [InlineData("queue")]
+        [InlineData("sessionQueue")]
         public void MessageContentTypeMustBeSet(string clientToCheck)
         {
             var message = GetMessageFrom(clientToCheck);
@@ -161,6 +192,7 @@ namespace Ev.ServiceBus.UnitTests
         [Theory]
         [InlineData("topic", typeof(PublishedEvent))]
         [InlineData("queue", typeof(PublishedThroughQueueEvent))]
+        [InlineData("sessionQueue", typeof(PublishedThroughSessionQueueEvent))]
         public void MessageMustContainAProperJsonBody(string clientToCheck, Type typeToParse)
         {
             var message = GetMessageFrom(clientToCheck);
@@ -174,10 +206,18 @@ namespace Ev.ServiceBus.UnitTests
         [Theory]
         [InlineData("topic")]
         [InlineData("queue")]
+        [InlineData("sessionQueue")]
         public void MessageMustContainALabel(string clientToCheck)
         {
             var message = GetMessageFrom(clientToCheck);
             Assert.NotNull(message?.Label);
+        }
+
+        [Fact]
+        public void MessageMustContainASessionId()
+        {
+            var message = GetMessageFrom("sessionQueue");
+            message?.SessionId.Should().Be("SomeSessionId");
         }
 
         [Fact]
@@ -195,7 +235,6 @@ namespace Ev.ServiceBus.UnitTests
                     });
             }
         }
-
 
         [Fact]
         public void SendEventsDoesntAcceptNulls()
@@ -220,6 +259,10 @@ namespace Ev.ServiceBus.UnitTests
             if (clientToCheck == "topic")
             {
                 return _sentMessagesToTopic.FirstOrDefault();
+            }
+            if (clientToCheck == "sessionQueue")
+            {
+                return _sentMessagesToQueueSession.FirstOrDefault();
             }
             return _sentMessagesToQueue.FirstOrDefault();
         }
