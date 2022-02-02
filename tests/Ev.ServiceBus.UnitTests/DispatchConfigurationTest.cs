@@ -53,6 +53,11 @@ namespace Ev.ServiceBus.UnitTests
             {
                 await sender.SendDispatches(new[] { new PublishedEvent() });
             });
+
+            await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
+            {
+                await sender.SendDispatches(new[] { new Abstractions.Dispatch(new PublishedEvent()) });
+            });
         }
 
         [Fact]
