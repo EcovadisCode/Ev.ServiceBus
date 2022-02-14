@@ -15,19 +15,18 @@ namespace Ev.ServiceBus
             _serviceProvider = serviceProvider;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             var engine = _serviceProvider.GetRequiredService<ServiceBusEngine>();
 
-            engine.StartAll();
-            return Task.CompletedTask;
+            await engine.StartAll();
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             var engine = _serviceProvider.GetRequiredService<ServiceBusEngine>();
 
-            await engine.StopAll().ConfigureAwait(false);
+            await engine.StopAll(cancellationToken).ConfigureAwait(false);
         }
     }
 }

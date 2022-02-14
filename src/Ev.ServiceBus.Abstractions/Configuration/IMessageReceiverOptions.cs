@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions
@@ -14,7 +14,7 @@ namespace Ev.ServiceBus.Abstractions
         /// <summary>
         /// Settings specific to this reception handler
         /// </summary>
-        Action<MessageHandlerOptions>? MessageHandlerConfig { get; }
+        Action<ServiceBusProcessorOptions>? ServiceBusProcessorOptions { get; }
 
         /// <summary>
         /// Type of a class inheriting from <see cref="IExceptionHandler"/> that will be resolved
@@ -26,6 +26,6 @@ namespace Ev.ServiceBus.Abstractions
         /// <summary>
         /// Settings specific to this reception handler
         /// </summary>
-        Action<SessionHandlerOptions>? SessionHandlerConfig { get; }
+        Action<ServiceBusSessionProcessorOptions>? SessionProcessorOptions { get; }
     }
 }

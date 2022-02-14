@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
-using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus
 {
@@ -21,27 +22,33 @@ namespace Ev.ServiceBus
         public ClientType ClientType { get; }
 
         /// <inheritdoc />
-        public Task SendAsync(Message message)
+        public Task SendMessageAsync(ServiceBusMessage message, CancellationToken cancellationToken = default) { throw new MessageSenderUnavailableException(Name); }
+        /// <inheritdoc />
+        public Task SendMessagesAsync(IEnumerable<ServiceBusMessage> messages, CancellationToken cancellationToken = default) { throw new MessageSenderUnavailableException(Name); }
+        /// <inheritdoc />
+        public ValueTask<ServiceBusMessageBatch> CreateMessageBatchAsync(CancellationToken cancellationToken = default) { throw new MessageSenderUnavailableException(Name); }
+        /// <inheritdoc />
+        public ValueTask<ServiceBusMessageBatch> CreateMessageBatchAsync(CreateMessageBatchOptions options, CancellationToken cancellationToken = default) { throw new MessageSenderUnavailableException(Name); }
+        /// <inheritdoc />
+        public Task SendMessagesAsync(ServiceBusMessageBatch messageBatch, CancellationToken cancellationToken = default) { throw new MessageSenderUnavailableException(Name); }
+
+        /// <inheritdoc />
+        public Task<long> ScheduleMessageAsync(ServiceBusMessage message, DateTimeOffset scheduledEnqueueTime,
+            CancellationToken cancellationToken = default)
         {
             throw new MessageSenderUnavailableException(Name);
         }
 
         /// <inheritdoc />
-        public Task SendAsync(IList<Message> messageList)
+        public Task<IReadOnlyList<long>> ScheduleMessagesAsync(IEnumerable<ServiceBusMessage> messages, DateTimeOffset scheduledEnqueueTime,
+            CancellationToken cancellationToken = default)
         {
             throw new MessageSenderUnavailableException(Name);
         }
 
         /// <inheritdoc />
-        public Task<long> ScheduleMessageAsync(Message message, DateTimeOffset scheduleEnqueueTimeUtc)
-        {
-            throw new MessageSenderUnavailableException(Name);
-        }
-
+        public Task CancelScheduledMessageAsync(long sequenceNumber, CancellationToken cancellationToken = default) { throw new MessageSenderUnavailableException(Name); }
         /// <inheritdoc />
-        public Task CancelScheduledMessageAsync(long sequenceNumber)
-        {
-            throw new MessageSenderUnavailableException(Name);
-        }
+        public Task CancelScheduledMessagesAsync(IEnumerable<long> sequenceNumbers, CancellationToken cancellationToken = default) { throw new MessageSenderUnavailableException(Name); }
     }
 }

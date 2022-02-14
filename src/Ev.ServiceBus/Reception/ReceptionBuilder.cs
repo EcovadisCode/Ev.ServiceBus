@@ -27,7 +27,7 @@ namespace Ev.ServiceBus.Reception
             }
 
             var queue = new QueueOptions(_services, queueName, false)
-                .ToMessageReceptionHandling();
+                .ToMessageReceptionHandling(_ => {});
             _services.Configure<ServiceBusOptions>(
                 options =>
                 {
@@ -61,7 +61,7 @@ namespace Ev.ServiceBus.Reception
             }
 
             var subscriptionOptions = new SubscriptionOptions(_services, topicName, subscriptionName, false)
-                .ToMessageReceptionHandling();
+                .ToMessageReceptionHandling(_ => {});
             _services.Configure<ServiceBusOptions>(
                 options =>
                 {

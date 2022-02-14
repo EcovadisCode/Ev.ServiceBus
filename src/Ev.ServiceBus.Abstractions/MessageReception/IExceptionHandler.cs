@@ -1,16 +1,15 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 
 // ReSharper disable once CheckNamespace
-namespace Ev.ServiceBus.Abstractions
+namespace Ev.ServiceBus.Abstractions;
+
+public interface IExceptionHandler
 {
-    public interface IExceptionHandler
-    {
-        /// <summary>
-        /// This is called whenever there's an unhandled exception during the reception process.
-        /// </summary>
-        /// <param name="exceptionReceivedEventArgs"></param>
-        /// <returns></returns>
-        Task HandleExceptionAsync(ExceptionReceivedEventArgs exceptionReceivedEventArgs);
-    }
+    /// <summary>
+    /// This is called whenever there's an unhandled exception during the reception process.
+    /// </summary>
+    /// <param name="exceptionReceivedEventArgs"></param>
+    /// <returns></returns>
+    Task HandleExceptionAsync(ProcessErrorEventArgs exceptionReceivedEventArgs);
 }

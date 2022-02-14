@@ -1,40 +1,46 @@
-﻿using Microsoft.Azure.ServiceBus;
+﻿using System;
+using Azure.Messaging.ServiceBus;
 
 namespace Ev.ServiceBus.Abstractions
 {
     public class ConnectionSettings
     {
-        internal ConnectionSettings(
-            ServiceBusConnection serviceBusConnection,
-            ReceiveMode receiveMode,
-            RetryPolicy? retryPolicy)
-        {
-            Connection = serviceBusConnection;
-            ReceiveMode = receiveMode;
-            RetryPolicy = retryPolicy;
-        }
-
-        internal ConnectionSettings(
-            ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder,
-            ReceiveMode receiveMode,
-            RetryPolicy? retryPolicy)
-        {
-            ConnectionStringBuilder = serviceBusConnectionStringBuilder;
-            ReceiveMode = receiveMode;
-            RetryPolicy = retryPolicy;
-        }
-
-        internal ConnectionSettings(string connectionString, ReceiveMode receiveMode, RetryPolicy? retryPolicy)
+        internal ConnectionSettings(string connectionString, ServiceBusClientOptions options)
         {
             ConnectionString = connectionString;
-            ReceiveMode = receiveMode;
-            RetryPolicy = retryPolicy;
+            Options = options;
+            Endpoint = GetEndpointFromConnectionString(connectionString);
         }
 
-        public string? ConnectionString { get; }
-        public ReceiveMode ReceiveMode { get; }
-        public RetryPolicy? RetryPolicy { get; }
-        public ServiceBusConnection? Connection { get; }
-        public ServiceBusConnectionStringBuilder? ConnectionStringBuilder { get; }
+        public string Endpoint { get; }
+        public string ConnectionString { get; }
+        public ServiceBusClientOptions Options { get; }
+
+        private string GetEndpointFromConnectionString(string connectionString)
+        {
+            var KeyValuePairDelimiter = ';';
+            var KeyValueSeparator = '=';
+            var EndpointConfigName = "Endpoint";
+
+            // First split based on ';'
+            var keyValuePairs = connectionString.Split(new[] { KeyValuePairDelimiter }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var keyValuePair in keyValuePairs)
+            {
+                // Now split based on the _first_ '='
+                var keyAndValue = keyValuePair.Split(new[] { KeyValueSeparator }, 2);
+                var key = keyAndValue[0];
+                if (keyAndValue.Length != 2)
+                {
+                    return string.Empty;
+                }
+
+                var value = keyAndValue[1].Trim();
+                if (key.Equals(EndpointConfigName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return value;
+                }
+            }
+            return string.Empty;
+        }
     }
 }

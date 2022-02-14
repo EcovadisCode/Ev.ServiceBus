@@ -1,7 +1,7 @@
 ﻿using System.Linq;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -35,61 +35,13 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
         }
 
         [Fact]
-        public void SubscriptionWithNoConnectionStringWillBeIgnored_case2()
-        {
-            var services = new ServiceCollection();
-
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-                settings.WithConnection(new ServiceBusConnectionStringBuilder());
-            });
-
-            services.AddHealthChecks().AddEvServiceBusChecks();
-
-            services.RegisterServiceBusReception().FromSubscription("topic", "subscription", builder =>
-            {
-                builder.RegisterReception<StudentCreated, StudentCreatedHandler>();
-            });
-
-            var provider = services.BuildServiceProvider();
-
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(0);
-        }
-
-        [Fact]
-        public void SubscriptionWithNoConnectionStringWillBeIgnored_case3()
-        {
-            var services = new ServiceCollection();
-
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-                settings.WithConnection(new ServiceBusConnection("Endpoint=sb://localhost.windows.net/;SharedAccessKeyName=accessKey;SharedAccessKey=6WXpAsTC+9QzmGiPt+58khMtryasgplsL6y9dpjSF1w="));
-            });
-
-            services.AddHealthChecks().AddEvServiceBusChecks();
-
-            services.RegisterServiceBusReception().FromSubscription("topic", "subscription", builder =>
-            {
-                builder.RegisterReception<StudentCreated, StudentCreatedHandler>();
-            });
-
-            var provider = services.BuildServiceProvider();
-
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(0);
-        }
-
-        [Fact]
         public void SubscriptionWithConnectionStringWillBeRegistered_case1()
         {
             var services = new ServiceCollection();
 
             services.AddServiceBus<PayloadSerializer>(settings =>
             {
-                settings.WithConnection("testConnectionString");
+                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             services.AddHealthChecks().AddEvServiceBusChecks();
@@ -122,7 +74,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
 
             services.RegisterServiceBusReception().FromSubscription("topic", "subscription", builder =>
             {
-                builder.CustomizeConnection("testConnectionString");
+                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
                 builder.RegisterReception<CourseCreated, CourseCreatedHandler>();
             });
 
@@ -143,7 +95,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
 
             services.AddServiceBus<PayloadSerializer>(settings =>
             {
-                settings.WithConnection("testConnectionString");
+                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             services.AddHealthChecks().AddEvServiceBusChecks();
