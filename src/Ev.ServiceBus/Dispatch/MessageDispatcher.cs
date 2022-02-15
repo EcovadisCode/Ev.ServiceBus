@@ -9,22 +9,22 @@ namespace Ev.ServiceBus.Dispatch
     public class MessageDispatcher : IMessagePublisher, IMessageDispatcher
     {
         private readonly IDispatchSender _sender;
-        private readonly List<object> _eventsToSend;
+        private readonly List<Abstractions.Dispatch> _dispatchesToSend;
 
         public MessageDispatcher(IDispatchSender sender)
         {
             _sender = sender;
-            _eventsToSend = new List<object>();
+            _dispatchesToSend = new List<Abstractions.Dispatch>();
         }
 
         /// <inheritdoc />
         public async Task ExecuteDispatches()
         {
-            if (_eventsToSend.Any())
+            if (_dispatchesToSend.Any())
             {
-                await _sender.SendDispatches(_eventsToSend).ConfigureAwait(false);
+                await _sender.SendDispatches(_dispatchesToSend).ConfigureAwait(false);
 
-                _eventsToSend.Clear();
+                _dispatchesToSend.Clear();
             }
         }
 
@@ -36,7 +36,26 @@ namespace Ev.ServiceBus.Dispatch
                 throw new ArgumentNullException(nameof(messageDto));
             }
 
-            _eventsToSend.Add(messageDto);
+            _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto));
+        }
+
+        /// <inheritdoc />
+        public void Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId)
+        {
+            if (messageDto == null)
+            {
+                throw new ArgumentNullException(nameof(messageDto));
+            }
+
+            if (sessionId == null)
+            {
+                throw new ArgumentNullException(nameof(sessionId));
+            }
+
+            _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto)
+            {
+                SessionId = sessionId
+            });
         }
     }
 }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -20,11 +21,13 @@ public class DispatchTest : IDisposable
     private readonly Composer _composer;
     private readonly List<ServiceBusMessage> _sentMessagesToTopic;
     private readonly List<ServiceBusMessage> _sentMessagesToQueue;
+    private readonly List<ServiceBusMessage> _sentMessagesToQueueSession;
 
     public DispatchTest()
     {
         _sentMessagesToTopic = new List<ServiceBusMessage>();
         _sentMessagesToQueue = new List<ServiceBusMessage>();
+        _sentMessagesToQueueSession = new List<ServiceBusMessage>();
         _composer = new Composer();
 
         _composer.WithAdditionalServices(services =>
@@ -32,6 +35,11 @@ public class DispatchTest : IDisposable
             services.RegisterServiceBusDispatch().ToTopic("testTopic", builder =>
             {
                 builder.RegisterDispatch<PublishedEvent>().CustomizePayloadTypeId("MyEvent");
+
+                services.RegisterServiceBusDispatch().ToQueue("testQueueSession", builder =>
+                {
+                    builder.RegisterDispatch<PublishedThroughSessionQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
+                });
 
                 // noise
                 builder.RegisterDispatch<PublishedEvent3>().CustomizePayloadTypeId("MyEvent3");
@@ -104,6 +112,11 @@ public class DispatchTest : IDisposable
                 SomeNumber = 36,
                 SomeString = "hello"
             });
+            eventPublisher.Publish(new PublishedThroughSessionQueueEvent()
+            {
+                SomeNumber = 36,
+                SomeString = "hello"
+            }, "SomeSessionId");
 
             await eventDispatcher.ExecuteDispatches();
         }
@@ -116,6 +129,7 @@ public class DispatchTest : IDisposable
     }
 
     public class PublishedThroughQueueEvent : PublishedEvent { }
+    public class PublishedThroughSessionQueueEvent : PublishedEvent { }
 
     public class PublishedEvent2 { }
     public class PublishedEvent3 { }
@@ -134,8 +148,8 @@ public class DispatchTest : IDisposable
     public void MessageMustContainTheRightMessageType(string clientToCheck)
     {
         var message = GetMessageFrom(clientToCheck);
-        Assert.True(message?.ApplicationProperties.ContainsKey("MessageType"));
-        Assert.Equal("IntegrationEvent", message?.ApplicationProperties["MessageType"]);
+        Assert.True(message?.UserProperties.ContainsKey("MessageType"));
+        Assert.Equal("IntegrationEvent", message?.UserProperties["MessageType"]);
     }
 
     [Theory]
@@ -144,15 +158,16 @@ public class DispatchTest : IDisposable
     public void MessageMustContainTheRightPayloadTypeId(string clientToCheck, string eventTypeId)
     {
         var message = GetMessageFrom(clientToCheck);
-        Assert.True(message?.ApplicationProperties.ContainsKey("EventTypeId"));
-        Assert.True(message?.ApplicationProperties.ContainsKey("PayloadTypeId"));
-        Assert.Equal(eventTypeId, message?.ApplicationProperties["EventTypeId"]);
-        Assert.Equal(eventTypeId, message?.ApplicationProperties["PayloadTypeId"]);
+        Assert.True(message?.UserProperties.ContainsKey("EventTypeId"));
+        Assert.True(message?.UserProperties.ContainsKey("PayloadTypeId"));
+        Assert.Equal(eventTypeId, message?.UserProperties["EventTypeId"]);
+        Assert.Equal(eventTypeId, message?.UserProperties["PayloadTypeId"]);
     }
 
     [Theory]
     [InlineData("topic")]
     [InlineData("queue")]
+    [InlineData("sessionQueue")]
     public void MessageContentTypeMustBeSet(string clientToCheck)
     {
         var message = GetMessageFrom(clientToCheck);
@@ -162,11 +177,12 @@ public class DispatchTest : IDisposable
     [Theory]
     [InlineData("topic", typeof(PublishedEvent))]
     [InlineData("queue", typeof(PublishedThroughQueueEvent))]
+    [InlineData("sessionQueue", typeof(PublishedThroughSessionQueueEvent))]
     public void MessageMustContainAProperJsonBody(string clientToCheck, Type typeToParse)
     {
         var message = GetMessageFrom(clientToCheck);
-        var body = Encoding.UTF8.GetString(message?.Body.ToArray());
-        var @event = JsonSerializer.Deserialize(body, typeToParse) as PublishedEvent;
+        var body = Encoding.UTF8.GetString(message?.Body);
+        var @event = JsonConvert.DeserializeObject(body, typeToParse) as PublishedEvent;
         Assert.NotNull(@event);
         Assert.Equal("hello", @event.SomeString);
         Assert.Equal(36, @event.SomeNumber);
@@ -175,10 +191,18 @@ public class DispatchTest : IDisposable
     [Theory]
     [InlineData("topic")]
     [InlineData("queue")]
+    [InlineData("sessionQueue")]
     public void MessageMustContainALabel(string clientToCheck)
     {
         var message = GetMessageFrom(clientToCheck);
-        Assert.NotNull(message?.Subject);
+        Assert.NotNull(message?.Label);
+    }
+
+    [Fact]
+    public void MessageMustContainASessionId()
+    {
+        var message = GetMessageFrom("sessionQueue");
+        message?.SessionId.Should().Be("SomeSessionId");
     }
 
     [Fact]
