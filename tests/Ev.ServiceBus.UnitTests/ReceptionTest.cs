@@ -44,7 +44,7 @@ namespace Ev.ServiceBus.UnitTests
         public async Task FailsWhenHandlerThrowsException()
         {
             var composer = await InitSimpleTest();
-            var client = composer.ClientFactory.GetProcessorMock("testTopic", "SubscriptionWithNoHandlers");
+            var client = composer.ClientFactory.GetProcessorMock("testTopic", "SubscriptionWithFailingHandler");
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 async () =>
@@ -162,7 +162,7 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
-        public void MaxAutoRenewDurationIsSet()
+        public async Task MaxAutoRenewDurationIsSet()
         {
             var services = new ServiceCollection();
 
@@ -177,6 +177,7 @@ namespace Ev.ServiceBus.UnitTests
             services.OverrideClientFactory();
             var provider = services.BuildServiceProvider();
 
+            await provider.SimulateStartHost(CancellationToken.None);
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
             options.Value.Receivers.Count.Should().Be(1);
             var subOptions = options.Value.Receivers.First();

@@ -41,7 +41,7 @@ namespace Ev.ServiceBus.UnitTests
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
 
             options.Value.Settings.ConnectionSettings.Should().NotBeNull();
-            options.Value.Settings.ConnectionSettings!.ConnectionString.Should().Be("testConnectionString");
+            options.Value.Settings.ConnectionSettings!.Endpoint.Should().Be("testConnectionString");
         }
     }
 }

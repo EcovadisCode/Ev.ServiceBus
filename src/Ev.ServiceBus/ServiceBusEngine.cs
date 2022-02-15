@@ -162,14 +162,14 @@ public class ServiceBusEngine
 
         var receiverOptions = new ComposedReceiverOptions(receivers.Cast<IMessageReceiverOptions>().ToArray());
 
-        var connectionSettings = receiverOptions.ConnectionSettings ?? _options.Value.Settings.ConnectionSettings;
-        if (connectionSettings == null)
-        {
-            throw new MissingConnectionException(receiverOptions.ResourceId, ClientType.Topic);
-        }
-
         try
         {
+            var connectionSettings = receiverOptions.ConnectionSettings ?? _options.Value.Settings.ConnectionSettings;
+            if (connectionSettings == null)
+            {
+                throw new MissingConnectionException(receiverOptions.ResourceId, ClientType.Topic);
+            }
+
             var client = CreateOrGetServiceBusClient(connectionSettings);
             var receiverWrapper = new ReceiverWrapper(
                 client,
@@ -177,7 +177,7 @@ public class ServiceBusEngine
                 _options.Value,
                 _provider);
             await receiverWrapper.Initialize();
-            _receivers.Add(receiverOptions.ResourceId, receiverWrapper);
+            _receivers.Add(_registry.ComputeResourceKey(receiverOptions.ClientType, receiverOptions.ResourceId), receiverWrapper);
         }
         catch (Exception ex)
         {

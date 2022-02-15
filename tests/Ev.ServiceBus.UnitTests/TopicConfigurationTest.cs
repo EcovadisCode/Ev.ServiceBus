@@ -96,7 +96,7 @@ public class TopicConfigurationTest
         var composer = new Composer();
         composer.WithDefaultSettings(settings => { });
 
-        var logger = new Mock<ILogger<SenderWrapper>>();
+        var logger = new Mock<ILogger<ServiceBusEngine>>();
         composer.WithAdditionalServices(
             services =>
             {

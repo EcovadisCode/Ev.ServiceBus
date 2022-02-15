@@ -147,7 +147,7 @@ namespace Ev.ServiceBus.UnitTests
             var composer = new Composer();
 
             composer.WithDefaultSettings(settings => { });
-            var logger = new Mock<ILogger<ReceiverWrapper>>();
+            var logger = new Mock<ILogger<ServiceBusEngine>>();
             composer.WithAdditionalServices(
                 services =>
                 {
@@ -186,9 +186,10 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var client = composer.ClientFactory.GetProcessorMock("testTopic", "testSubscription");
-
-            client.Should().BeNull();
+            var client = composer.ClientFactory.GetAssociatedMock("testConnectionStringFromDefault");
+            client.Should().NotBeNull();
+            var receiver = composer.ClientFactory.GetProcessorMock("testTopic", "testSubscription");
+            receiver.Should().NotBeNull();
         }
 
         [Fact]

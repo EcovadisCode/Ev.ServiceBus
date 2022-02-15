@@ -42,5 +42,19 @@ namespace Ev.ServiceBus.Abstractions
             }
             return string.Empty;
         }
+
+        public override int GetHashCode()
+        {
+            return Endpoint.GetHashCode();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is not ConnectionSettings settings)
+            {
+                return false;
+            }
+            return Endpoint.Equals(settings.Endpoint);
+        }
     }
 }

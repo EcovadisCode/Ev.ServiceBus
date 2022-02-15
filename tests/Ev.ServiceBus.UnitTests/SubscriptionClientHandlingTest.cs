@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -160,12 +161,7 @@ namespace Ev.ServiceBus.UnitTests
             await provider.SimulateStartHost(token: new CancellationToken());
 
             var clientMock = provider.GetProcessorMock("testTopic", "testSub");
-
-            var sentMessage = new ServiceBusMessage();
-            var sentToken = new CancellationToken();
-            await clientMock.TriggerMessageReception(sentMessage, sentToken);
-
-            mock.Verify(o => o.HandleMessageAsync(It.Is<MessageContext>(context => context.Message.MessageId == sentMessage.MessageId)),Times.Never);
+            clientMock.Should().BeNull();
         }
     }
 }
