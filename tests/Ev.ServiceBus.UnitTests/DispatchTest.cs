@@ -148,8 +148,8 @@ public class DispatchTest : IDisposable
     public void MessageMustContainTheRightMessageType(string clientToCheck)
     {
         var message = GetMessageFrom(clientToCheck);
-        Assert.True(message?.UserProperties.ContainsKey("MessageType"));
-        Assert.Equal("IntegrationEvent", message?.UserProperties["MessageType"]);
+        Assert.True(message?.ApplicationProperties.ContainsKey("MessageType"));
+        Assert.Equal("IntegrationEvent", message?.ApplicationProperties["MessageType"]);
     }
 
     [Theory]
@@ -158,10 +158,10 @@ public class DispatchTest : IDisposable
     public void MessageMustContainTheRightPayloadTypeId(string clientToCheck, string eventTypeId)
     {
         var message = GetMessageFrom(clientToCheck);
-        Assert.True(message?.UserProperties.ContainsKey("EventTypeId"));
-        Assert.True(message?.UserProperties.ContainsKey("PayloadTypeId"));
-        Assert.Equal(eventTypeId, message?.UserProperties["EventTypeId"]);
-        Assert.Equal(eventTypeId, message?.UserProperties["PayloadTypeId"]);
+        Assert.True(message?.ApplicationProperties.ContainsKey("EventTypeId"));
+        Assert.True(message?.ApplicationProperties.ContainsKey("PayloadTypeId"));
+        Assert.Equal(eventTypeId, message?.ApplicationProperties["EventTypeId"]);
+        Assert.Equal(eventTypeId, message?.ApplicationProperties["PayloadTypeId"]);
     }
 
     [Theory]
@@ -181,8 +181,8 @@ public class DispatchTest : IDisposable
     public void MessageMustContainAProperJsonBody(string clientToCheck, Type typeToParse)
     {
         var message = GetMessageFrom(clientToCheck);
-        var body = Encoding.UTF8.GetString(message?.Body);
-        var @event = JsonConvert.DeserializeObject(body, typeToParse) as PublishedEvent;
+        var body = Encoding.UTF8.GetString(message?.Body.ToArray());
+        var @event = JsonSerializer.Deserialize(body, typeToParse) as PublishedEvent;
         Assert.NotNull(@event);
         Assert.Equal("hello", @event.SomeString);
         Assert.Equal(36, @event.SomeNumber);
@@ -195,7 +195,7 @@ public class DispatchTest : IDisposable
     public void MessageMustContainALabel(string clientToCheck)
     {
         var message = GetMessageFrom(clientToCheck);
-        Assert.NotNull(message?.Label);
+        Assert.NotNull(message?.Subject);
     }
 
     [Fact]
