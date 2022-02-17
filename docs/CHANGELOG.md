@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 ### Changed
 ### Removed
+
+## 3.6.0
+- Added method overloads enabling you to publish a message with a specific sessionId.
+
 ## 3.5.0
 - Clients can now receive message in session mode.
 
