@@ -41,6 +41,11 @@ public class DispatchTest : IDisposable
                     builder.RegisterDispatch<PublishedThroughSessionQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
                 });
 
+                services.RegisterServiceBusDispatch().ToQueue("testQueueSession", builder =>
+                {
+                    builder.RegisterDispatch<PublishedThroughSessionQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
+                });
+
                 // noise
                 builder.RegisterDispatch<PublishedEvent3>().CustomizePayloadTypeId("MyEvent3");
             });
