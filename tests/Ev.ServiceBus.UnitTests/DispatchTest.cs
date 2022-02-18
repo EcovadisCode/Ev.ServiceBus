@@ -41,11 +41,6 @@ public class DispatchTest : IDisposable
                     builder.RegisterDispatch<PublishedThroughSessionQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
                 });
 
-                services.RegisterServiceBusDispatch().ToQueue("testQueueSession", builder =>
-                {
-                    builder.RegisterDispatch<PublishedThroughSessionQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
-                });
-
                 // noise
                 builder.RegisterDispatch<PublishedEvent3>().CustomizePayloadTypeId("MyEvent3");
             });
@@ -249,6 +244,10 @@ public class DispatchTest : IDisposable
         if (clientToCheck == "topic")
         {
             return _sentMessagesToTopic.FirstOrDefault();
+        }
+        if (clientToCheck == "sessionQueue")
+        {
+            return _sentMessagesToQueueSession.FirstOrDefault();
         }
         return _sentMessagesToQueue.FirstOrDefault();
     }
