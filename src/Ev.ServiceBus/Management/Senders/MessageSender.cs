@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;
 using IMessageSender = Ev.ServiceBus.Abstractions.IMessageSender;
 
@@ -13,10 +13,10 @@ namespace Ev.ServiceBus
 {
     public class MessageSender : IMessageSender
     {
-        private readonly ISenderClient _client;
+        private readonly ServiceBusSender _client;
         private readonly ILogger<MessageSender> _logger;
 
-        public MessageSender(ISenderClient client, string name, ClientType clientType, ILogger<MessageSender> logger)
+        public MessageSender(ServiceBusSender client, string name, ClientType clientType, ILogger<MessageSender> logger)
         {
             _client = client;
             _logger = logger;
@@ -31,31 +31,63 @@ namespace Ev.ServiceBus
         public ClientType ClientType { get; }
 
         /// <inheritdoc />
-        public Task SendAsync(Message message)
+        public async Task SendMessageAsync(ServiceBusMessage message, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation($"[Ev.ServiceBus] Sending a message to {ClientType} {Name}");
-            return _client.SendAsync(message);
+            await _client.SendMessageAsync(message, cancellationToken);
         }
 
         /// <inheritdoc />
-        public Task SendAsync(IList<Message> messageList)
+        public async Task SendMessagesAsync(IEnumerable<ServiceBusMessage> messages,
+            CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation($"[Ev.ServiceBus] Sending {messageList.Count()} messages to {ClientType} {Name}");
-            return _client.SendAsync(messageList);
+            await _client.SendMessagesAsync(messages, cancellationToken);
         }
 
         /// <inheritdoc />
-        public Task<long> ScheduleMessageAsync(Message message, DateTimeOffset scheduleEnqueueTimeUtc)
+        public async ValueTask<ServiceBusMessageBatch> CreateMessageBatchAsync(
+            CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation($"[Ev.ServiceBus] Scheduling a message to {ClientType} {Name} to be executed at {scheduleEnqueueTimeUtc:O}");
-            return _client.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc);
+            return await _client.CreateMessageBatchAsync(cancellationToken);
         }
 
         /// <inheritdoc />
-        public Task CancelScheduledMessageAsync(long sequenceNumber)
+        public async ValueTask<ServiceBusMessageBatch> CreateMessageBatchAsync(CreateMessageBatchOptions options,
+            CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation($"[Ev.ServiceBus] Cancelling a scheduled message {ClientType} {Name}");
-            return _client.CancelScheduledMessageAsync(sequenceNumber);
+            return await _client.CreateMessageBatchAsync(options, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task SendMessagesAsync(ServiceBusMessageBatch messageBatch,
+            CancellationToken cancellationToken = default)
+        {
+            await _client.SendMessagesAsync(messageBatch, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task<long> ScheduleMessageAsync(ServiceBusMessage message, DateTimeOffset scheduledEnqueueTime, CancellationToken cancellationToken = default)
+        {
+            return await _client.ScheduleMessageAsync(message, scheduledEnqueueTime, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<long>> ScheduleMessagesAsync(IEnumerable<ServiceBusMessage> messages, DateTimeOffset scheduledEnqueueTime,
+            CancellationToken cancellationToken = default)
+        {
+            return await _client.ScheduleMessagesAsync(messages, scheduledEnqueueTime, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task CancelScheduledMessageAsync(long sequenceNumber, CancellationToken cancellationToken = default)
+        {
+            await _client.CancelScheduledMessageAsync(sequenceNumber, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task CancelScheduledMessagesAsync(IEnumerable<long> sequenceNumbers,
+            CancellationToken cancellationToken = default)
+        {
+            await _client.CancelScheduledMessagesAsync(sequenceNumbers, cancellationToken);
         }
     }
 }

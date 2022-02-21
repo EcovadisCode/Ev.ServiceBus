@@ -1,5 +1,4 @@
-﻿using Microsoft.Azure.ServiceBus;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions
@@ -15,7 +14,7 @@ namespace Ev.ServiceBus.Abstractions
             bool strictMode)
             : base(
                 serviceCollection,
-                EntityNameHelper.FormatSubscriptionPath(topicName, subscriptionName),
+                $"{topicName}/Subscriptions/{subscriptionName}",
                 ClientType.Subscription,
                 strictMode)
         {

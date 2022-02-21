@@ -1,6 +1,4 @@
-﻿using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.TestHelpers;
-using Microsoft.Azure.ServiceBus;
+﻿using Ev.ServiceBus.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -8,35 +6,22 @@ namespace Ev.ServiceBus.UnitTests.Helpers
 {
     public static class ServiceCollectionHelpers
     {
-        public static IServiceCollection OverrideClientFactories(this IServiceCollection services)
+        public static IServiceCollection OverrideClientFactory(this IServiceCollection services)
         {
-            services.AddSingleton<FakeQueueClientFactory>();
-            services.AddSingleton<FakeTopicClientFactory>();
-            services.AddSingleton<FakeSubscriptionClientFactory>();
+            services.AddSingleton<FakeClientFactory>();
             services.Replace(
                 new ServiceDescriptor(
-                    typeof(IClientFactory<QueueOptions, IQueueClient>),
-                    provider => provider.GetRequiredService<FakeQueueClientFactory>(),
-                    ServiceLifetime.Singleton));
-            services.Replace(
-                new ServiceDescriptor(
-                    typeof(IClientFactory<TopicOptions, ITopicClient>),
-                    provider => provider.GetRequiredService<FakeTopicClientFactory>(),
-                    ServiceLifetime.Singleton));
-            services.Replace(
-                new ServiceDescriptor(
-                    typeof(IClientFactory<SubscriptionOptions, ISubscriptionClient>),
-                    provider => provider.GetRequiredService<FakeSubscriptionClientFactory>(),
+                    typeof(IClientFactory),
+                    provider => provider.GetRequiredService<FakeClientFactory>(),
                     ServiceLifetime.Singleton));
             return services;
         }
 
-        public static IServiceCollection OverrideClientFactory<TOptions, TClient>(
+        public static IServiceCollection OverrideClientFactory(
             this IServiceCollection services,
-            IClientFactory<TOptions, TClient> instance)
-            where TOptions : ClientOptions where TClient : IClientEntity
+            IClientFactory instance)
         {
-            services.Replace(new ServiceDescriptor(typeof(IClientFactory<TOptions, TClient>), instance));
+            services.Replace(new ServiceDescriptor(typeof(IClientFactory), instance));
             return services;
         }
     }

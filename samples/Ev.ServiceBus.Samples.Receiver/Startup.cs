@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.AsyncApi;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.Sample.Contracts;
@@ -45,7 +46,7 @@ namespace Ev.ServiceBus.Samples.Receiver
                     settings =>
                     {
                         // Provide a connection string here !
-                        settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=");
+                        settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=", new ServiceBusClientOptions());
                     })
                 // Enables you to execute code whenever execution of a message starts, succeeded or failed
                 .RegisterEventListener<ServiceBusEventListener>()

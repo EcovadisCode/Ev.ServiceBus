@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Core.Amqp;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.UnitTests.Helpers;
@@ -34,7 +36,7 @@ namespace Ev.ServiceBus.UnitTests
             });
             await composer.Compose();
 
-            var clientMock = composer.Provider.GetQueueClientMock("testQueue");
+            var clientMock = composer.Provider.GetProcessorMock("testQueue");
             var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
 
@@ -67,7 +69,7 @@ namespace Ev.ServiceBus.UnitTests
             });
             await composer.Compose();
 
-            var clientMock = composer.Provider.GetQueueClientMock("testQueue");
+            var clientMock = composer.Provider.GetProcessorMock("testQueue");
             var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
 
@@ -104,7 +106,7 @@ namespace Ev.ServiceBus.UnitTests
             });
             await composer.Compose();
 
-            var clientMock = composer.Provider.GetSubscriptionClientMock("testSubscription");
+            var clientMock = composer.Provider.GetProcessorMock("testTopic", "testSubscription");
             var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
 
@@ -137,7 +139,7 @@ namespace Ev.ServiceBus.UnitTests
             });
             await composer.Compose();
 
-            var clientMock = composer.Provider.GetSubscriptionClientMock("testSubscription");
+            var clientMock = composer.Provider.GetProcessorMock("testTopic", "testSubscription");
             var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
 

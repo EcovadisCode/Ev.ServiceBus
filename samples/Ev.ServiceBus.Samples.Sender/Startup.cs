@@ -1,5 +1,5 @@
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.AsyncApi;
-using Ev.ServiceBus.HealthChecks;
 using Ev.ServiceBus.Mvc;
 using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Builder;
@@ -44,7 +44,7 @@ namespace Ev.ServiceBus.Samples.Sender
                 settings =>
                 {
                     // Provide a connection string here !
-                    settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=");
+                    settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=", new ServiceBusClientOptions());
                 })
                 .PopulateAsyncApiSchemaWithEvServiceBus();
 

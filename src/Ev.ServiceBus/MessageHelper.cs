@@ -1,39 +1,38 @@
-﻿using Microsoft.Azure.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 
-namespace Ev.ServiceBus
+namespace Ev.ServiceBus;
+
+public static class MessageHelper
 {
-    public static class MessageHelper
+    internal static string? GetEventTypeId(this ServiceBusReceivedMessage message)
     {
-        internal static string? GetEventTypeId(this Message message)
-        {
-            return TryGetValue(message, UserProperties.EventTypeIdProperty);
-        }
+        return TryGetValue(message, UserProperties.EventTypeIdProperty);
+    }
 
-        internal static string? GetPayloadTypeId(this Message message)
-        {
-            return TryGetValue(message, UserProperties.PayloadTypeIdProperty);
-        }
+    internal static string? GetPayloadTypeId(this ServiceBusReceivedMessage message)
+    {
+        return TryGetValue(message, UserProperties.PayloadTypeIdProperty);
+    }
 
-        private static string? TryGetValue(Message message, string propertyName)
-        {
-            message.UserProperties.TryGetValue(propertyName, out var value);
-            return value as string;
-        }
+    private static string? TryGetValue(ServiceBusReceivedMessage message, string propertyName)
+    {
+        message.ApplicationProperties.TryGetValue(propertyName, out var value);
+        return value as string;
+    }
 
-        internal static Message CreateMessage(string contentType, byte[] body, string payloadTypeId)
+    internal static ServiceBusMessage CreateMessage(string contentType, byte[] body, string payloadTypeId)
+    {
+        var message = new ServiceBusMessage(body)
         {
-            var message = new Message(body)
+            ContentType = contentType,
+            Subject = $"An Ev.ServiceBus message of type '{payloadTypeId}'",
+            ApplicationProperties =
             {
-                ContentType = contentType,
-                Label = $"An Ev.ServiceBus message of type '{payloadTypeId}'",
-                UserProperties =
-                {
-                    {UserProperties.MessageTypeProperty, "IntegrationEvent"},
-                    {UserProperties.PayloadTypeIdProperty, payloadTypeId},
-                    {UserProperties.EventTypeIdProperty, payloadTypeId}
-                }
-            };
-            return message;
-        }
+                {UserProperties.MessageTypeProperty, "IntegrationEvent"},
+                {UserProperties.PayloadTypeIdProperty, payloadTypeId},
+                {UserProperties.EventTypeIdProperty, payloadTypeId}
+            }
+        };
+        return message;
     }
 }

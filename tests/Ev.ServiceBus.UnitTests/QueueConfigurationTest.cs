@@ -1,351 +1,201 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
-using Microsoft.Azure.ServiceBus;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace Ev.ServiceBus.UnitTests
+namespace Ev.ServiceBus.UnitTests;
+
+public class QueueConfigurationTest
 {
-    public class QueueConfigurationTest
+    [Fact]
+    public async Task CannotRegisterTwoQueuesWithTheSameName()
     {
-        [Fact]
-        public async Task CannotRegisterTwoQueuesWithTheSameName()
-        {
-            var composer = new Composer();
+        var composer = new Composer();
 
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.RegisterServiceBusQueue("testQueue");
-                    services.RegisterServiceBusQueue("testQueue");
-                });
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.RegisterServiceBusQueue("testQueue");
+                services.RegisterServiceBusQueue("testQueue");
+            });
 
-            await Assert.ThrowsAnyAsync<DuplicateSenderRegistrationException>(
-                async () => await composer.Compose());
-        }
+        await Assert.ThrowsAnyAsync<DuplicateSenderRegistrationException>(
+            async () => await composer.Compose());
+    }
 
-        [Fact]
-        public async Task CanRegisterAndRetrieveQueues()
-        {
-            var composer = new Composer();
+    [Fact]
+    public async Task CanRegisterAndRetrieveQueues()
+    {
+        var composer = new Composer();
 
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
-                    services.RegisterServiceBusQueue("testQueue2").WithConnection("testConnectionString2");
-                    services.RegisterServiceBusQueue("testQueue3").WithConnection("testConnectionString3");
-                });
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.RegisterServiceBusQueue("testQueue").WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                services.RegisterServiceBusQueue("testQueue2").WithConnection("Endpoint=testConnectionString2;", new ServiceBusClientOptions());
+                services.RegisterServiceBusQueue("testQueue3").WithConnection("Endpoint=testConnectionString3;", new ServiceBusClientOptions());
+            });
 
-            var provider = await composer.Compose();
+        var provider = await composer.Compose();
 
-            var registry = provider.GetService<IServiceBusRegistry>();
+        var registry = provider.GetService<IServiceBusRegistry>();
 
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-            Assert.Equal("testQueue2", registry.GetQueueSender("testQueue2")?.Name);
-            Assert.Equal("testQueue3", registry.GetQueueSender("testQueue3")?.Name);
-        }
+        Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
+        Assert.Equal("testQueue2", registry.GetQueueSender("testQueue2")?.Name);
+        Assert.Equal("testQueue3", registry.GetQueueSender("testQueue3")?.Name);
+    }
 
-        [Fact]
-        public async Task CanRegisterQueueWithConnection()
-        {
-            var composer = new Composer();
+    [Fact]
+    public async Task CanRegisterQueueWithConnectionString()
+    {
+        var composer = new Composer();
+        var serviceBusClientOptions = new ServiceBusClientOptions();
 
-            var serviceBusConnection = new ServiceBusConnection(
-                "Endpoint=sb://labepdvsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=TOEhvlmrOoLjHfxhYJ3xjoLtVZrMQLqP8MUwrv5flOA=");
-            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
-            factory
-                .Setup(
-                    o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
-                        It.Is<ConnectionSettings>(conn => conn.Connection == serviceBusConnection)))
-                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
-                .Verifiable();
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.RegisterServiceBusQueue("testQueue").WithConnection("Endpoint=testConnectionString;", serviceBusClientOptions);
+            });
 
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.OverrideClientFactory(factory.Object);
+        var provider = await composer.Compose();
 
-                    services.RegisterServiceBusQueue("testQueue").WithConnection(serviceBusConnection);
-                });
+        var registry = provider.GetRequiredService<IServiceBusRegistry>();
 
-            var provider = await composer.Compose();
+        composer.ClientFactory.GetSenderMock("testQueue").Should().NotBeNull();
+        composer.ClientFactory.GetProcessorMock("testQueue").Should().BeNull();
+        composer.ClientFactory.GetSessionProcessorMock("testQueue").Should().BeNull();
 
-            var registry = provider.GetService<IServiceBusRegistry>();
+        Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
+    }
 
-            factory.VerifyAll();
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-        }
+    [Fact]
+    public async Task FailsSilentlyWhenAnErrorOccursBuildingAQueueClient()
+    {
+        var composer = new Composer();
+        composer.OverrideClientFactory(new FailingClientFactory());
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.RegisterServiceBusQueue("testQueue").WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            });
 
-        [Fact]
-        public async Task CanRegisterQueueWithConnectionString()
-        {
-            var composer = new Composer();
+        var provider = await composer.Compose();
 
-            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
-            factory
-                .Setup(
-                    o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
-                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionString")))
-                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
-                .Verifiable();
+        var registry = provider.GetService<ServiceBusRegistry>();
 
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.OverrideClientFactory(factory.Object);
+        await Assert.ThrowsAsync<MessageSenderUnavailableException>(
+            async () =>
+            {
+                await registry.GetQueueSender("testQueue").SendMessageAsync(new ServiceBusMessage());
+            });
+    }
 
-                    services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
-                });
+    [Fact]
+    public async Task DoesntThrowExceptionWhenServiceBusIsDeactivated()
+    {
+        var services = new ServiceCollection();
 
-            var provider = await composer.Compose();
+        services.AddLogging();
+        services.AddServiceBus<PayloadSerializer>(
+            settings =>
+            {
+                settings.Enabled = false;
+            });
+        services.RegisterServiceBusQueue("testQueue").WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+        services.OverrideClientFactory(new FailingClientFactory());
 
-            var registry = provider.GetService<IServiceBusRegistry>();
+        var provider = services.BuildServiceProvider();
+        await provider.SimulateStartHost(new CancellationToken());
 
-            factory.VerifyAll();
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-        }
+        var registry = provider.GetService<ServiceBusRegistry>();
+        await registry.GetQueueSender("testQueue").SendMessageAsync(new ServiceBusMessage());
+    }
 
-        [Fact]
-        public async Task CanRegisterQueueWithConnectionStringBuilder()
-        {
-            var composer = new Composer();
+    [Fact]
+    public async Task FailsSilentlyWhenRegisteringQueueWithNoConnectionAndNoDefaultConnection()
+    {
+        var composer = new Composer();
 
-            var connectionStringBuilder = new ServiceBusConnectionStringBuilder();
-            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
-            factory
-                .Setup(
-                    o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
-                        It.Is<ConnectionSettings>(conn => conn.ConnectionStringBuilder == connectionStringBuilder)))
-                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
-                .Verifiable();
+        var logger = new Mock<ILogger<ServiceBusEngine>>();
+        composer.WithDefaultSettings(settings => {});
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.AddSingleton(logger.Object);
+                services.RegisterServiceBusQueue("testQueue");
+            });
 
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.OverrideClientFactory(factory.Object);
+        var provider = await composer.Compose();
 
-                    services.RegisterServiceBusQueue("testQueue").WithConnection(connectionStringBuilder);
-                });
+        var registry = provider.GetService<IServiceBusRegistry>();
+        await Assert.ThrowsAsync<MessageSenderUnavailableException>(
+            async () =>
+            {
+                await registry.GetQueueSender("testQueue").SendMessageAsync(new ServiceBusMessage());
+            });
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<MissingConnectionException>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
 
-            var provider = await composer.Compose();
+    [Fact]
+    public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
+    {
+        var composer = new Composer();
 
-            var registry = provider.GetService<IServiceBusRegistry>();
+        composer.WithDefaultSettings(
+            settings =>
+            {
+                settings.WithConnection("Endpoint=testConnectionStringFromDefault;", new ServiceBusClientOptions());
+            });
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.RegisterServiceBusQueue("testQueue");
+            });
 
-            factory.VerifyAll();
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-        }
+        var provider = await composer.Compose();
 
-        [Fact]
-        public async Task CanRegisterQueueWithReceiveMode()
-        {
-            var composer = new Composer();
+        composer.ClientFactory.GetAssociatedMock("testConnectionStringFromDefault").Should().NotBeNull();
+        var registry = provider.GetService<IServiceBusRegistry>();
 
-            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
-            factory
-                .Setup(
-                    o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
-                        It.Is<ConnectionSettings>(conn => conn.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
-                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
-                .Verifiable();
+        Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
+    }
 
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.OverrideClientFactory(factory.Object);
+    [Fact]
+    public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
+    {
+        var composer = new Composer();
+        composer.WithDefaultSettings(
+            settings =>
+            {
+                settings.WithConnection("Endpoint=testConnectionStringFromDefault;", new ServiceBusClientOptions());
+            });
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.RegisterServiceBusQueue("testQueue").WithConnection("Endpoint=concreteTestConnectionString;", new ServiceBusClientOptions());
+            });
 
-                    services.RegisterServiceBusQueue("testQueue")
-                        .WithConnection("testConnectionString", ReceiveMode.ReceiveAndDelete);
-                });
+        var provider = await composer.Compose();
 
-            var provider = await composer.Compose();
+        var connection = composer.ClientFactory.GetAssociatedMock("concreteTestConnectionString");
+        connection.GetSenderMock("testQueue").Should().NotBeNull();
+        var registry = provider.GetService<IServiceBusRegistry>();
 
-            var registry = provider.GetService<IServiceBusRegistry>();
-
-            factory.VerifyAll();
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-        }
-
-        [Fact]
-        public async Task CanRegisterQueueWithRetryPolicy()
-        {
-            var composer = new Composer();
-
-            var retryPolicy = new NoRetry();
-            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
-            factory
-                .Setup(
-                    o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
-                        It.Is<ConnectionSettings>(conn => conn.RetryPolicy == retryPolicy)))
-                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
-                .Verifiable();
-
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.OverrideClientFactory(factory.Object);
-
-                    services.RegisterServiceBusQueue("testQueue")
-                        .WithConnection("testConnectionString", ReceiveMode.PeekLock, retryPolicy);
-                });
-
-            var provider = await composer.Compose();
-
-            var registry = provider.GetService<IServiceBusRegistry>();
-
-            factory.VerifyAll();
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-        }
-
-        [Fact]
-        public async Task FailsSilentlyWhenAnErrorOccursBuildingAQueueClient()
-        {
-            var composer = new Composer();
-            composer.OverrideClientFactory(new FailingClientFactory<QueueOptions, IQueueClient>());
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
-                });
-
-            var provider = await composer.Compose();
-
-            var registry = provider.GetService<ServiceBusRegistry>();
-
-            await Assert.ThrowsAsync<MessageSenderUnavailableException>(
-                async () =>
-                {
-                    await registry.GetQueueSender("testQueue").SendAsync(new Message());
-                });
-        }
-
-        [Fact]
-        public async Task DoesntThrowExceptionWhenServiceBusIsDeactivated()
-        {
-            var services = new ServiceCollection();
-
-            services.AddLogging();
-            services.AddServiceBus<PayloadSerializer>(
-                settings =>
-                {
-                    settings.Enabled = false;
-                });
-            services.RegisterServiceBusQueue("testQueue").WithConnection("testConnectionString");
-
-            var provider = services.BuildServiceProvider();
-            await provider.SimulateStartHost(new CancellationToken());
-            var composer = new Composer();
-            composer.OverrideClientFactory(new FailingClientFactory<QueueOptions, IQueueClient>());
-
-            var registry = provider.GetService<ServiceBusRegistry>();
-            await registry.GetQueueSender("testQueue").SendAsync(new Message());
-        }
-
-        [Fact]
-        public async Task FailsSilentlyWhenRegisteringQueueWithNoConnectionAndNoDefaultConnection()
-        {
-            var composer = new Composer();
-
-            var logger = new Mock<ILogger<SenderWrapper>>();
-            composer.WithDefaultSettings(settings => {});
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.AddSingleton(logger.Object);
-                    services.RegisterServiceBusQueue("testQueue");
-                });
-
-            var provider = await composer.Compose();
-
-            var registry = provider.GetService<IServiceBusRegistry>();
-            await Assert.ThrowsAsync<MessageSenderUnavailableException>(
-                async () =>
-                {
-                    await registry.GetQueueSender("testQueue").SendAsync(new Message());
-                });
-            logger.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<MissingConnectionException>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task UsesDefaultConnectionWhenNoConnectionIsProvided()
-        {
-            var composer = new Composer();
-            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
-            factory
-                .Setup(
-                    o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
-                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "testConnectionStringFromDefault")))
-                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
-                .Verifiable();
-            composer.WithDefaultSettings(
-                settings =>
-                {
-                    settings.WithConnection("testConnectionStringFromDefault");
-                });
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.OverrideClientFactory(factory.Object);
-                    services.RegisterServiceBusQueue("testQueue");
-                });
-
-            var provider = await composer.Compose();
-
-            var registry = provider.GetService<IServiceBusRegistry>();
-
-            factory.VerifyAll();
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-        }
-
-        [Fact]
-        public async Task OverridesDefaultConnectionWhenConcreteConnectionIsProvided()
-        {
-            var composer = new Composer();
-            var factory = new Mock<IClientFactory<QueueOptions, IQueueClient>>();
-            factory
-                .Setup(
-                    o => o.Create(
-                        It.Is<QueueOptions>(opts => opts.ResourceId == "testQueue"),
-                        It.Is<ConnectionSettings>(conn => conn.ConnectionString == "concreteTestConnectionString")))
-                .Returns((QueueOptions o, ConnectionSettings p) => new QueueClientMock("testQueue").QueueClient)
-                .Verifiable();
-            composer.WithDefaultSettings(
-                settings =>
-                {
-                    settings.WithConnection("testConnectionStringFromDefault");
-                });
-            composer.WithAdditionalServices(
-                services =>
-                {
-                    services.OverrideClientFactory(factory.Object);
-                    services.RegisterServiceBusQueue("testQueue").WithConnection("concreteTestConnectionString");
-                });
-
-            var provider = await composer.Compose();
-
-            var registry = provider.GetService<IServiceBusRegistry>();
-
-            factory.VerifyAll();
-            Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
-        }
+        Assert.Equal("testQueue", registry.GetQueueSender("testQueue")?.Name);
     }
 }

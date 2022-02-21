@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Management;
-using Microsoft.Azure.ServiceBus;
 
 namespace Ev.ServiceBus.Dispatch
 {
@@ -73,12 +73,12 @@ namespace Ev.ServiceBus.Dispatch
 
                 foreach (var pageMessages in paginatedMessages)
                 {
-                    await sender.SendAsync(pageMessages.Select(m => m).ToArray()).ConfigureAwait(false);
+                    await sender.SendMessagesAsync(pageMessages.Select(m => m).ToArray()).ConfigureAwait(false);
                 }
             }
         }
 
-        private Message CreateMessage(MessageDispatchRegistration registration, Abstractions.Dispatch dispatch)
+        private ServiceBusMessage CreateMessage(MessageDispatchRegistration registration, Abstractions.Dispatch dispatch)
         {
             var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);

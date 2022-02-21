@@ -1,5 +1,5 @@
-﻿using Ev.ServiceBus.Abstractions;
-using Microsoft.Azure.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
+using Ev.ServiceBus.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ev.ServiceBus.Dispatch
@@ -19,14 +19,12 @@ namespace Ev.ServiceBus.Dispatch
         /// Sets a specific connection for the underlying resource.
         /// </summary>
         /// <param name="connectionString"></param>
-        /// <param name="receiveMode"></param>
-        /// <param name="retryPolicy"></param>
+        /// <param name="options"></param>
         public void CustomizeConnection(
             string connectionString,
-            ReceiveMode receiveMode = ReceiveMode.PeekLock,
-            RetryPolicy? retryPolicy = null)
+            ServiceBusClientOptions options)
         {
-            _options.WithConnection(connectionString, receiveMode, retryPolicy);
+            _options.WithConnection(connectionString, options);
         }
 
         /// <summary>

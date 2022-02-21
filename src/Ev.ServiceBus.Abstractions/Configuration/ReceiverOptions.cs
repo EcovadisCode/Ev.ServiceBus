@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -20,24 +20,24 @@ namespace Ev.ServiceBus.Abstractions
         public Type? MessageHandlerType { get; private set; }
 
         /// <inheritdoc />
-        public Action<MessageHandlerOptions>? MessageHandlerConfig { get; private set; }
+        public Action<ServiceBusProcessorOptions>? ServiceBusProcessorOptions { get; private set; }
 
         /// <inheritdoc />
         public Type? ExceptionHandlerType { get; private set; }
 
-        public Action<SessionHandlerOptions>? SessionHandlerConfig { get; private set; }
+        public Action<ServiceBusSessionProcessorOptions>? SessionProcessorOptions { get; private set; }
 
         /// <summary>
         /// Defines a message handler for the current receiver.
         /// </summary>
         /// <param name="config"></param>
         /// <typeparam name="TMessageHandler"></typeparam>
-        public void WithCustomMessageHandler<TMessageHandler>(Action<MessageHandlerOptions>? config = null)
+        public void WithCustomMessageHandler<TMessageHandler>(Action<ServiceBusProcessorOptions> config)
             where TMessageHandler : class, IMessageHandler
         {
             _services.TryAddScoped<TMessageHandler>();
             MessageHandlerType = typeof(TMessageHandler);
-            MessageHandlerConfig = config;
+            ServiceBusProcessorOptions = config;
         }
 
         /// <summary>
@@ -54,18 +54,9 @@ namespace Ev.ServiceBus.Abstractions
         /// <summary>
         /// Activates session handling for the current receiver.
         /// </summary>
-        /// <param name="maxConcurrentSessions"></param>
-        /// <param name="maxAutoRenewDuration"></param>
-        public void EnableSessionHandling(int maxConcurrentSessions, TimeSpan? maxAutoRenewDuration)
+        public void EnableSessionHandling(Action<ServiceBusSessionProcessorOptions> config)
         {
-            SessionHandlerConfig = options =>
-            {
-                options.MaxConcurrentSessions = maxConcurrentSessions;
-                if (maxAutoRenewDuration.HasValue)
-                {
-                    options.MaxAutoRenewDuration = maxAutoRenewDuration.Value;
-                }
-            };
+            SessionProcessorOptions = config;
         }
     }
 }

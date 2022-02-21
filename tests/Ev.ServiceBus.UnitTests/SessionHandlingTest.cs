@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ev.ServiceBus.Abstractions;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Moq;
 using Xunit;
 
 namespace Ev.ServiceBus.UnitTests;
@@ -29,7 +25,7 @@ public class SessionHandlingTest
                 services.RegisterServiceBusReception()
                     .FromQueue("testQueue", builder =>
                     {
-                        builder.EnableSessionHandling();
+                        builder.EnableSessionHandling(_ => {});
                         builder.RegisterReception<SubscribedEvent, ReceptionTest.SubscribedPayloadHandler>();
                     });
 
@@ -38,17 +34,14 @@ public class SessionHandlingTest
 
         await composer.Compose();
 
-        var clients = composer
-            .QueueFactory
-            .GetAllRegisteredClients();
-        var client = clients.First(o => o.ClientName == "testQueue" && o.IsReceiver);
+        var client = composer.ClientFactory.GetSessionProcessorMock("testQueue");
 
         var message = TestMessageHelper.CreateEventMessage("SubscribedEvent", new
         {
             SomeString = "hello",
             SomeNumber = 36
         });
-        await client.TriggerSessionMessageReception(message, CancellationToken.None);
+        await client.TriggerMessageReception(message, CancellationToken.None);
 
         eventStore.Events.Count.Should().Be(1);
     }
@@ -65,7 +58,7 @@ public class SessionHandlingTest
                 services.RegisterServiceBusReception()
                     .FromSubscription("testTopic", "testSubscription", builder =>
                     {
-                        builder.EnableSessionHandling();
+                        builder.EnableSessionHandling(_ => {});
                         builder.RegisterReception<SubscribedEvent, ReceptionTest.SubscribedPayloadHandler>();
                     });
 
@@ -74,17 +67,14 @@ public class SessionHandlingTest
 
         await composer.Compose();
 
-        var clients = composer
-            .SubscriptionFactory
-            .GetAllRegisteredClients();
-        var client = clients.First(o => o.ClientName == "testSubscription");
+        var client = composer.ClientFactory.GetSessionProcessorMock("testTopic", "testSubscription");
 
         var message = TestMessageHelper.CreateEventMessage("SubscribedEvent", new
         {
             SomeString = "hello",
             SomeNumber = 36
         });
-        await client.TriggerSessionMessageReception(message, CancellationToken.None);
+        await client.TriggerMessageReception(message, CancellationToken.None);
 
         eventStore.Events.Count.Should().Be(1);
     }
@@ -95,31 +85,21 @@ public class SessionHandlingTest
         var services = new ServiceCollection();
         services.AddServiceBus<PayloadSerializer>(settings =>
         {
-            settings.WithConnection("testConnectionString");
+            settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
         });
 
         services.RegisterServiceBusReception()
             .FromSubscription("testTopic", "testSubscription", builder =>
             {
-                builder.EnableSessionHandling(3, TimeSpan.FromSeconds(13));
+                builder.EnableSessionHandling(options =>
+                {
+                    options.MaxConcurrentSessions = 3;
+                    options.MaxAutoLockRenewalDuration = TimeSpan.FromSeconds(13);
+                });
                 builder.RegisterReception<SubscribedEvent, ReceptionTest.SubscribedPayloadHandler>();
             });
 
-        var factory = new Factory();
-        SessionHandlerOptions optionsToCheck = null;
-        factory.Mock
-            .Setup(o => o.RegisterSessionHandler(It.IsAny<Func<IMessageSession, Message, CancellationToken, Task>>(), It.IsAny<SessionHandlerOptions>()))
-            .Callback((Func<IMessageSession, Message, CancellationToken, Task> messageHandler, SessionHandlerOptions options) =>
-            {
-                optionsToCheck = options;
-            });
-
-        services.Replace(
-            new ServiceDescriptor(
-                typeof(IClientFactory<SubscriptionOptions, ISubscriptionClient>),
-                provider => factory,
-                ServiceLifetime.Singleton));
-
+        services.OverrideClientFactory();
         var provider = services.BuildServiceProvider();
 
         var hostedServices = provider.GetServices<IHostedService>();
@@ -129,23 +109,10 @@ public class SessionHandlingTest
             await hostedService.StartAsync(CancellationToken.None);
         }
 
-        optionsToCheck.Should().NotBeNull();
-        optionsToCheck.MaxConcurrentSessions.Should().Be(3);
-        optionsToCheck.MaxAutoRenewDuration.Should().Be(TimeSpan.FromSeconds(13));
-    }
+        var client = provider.GetSessionProcessorMock("testTopic", "testSubscription");
 
-    private class Factory : IClientFactory<SubscriptionOptions, ISubscriptionClient>
-    {
-        public Factory()
-        {
-            Mock = new Mock<ISubscriptionClient>();
-        }
-
-        public Mock<ISubscriptionClient> Mock { get; }
-
-        public ISubscriptionClient Create(SubscriptionOptions options, ConnectionSettings connectionSettings)
-        {
-            return Mock.Object;
-        }
+        client.Options.Should().NotBeNull();
+        client.Options.MaxConcurrentSessions.Should().Be(3);
+        client.Options.MaxAutoLockRenewalDuration.Should().Be(TimeSpan.FromSeconds(13));
     }
 }

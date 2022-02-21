@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -28,16 +28,16 @@ namespace Ev.ServiceBus.UnitTests
                     services.AddTransient<TransientObject>();
 
                     services.RegisterServiceBusQueue("testQueue")
-                        .WithConnection("connectionStringTest")
-                        .WithCustomMessageHandler<InstanceCounterMessageHandler>();
+                        .WithConnection("Endpoint=connectionStringTest;", new ServiceBusClientOptions())
+                        .WithCustomMessageHandler<InstanceCounterMessageHandler>(_ => {});
                 });
 
             var provider = await composer.Compose();
 
-            var clientMock = provider.GetQueueClientMock("testQueue");
+            var clientMock = composer.ClientFactory.GetProcessorMock("testQueue");
 
-            await clientMock.TriggerMessageReception(new Message(), new CancellationToken());
-            await clientMock.TriggerMessageReception(new Message(), new CancellationToken());
+            await clientMock.TriggerMessageReception(new ServiceBusMessage(), new CancellationToken());
+            await clientMock.TriggerMessageReception(new ServiceBusMessage(), new CancellationToken());
 
             var registry = provider.GetService<InstanceRegistry>();
 
@@ -60,7 +60,7 @@ namespace Ev.ServiceBus.UnitTests
             var mock = new Mock<IMessageHandler>();
 
             var exceptionMock = new Mock<IExceptionHandler>();
-            exceptionMock.Setup(o => o.HandleExceptionAsync(It.IsAny<ExceptionReceivedEventArgs>()))
+            exceptionMock.Setup(o => o.HandleExceptionAsync(It.IsAny<ProcessErrorEventArgs>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -71,16 +71,16 @@ namespace Ev.ServiceBus.UnitTests
                     services.AddSingleton(exceptionMock);
 
                     var queue = services.RegisterServiceBusQueue("testQueue")
-                        .WithConnection("connectionStringTest");
-                    queue.WithCustomMessageHandler<FakeMessageHandler>();
+                        .WithConnection("Endpoint=connectionStringTest;", new ServiceBusClientOptions());
+                    queue.WithCustomMessageHandler<FakeMessageHandler>(_ => {});
                     queue.WithCustomExceptionHandler<FakeExceptionHandler>();
                 });
 
             var provider = await composer.Compose();
 
-            var clientMock = provider.GetQueueClientMock("testQueue");
+            var clientMock = provider.GetProcessorMock("testQueue");
 
-            var sentArgs = new ExceptionReceivedEventArgs(new Exception(), "", "", "", "");
+            var sentArgs = new ProcessErrorEventArgs(new Exception(), ServiceBusErrorSource.Abandon, "", "", CancellationToken.None);
             await clientMock.TriggerExceptionOccured(sentArgs);
 
             exceptionMock.Verify(
@@ -101,15 +101,15 @@ namespace Ev.ServiceBus.UnitTests
                     services.AddSingleton(mock);
 
                     services.RegisterServiceBusQueue("testQueue")
-                        .WithConnection("connectionStringTest")
-                        .WithCustomMessageHandler<FakeMessageHandler>();
+                        .WithConnection("Endpoint=connectionStringTest;", new ServiceBusClientOptions())
+                        .WithCustomMessageHandler<FakeMessageHandler>(_ => {});
                 });
 
             var provider = await composer.Compose();
 
-            var clientMock = provider.GetQueueClientMock("testQueue");
+            var clientMock = provider.GetProcessorMock("testQueue");
 
-            var sentArgs = new ExceptionReceivedEventArgs(new Exception(), "", "", "", "");
+            var sentArgs = new ProcessErrorEventArgs(new Exception(), ServiceBusErrorSource.Abandon, "", "", CancellationToken.None);
             await clientMock.TriggerExceptionOccured(sentArgs);
         }
 

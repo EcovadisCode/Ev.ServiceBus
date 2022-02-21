@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -89,7 +88,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(1);
             receivers.Should().SatisfyRespectively(
@@ -121,7 +120,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(1);
             receivers.Should().SatisfyRespectively(
@@ -139,7 +138,7 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusQueue("queueName").WithCustomMessageHandler<CustomMessageHandler>();
+                services.RegisterServiceBusQueue("queueName").WithCustomMessageHandler<CustomMessageHandler>(_ => {});
 
                 services.RegisterServiceBusReception().FromQueue("queueName", builder =>
                 {
@@ -153,7 +152,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(1);
             receivers.Should().SatisfyRespectively(
@@ -172,8 +171,8 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusQueue("queueName")
-                    .WithConnection("anotherConnectionString")
-                    .WithCustomMessageHandler<CustomMessageHandler>();
+                    .WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions())
+                    .WithCustomMessageHandler<CustomMessageHandler>(_ => { });
 
                 services.RegisterServiceBusReception().FromQueue("queueName", builder =>
                 {
@@ -187,7 +186,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(2);
             receivers.Should().SatisfyRespectively(
@@ -211,11 +210,11 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusQueue("queueName")
-                    .WithCustomMessageHandler<CustomMessageHandler>();
+                    .WithCustomMessageHandler<CustomMessageHandler>(_ => {});
 
                 services.RegisterServiceBusReception().FromQueue("queueName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
 
                     builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
                 });
@@ -227,7 +226,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(2);
             receivers.Should().SatisfyRespectively(
@@ -251,12 +250,12 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusQueue("queueName")
-                    .WithConnection("anotherConnectionString")
-                    .WithCustomMessageHandler<CustomMessageHandler>();
+                    .WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions())
+                    .WithCustomMessageHandler<CustomMessageHandler>(_ => {});
 
                 services.RegisterServiceBusReception().FromQueue("queueName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString2");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString2;", new ServiceBusClientOptions());
 
                     builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
                 });
@@ -268,7 +267,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(3);
             receivers.Should().SatisfyRespectively(
@@ -308,7 +307,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(1);
             receivers.Should().SatisfyRespectively(
@@ -340,7 +339,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(1);
             receivers.Should().SatisfyRespectively(
@@ -358,7 +357,7 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusSubscription("topicName", "subscriptionName").WithCustomMessageHandler<CustomMessageHandler>();
+                services.RegisterServiceBusSubscription("topicName", "subscriptionName").WithCustomMessageHandler<CustomMessageHandler>(_ => {});
 
                 services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
                 {
@@ -372,7 +371,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(1);
             receivers.Should().SatisfyRespectively(
@@ -391,8 +390,8 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusSubscription("topicName", "subscriptionName")
-                    .WithConnection("anotherConnectionString")
-                    .WithCustomMessageHandler<CustomMessageHandler>();
+                    .WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions())
+                    .WithCustomMessageHandler<CustomMessageHandler>(_ => {});
 
                 services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
                 {
@@ -406,7 +405,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(2);
             receivers.Should().SatisfyRespectively(
@@ -430,11 +429,11 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusSubscription("topicName", "subscriptionName")
-                    .WithCustomMessageHandler<CustomMessageHandler>();
+                    .WithCustomMessageHandler<CustomMessageHandler>(_ => {});
 
                 services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
 
                     builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
                 });
@@ -446,7 +445,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(2);
             receivers.Should().SatisfyRespectively(
@@ -470,12 +469,12 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusSubscription("topicName", "subscriptionName")
-                    .WithConnection("anotherConnectionString")
-                    .WithCustomMessageHandler<CustomMessageHandler>();
+                    .WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions())
+                    .WithCustomMessageHandler<CustomMessageHandler>(_ => {});
 
                 services.RegisterServiceBusReception().FromSubscription("topicName", "subscriptionName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString2");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString2;", new ServiceBusClientOptions());
 
                     builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
                 });
@@ -487,7 +486,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var receivers = registry!.GetAllReceivers();
             receivers.Length.Should().Be(3);
             receivers.Should().SatisfyRespectively(
@@ -598,7 +597,12 @@ namespace Ev.ServiceBus.UnitTests
                     .FromSubscription("testTopic", "testSubscription",
                         builder =>
                         {
-                            builder.CustomizeMessageHandling(3, TimeSpan.FromDays(3));
+                            builder.CustomizeMessageHandling(options =>
+                            {
+                                options.MaxConcurrentCalls = 3;
+                                options.MaxAutoLockRenewalDuration = TimeSpan.FromDays(3);
+                                options.ReceiveMode = ServiceBusReceiveMode.ReceiveAndDelete;
+                            });
                             builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>()
                                 .CustomizePayloadTypeId("MyEvent");
                         });
@@ -606,16 +610,11 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var clients = composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
+            var client = composer.ClientFactory.GetProcessorMock("testTopic", "testSubscription");
 
-            var client = clients.First(o => o.ClientName == "testSubscription");
-            client.Mock.Verify(o => o.RegisterMessageHandler(It.IsAny<Func<Message, CancellationToken, Task>>(),
-                It.Is<MessageHandlerOptions>(handlerOptions =>
-                    handlerOptions.AutoComplete
-                    && handlerOptions.MaxConcurrentCalls == 3
-                    && handlerOptions.MaxAutoRenewDuration == TimeSpan.FromDays(3))), Times.Once);
+            client.Options.MaxConcurrentCalls.Should().Be(3);
+            client.Options.MaxAutoLockRenewalDuration.Should().Be(TimeSpan.FromDays(3));
+            client.Options.ReceiveMode.Should().Be(ServiceBusReceiveMode.ReceiveAndDelete);
         }
 
         [Fact]
@@ -623,27 +622,26 @@ namespace Ev.ServiceBus.UnitTests
         {
             var composer = new Composer();
 
-            var factory = new Mock<IClientFactory<SubscriptionOptions, ISubscriptionClient>>();
-            factory.Setup(o => o.Create(It.IsAny<SubscriptionOptions>(),
-                    It.Is<ConnectionSettings>(settings => settings.ConnectionString == "newConnectionString"
-                                                          && settings.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
-                .Returns(new Mock<ISubscriptionClient>().Object);
-
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusReception()
                     .FromSubscription("testTopic", "testSubscription",
                         builder =>
                         {
-                            builder.CustomizeConnection("newConnectionString", ReceiveMode.ReceiveAndDelete, RetryPolicy.NoRetry);
+                            builder.CustomizeConnection("Endpoint=newConnectionString;", new ServiceBusClientOptions()
+                            {
+                                EnableCrossEntityTransactions = true,
+                                TransportType = ServiceBusTransportType.AmqpWebSockets
+                            });
                             builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>()
                                 .CustomizePayloadTypeId("MyEvent");
                         });
-                ServiceCollectionHelpers.OverrideClientFactory(services, factory.Object);
             });
 
             await composer.Compose();
-            factory.VerifyAll();
+            var client = composer.ClientFactory.GetAssociatedMock("newConnectionString");
+            client.ConnectionSettings.Options.EnableCrossEntityTransactions.Should().Be(true);
+            client.ConnectionSettings.Options.TransportType.Should().Be(ServiceBusTransportType.AmqpWebSockets);
         }
 
         public class SubscribedEventHandler2 : IMessageReceptionHandler<SubscribedEvent>
