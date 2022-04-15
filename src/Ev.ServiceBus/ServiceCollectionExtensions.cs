@@ -51,12 +51,12 @@ namespace Ev.ServiceBus
 
             RegisterMessageReceptionServices(services);
 
+            services.TryAddSingleton<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
         private static void RegisterMessageReceptionServices(IServiceCollection services)
         {
             services.TryAddScoped<MessageReceptionHandler>();
-            services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
         private static void RegisterMessageDispatchServices(IServiceCollection services)

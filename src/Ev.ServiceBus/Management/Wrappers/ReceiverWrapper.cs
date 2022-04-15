@@ -7,8 +7,11 @@ using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
+using Ev.ServiceBus.Dispatch;
+using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MessageContext = Ev.ServiceBus.Abstractions.MessageContext;
 
 namespace Ev.ServiceBus;
 
@@ -146,8 +149,10 @@ public class ReceiverWrapper : IWrapper
         using (_logger.BeginScope(scopeValues))
         using (var scope = _provider.CreateScope())
         {
-            var metadataAccessor = (MessageMetadataAccessor)scope.ServiceProvider.GetRequiredService<IMessageMetadataAccessor>();
-            metadataAccessor.SetData(context);
+            var metadataAccessor =
+                (MessageMetadataAccessor)scope.ServiceProvider.GetRequiredService<IMessageMetadataAccessor>();
+            var metadata = new MessageMetadata(context.Message, context.CancellationToken);
+            metadataAccessor.Metadata = metadata;
             var listeners = scope.ServiceProvider.GetRequiredService<IEnumerable<IServiceBusEventListener>>();
             var executionStartedArgs = new ExecutionStartedArgs(ClientType, ResourceId, _composedOptions.MessageHandlerType, context.Message);
             foreach (var listener in listeners)

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Management;
 
 namespace Ev.ServiceBus.Dispatch
@@ -14,15 +15,18 @@ namespace Ev.ServiceBus.Dispatch
         private readonly IMessagePayloadSerializer _messagePayloadSerializer;
         private readonly ServiceBusRegistry _dispatchRegistry;
         private readonly IServiceBusRegistry _registry;
+        private readonly IMessageMetadataAccessor _messageMetadataAccessor;
 
         public DispatchSender(
             IServiceBusRegistry registry,
             IMessagePayloadSerializer messagePayloadSerializer,
-            ServiceBusRegistry dispatchRegistry)
+            ServiceBusRegistry dispatchRegistry,
+            IMessageMetadataAccessor messageMetadataAccessor)
         {
             _registry = registry;
             _messagePayloadSerializer = messagePayloadSerializer;
             _dispatchRegistry = dispatchRegistry;
+            _messageMetadataAccessor = messageMetadataAccessor;
         }
 
         /// <inheritdoc />
@@ -45,13 +49,14 @@ namespace Ev.ServiceBus.Dispatch
                 throw new ArgumentNullException(nameof(messagePayloads));
             }
 
+            var originalCorrelationId = _messageMetadataAccessor.Metadata?.CorrelationId ?? Guid.NewGuid().ToString();
             var dispatches =
                 (
                     from dispatch in messagePayloads
                     // the same dispatch can be published to several senders
                     let registrations = _dispatchRegistry.GetDispatchRegistrations(dispatch.Payload.GetType())
                     from eventPublicationRegistration in registrations
-                    let message = CreateMessage(eventPublicationRegistration, dispatch)
+                    let message = CreateMessage(eventPublicationRegistration, dispatch, originalCorrelationId)
                     select new
                     {
                         Message = message,
@@ -78,11 +83,17 @@ namespace Ev.ServiceBus.Dispatch
             }
         }
 
-        private ServiceBusMessage CreateMessage(MessageDispatchRegistration registration, Abstractions.Dispatch dispatch)
+        private ServiceBusMessage CreateMessage(
+            MessageDispatchRegistration registration,
+            Abstractions.Dispatch dispatch,
+            string originalCorrelationId)
         {
             var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
+
             message.SessionId = dispatch.SessionId;
+            message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
+
             foreach (var customizer in registration.OutgoingMessageCustomizers)
             {
                 customizer?.Invoke(message, dispatch.Payload);

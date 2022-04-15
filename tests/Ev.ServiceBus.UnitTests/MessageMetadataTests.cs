@@ -15,7 +15,7 @@ namespace Ev.ServiceBus.UnitTests
     public class MessageMetadataTests
     {
         [Fact]
-        public async Task AScopeIsCreatedForEachMessageReceived()
+        public async Task MetadataIsProperlySet()
         {
             var composer = new Composer();
 
@@ -45,6 +45,8 @@ namespace Ev.ServiceBus.UnitTests
                 .Contain(UserProperties.MessageTypeProperty)
                 .And
                 .Contain(UserProperties.EventTypeIdProperty);
+            metadata.CorrelationId.Should().Be("8B4C4C3C-482A-4688-8458-AFF9998C0A12");
+            metadata.SessionId.Should().Be("ABB8761B-C22E-407E-801C-DFAF68916F04");
         }
 
         private async Task SimulateEventReception(
@@ -61,7 +63,9 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     { UserProperties.MessageTypeProperty, "IntegrationEvent" },
                     { UserProperties.EventTypeIdProperty, "Payload" }
-                }
+                },
+                CorrelationId = "8B4C4C3C-482A-4688-8458-AFF9998C0A12",
+                SessionId = "ABB8761B-C22E-407E-801C-DFAF68916F04"
             };
 
             // Necessary to simulate the reception of the message
