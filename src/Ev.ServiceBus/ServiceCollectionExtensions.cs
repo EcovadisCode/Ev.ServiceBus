@@ -51,12 +51,12 @@ namespace Ev.ServiceBus
 
             RegisterMessageReceptionServices(services);
 
+            services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
         private static void RegisterMessageReceptionServices(IServiceCollection services)
         {
             services.TryAddScoped<MessageReceptionHandler>();
-            services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
         private static void RegisterMessageDispatchServices(IServiceCollection services)
@@ -64,7 +64,7 @@ namespace Ev.ServiceBus
             services.TryAddScoped<MessageDispatcher>();
             services.TryAddScoped<IMessagePublisher>(provider => provider.GetRequiredService<MessageDispatcher>());
             services.TryAddScoped<IMessageDispatcher>(provider => provider.GetRequiredService<MessageDispatcher>());
-            services.TryAddSingleton<IDispatchSender, DispatchSender>();
+            services.TryAddScoped<IDispatchSender, DispatchSender>();
         }
 
         private static void RegisterResourceManagementServices(IServiceCollection services)
