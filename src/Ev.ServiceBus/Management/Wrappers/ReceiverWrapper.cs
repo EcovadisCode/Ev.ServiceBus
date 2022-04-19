@@ -151,8 +151,7 @@ public class ReceiverWrapper : IWrapper
         {
             var metadataAccessor =
                 (MessageMetadataAccessor)scope.ServiceProvider.GetRequiredService<IMessageMetadataAccessor>();
-            var metadata = new MessageMetadata(context.Message, context.CancellationToken);
-            metadataAccessor.Metadata = metadata;
+            metadataAccessor.SetData(context);
             var listeners = scope.ServiceProvider.GetRequiredService<IEnumerable<IServiceBusEventListener>>();
             var executionStartedArgs = new ExecutionStartedArgs(ClientType, ResourceId, _composedOptions.MessageHandlerType, context.Message);
             foreach (var listener in listeners)
