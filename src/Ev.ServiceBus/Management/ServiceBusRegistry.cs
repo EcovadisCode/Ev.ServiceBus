@@ -47,7 +47,7 @@ namespace Ev.ServiceBus.Management
 
         private string ComputeReceptionKey(string payloadTypeId, string receiverName, ClientType clientType)
         {
-            return $"{clientType}|{receiverName}|{payloadTypeId}";
+            return $"{clientType}|{receiverName}|{payloadTypeId.ToLower()}";
         }
 
         internal void Register(SenderWrapper senderWrapper)

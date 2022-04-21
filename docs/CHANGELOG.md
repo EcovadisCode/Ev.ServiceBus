@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 3.7.0
+- Made the matching of payloadTypeIds less strict by making it case-insensitive.
+
 ## 3.6.0
 - Added method overloads enabling you to publish a message with a specific sessionId.
 

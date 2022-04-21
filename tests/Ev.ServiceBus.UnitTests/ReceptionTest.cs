@@ -140,6 +140,48 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
+        public async Task CasingDoesntMatterInPayloadTypeId()
+        {
+            var composer = new Composer();
+            var eventStore = new EventStore();
+
+            composer.WithAdditionalServices(
+                services =>
+                {
+                    services.RegisterServiceBusReception()
+                        .FromSubscription(
+                            "testTopic",
+                            "testSubscription",
+                            builder =>
+                            {
+                                builder.RegisterReception<SubscribedEvent, SubscribedPayloadHandler>()
+                                    .CustomizePayloadTypeId("MyEvent");
+                            });
+
+                    services.AddSingleton(eventStore);
+                });
+
+            await composer.Compose();
+            var clients = composer
+                .SubscriptionFactory
+                .GetAllRegisteredClients();
+            var client = clients.First(o => o.ClientName == "testSubscription");
+
+            var message = TestMessageHelper.CreateEventMessage("myevent", new
+            {
+                SomeString = "hello",
+                SomeNumber = 36
+            });
+
+            await client.TriggerMessageReception(message, CancellationToken.None);
+            var @event = eventStore.Events.FirstOrDefault(o => o.HandlerType == typeof(SubscribedPayloadHandler));
+            Assert.NotNull(@event);
+            Assert.IsType<SubscribedEvent>(@event.Event);
+            Assert.Equal("hello", ((SubscribedEvent) @event.Event).SomeString);
+            Assert.Equal(36, ((SubscribedEvent) @event.Event).SomeNumber);
+        }
+
+        [Fact]
         public async Task CancellationTokenIsPassedDownToHandlers()
         {
             var composer = new Composer();
