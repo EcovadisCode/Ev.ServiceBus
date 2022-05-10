@@ -1,6 +1,6 @@
-﻿using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
@@ -20,7 +20,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
 
             services.AddServiceBus<PayloadSerializer>(settings =>
             {
-                settings.WithConnection("testConnectionString");
+                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             services.AddHealthChecks().AddEvServiceBusChecks();
@@ -65,7 +65,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
 
             services.AddServiceBus<PayloadSerializer>(settings =>
             {
-                settings.WithConnection("testConnectionString");
+                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             services.AddHealthChecks().AddEvServiceBusChecks();
@@ -101,7 +101,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
 
             services.AddServiceBus<PayloadSerializer>(settings =>
             {
-                settings.WithConnection("testConnectionString");
+                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             services.AddHealthChecks().AddEvServiceBusChecks();
@@ -137,7 +137,7 @@ namespace Ev.ServiceBus.HealthChecks.UnitTests
 
             services.AddServiceBus<PayloadSerializer>(settings =>
             {
-                settings.WithConnection("testConnectionString");
+                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             services.AddHealthChecks().AddEvServiceBusChecks();

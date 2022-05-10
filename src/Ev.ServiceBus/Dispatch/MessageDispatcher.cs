@@ -57,5 +57,31 @@ namespace Ev.ServiceBus.Dispatch
                 SessionId = sessionId
             });
         }
+
+        /// <inheritdoc />
+        public void Publish<TMessagePayload>(
+            TMessagePayload messageDto,
+            Action<IMessageContext> messageContextConfiguration)
+        {
+            if (messageDto == null)
+            {
+                throw new ArgumentNullException(nameof(messageDto));
+            }
+
+            if (messageContextConfiguration == null)
+            {
+                throw new ArgumentNullException(nameof(messageContextConfiguration));
+            }
+
+            var context = new MessageContext();
+
+            messageContextConfiguration.Invoke(context);
+
+            _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto)
+            {
+                SessionId = context.SessionId,
+                CorrelationId = context.CorrelationId
+            });
+        }
     }
 }

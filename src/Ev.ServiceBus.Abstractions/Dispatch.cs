@@ -9,5 +9,6 @@ public sealed class Dispatch
 
     public object Payload { get; }
     public string? SessionId { get; set; }
+    public string? CorrelationId { get; set; }
 }
 

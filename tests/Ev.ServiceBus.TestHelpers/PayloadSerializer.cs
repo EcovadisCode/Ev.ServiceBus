@@ -1,35 +1,30 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Ev.ServiceBus.Abstractions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
-namespace Ev.ServiceBus.UnitTests.Helpers
+namespace Ev.ServiceBus.UnitTests.Helpers;
+
+public class PayloadSerializer : IMessagePayloadSerializer
 {
-    public class PayloadSerializer : IMessagePayloadSerializer
+    internal static readonly JsonSerializerOptions Settings = new JsonSerializerOptions()
     {
-        internal static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
+        Converters =
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver(),
-            Formatting = Formatting.None,
-            Converters =
-            {
-                new StringEnumConverter()
-            },
-            NullValueHandling = NullValueHandling.Ignore
-        };
+            new JsonStringEnumConverter()
+        },
+    };
 
-        public SerializationResult SerializeBody(object objectToSerialize)
-        {
-            var json = JsonConvert.SerializeObject(objectToSerialize, Formatting.None, Settings);
-            return new SerializationResult("application/json", Encoding.UTF8.GetBytes(json));
-        }
+    public SerializationResult SerializeBody(object objectToSerialize)
+    {
+        var json = JsonSerializer.Serialize(objectToSerialize, Settings);
+        return new SerializationResult("application/json", Encoding.UTF8.GetBytes(json));
+    }
 
-        public object DeSerializeBody(byte[] content, Type typeToCreate)
-        {
-            var @string = Encoding.UTF8.GetString(content);
-            return JsonConvert.DeserializeObject(@string, typeToCreate, Settings);
-        }
+    public object DeSerializeBody(byte[] content, Type typeToCreate)
+    {
+        var @string = Encoding.UTF8.GetString(content);
+        return JsonSerializer.Deserialize(@string, typeToCreate, Settings);
     }
 }

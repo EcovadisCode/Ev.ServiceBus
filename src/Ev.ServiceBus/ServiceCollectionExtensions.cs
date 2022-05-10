@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Dispatch;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -51,12 +51,12 @@ namespace Ev.ServiceBus
 
             RegisterMessageReceptionServices(services);
 
+            services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
         private static void RegisterMessageReceptionServices(IServiceCollection services)
         {
             services.TryAddScoped<MessageReceptionHandler>();
-            services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
         private static void RegisterMessageDispatchServices(IServiceCollection services)
@@ -64,7 +64,7 @@ namespace Ev.ServiceBus
             services.TryAddScoped<MessageDispatcher>();
             services.TryAddScoped<IMessagePublisher>(provider => provider.GetRequiredService<MessageDispatcher>());
             services.TryAddScoped<IMessageDispatcher>(provider => provider.GetRequiredService<MessageDispatcher>());
-            services.TryAddSingleton<IDispatchSender, DispatchSender>();
+            services.TryAddScoped<IDispatchSender, DispatchSender>();
         }
 
         private static void RegisterResourceManagementServices(IServiceCollection services)
@@ -77,10 +77,7 @@ namespace Ev.ServiceBus
             }
 
             services.TryAddSingleton<ServiceBusEngine>();
-
-            services.TryAddSingleton<IClientFactory<QueueOptions, IQueueClient>, QueueClientFactory>();
-            services.TryAddSingleton<IClientFactory<TopicOptions, ITopicClient>, TopicClientFactory>();
-            services.TryAddSingleton<IClientFactory<SubscriptionOptions, ISubscriptionClient>, SubscriptionClientFactory>();
+            services.TryAddSingleton<IClientFactory, ClientFactory>();
 
             if (services.Any(o => o.ImplementationType == typeof(ServiceBusHost)) == false)
             {
@@ -92,26 +89,15 @@ namespace Ev.ServiceBus
         /// Define that messages received by the receiver will go to the <see cref="MessageReceptionHandler"/> handler.
         /// </summary>
         /// <param name="options"></param>
-        /// <param name="maxConcurrentCalls">The number of messages that can be executed concurrently.</param>
-        /// <param name="maxAutoRenewDuration">The maximum period of time that a message's processing can take</param>
+        /// <param name="config"></param>
         /// <typeparam name="TOptions"></typeparam>
         /// <returns></returns>
         public static TOptions ToMessageReceptionHandling<TOptions>(
             this TOptions options,
-            int maxConcurrentCalls = 1,
-            TimeSpan? maxAutoRenewDuration = null)
+            Action<ServiceBusProcessorOptions> config)
             where TOptions : ReceiverOptions
         {
-            options.WithCustomMessageHandler<MessageReceptionHandler>(
-                config =>
-                {
-                    config.AutoComplete = true;
-                    config.MaxConcurrentCalls = maxConcurrentCalls;
-                    if (maxAutoRenewDuration != null)
-                    {
-                        config.MaxAutoRenewDuration = maxAutoRenewDuration.Value;
-                    }
-                });
+            options.WithCustomMessageHandler<MessageReceptionHandler>(config);
             return options;
         }
 

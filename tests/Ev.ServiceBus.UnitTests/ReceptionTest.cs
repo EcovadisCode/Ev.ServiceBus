@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -44,14 +44,12 @@ namespace Ev.ServiceBus.UnitTests
         public async Task FailsWhenHandlerThrowsException()
         {
             var composer = await InitSimpleTest();
-            var clients = composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
+            var client = composer.ClientFactory.GetProcessorMock("testTopic", "SubscriptionWithFailingHandler");
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 async () =>
                 {
-                    await SimulateEventReception(clients.First(o => o.ClientName == "SubscriptionWithFailingHandler"));
+                    await SimulateEventReception(client);
                 });
         }
 
@@ -79,22 +77,19 @@ namespace Ev.ServiceBus.UnitTests
                 });
 
             await composer.Compose();
-            var clients = composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
-            var client = clients.First(o => o.ClientName == "testSubscription");
+            var client = composer.ClientFactory.GetProcessorMock("testTopic", "testSubscription");
 
-            var message = new Message
+            var message = new ServiceBusMessage()
             {
-                UserProperties = { { "wrongProperty", "wrongValue" } }
+                ApplicationProperties = { {"wrongProperty", "wrongValue"} }
             };
 
-            // Necessary to simulate the reception of the message
-            var propertyInfo = message.SystemProperties.GetType().GetProperty("SequenceNumber");
-            if (propertyInfo != null && propertyInfo.CanWrite)
-            {
-                propertyInfo.SetValue(message.SystemProperties, 1, null);
-            }
+            // // Necessary to simulate the reception of the message
+            // var propertyInfo = message.SystemProperties.GetType().GetProperty("SequenceNumber");
+            // if (propertyInfo != null && propertyInfo.CanWrite)
+            // {
+            //     propertyInfo.SetValue(message.SystemProperties, 1, null);
+            // }
 
             await Assert.ThrowsAsync<MessageIsMissingPayloadTypeIdException>(
                 async () =>
@@ -132,10 +127,7 @@ namespace Ev.ServiceBus.UnitTests
                 });
 
             await composer.Compose();
-            var clients = composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
-            var client = clients.First(o => o.ClientName == "SubscriptionWithNoHandlers");
+            var client = composer.ClientFactory.GetProcessorMock("testTopic", "SubscriptionWithNoHandlers");
             await SimulateEventReception(client);
         }
 
@@ -204,10 +196,7 @@ namespace Ev.ServiceBus.UnitTests
                 });
 
             await composer.Compose();
-            var clients = composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
-            var client = clients.First(o => o.ClientName == "testSubscription");
+            var client = composer.ClientFactory.GetProcessorMock("testTopic", "testSubscription");
 
             var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
@@ -215,24 +204,31 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
-        public void MaxAutoRenewDurationIsSet()
+        public async Task MaxAutoRenewDurationIsSet()
         {
             var services = new ServiceCollection();
 
             services.RegisterServiceBusSubscription("testTopic", "testSubscription")
-                .WithConnection("testconnectionstring")
-                .ToMessageReceptionHandling(3, TimeSpan.FromMinutes(20));
+                .WithConnection("Endpoint=testconnectionstring;", new ServiceBusClientOptions())
+                .ToMessageReceptionHandling(processorOptions =>
+                {
+                    processorOptions.MaxConcurrentCalls = 3;
+                    processorOptions.MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(20);
+                });
 
+            services.OverrideClientFactory();
             var provider = services.BuildServiceProvider();
 
+            await provider.SimulateStartHost(CancellationToken.None);
             var options = provider.GetService<IOptions<ServiceBusOptions>>();
             options.Value.Receivers.Count.Should().Be(1);
             var subOptions = options.Value.Receivers.First();
-            subOptions.MessageHandlerConfig.Should().NotBeNull();
+            subOptions.ServiceBusProcessorOptions.Should().NotBeNull();
 
-            var messageHandlerOptions = new MessageHandlerOptions(_ => Task.CompletedTask);
-            subOptions.MessageHandlerConfig!(messageHandlerOptions);
-            messageHandlerOptions.MaxAutoRenewDuration.Should().Be(TimeSpan.FromMinutes(20));
+
+            var client = provider.GetProcessorMock("testTopic", "testSubscription");
+            client.Options.MaxConcurrentCalls.Should().Be(3);
+            client.Options.MaxAutoLockRenewalDuration.Should().Be(TimeSpan.FromMinutes(20));
         }
 
         private async Task<Composer> InitSimpleTest()
@@ -273,7 +269,7 @@ namespace Ev.ServiceBus.UnitTests
 
                     // noise
                     services.RegisterServiceBusSubscription("testTopic", "testSubscription2")
-                        .ToMessageReceptionHandling();
+                        .ToMessageReceptionHandling(_ => {});
 
                     services.RegisterServiceBusReception()
                         .FromSubscription(
@@ -290,16 +286,16 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var clients = composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
+            var client = composer
+                .ClientFactory
+                .GetProcessorMock("testTopic", "testSubscription");
 
-            await SimulateEventReception(clients.First(o => o.ClientName == "testSubscription"));
+            await SimulateEventReception(client);
             return composer;
         }
 
         private async Task SimulateEventReception(
-            SubscriptionClientMock client,
+            ProcessorMock client,
             CancellationToken? cancellationToken = null)
         {
             var parser = new PayloadSerializer();
@@ -309,23 +305,23 @@ namespace Ev.ServiceBus.UnitTests
                     SomeString = "hello",
                     SomeNumber = 36
                 });
-            var message = new Message(result.Body)
+            var message = new ServiceBusMessage(result.Body)
             {
                 ContentType = result.ContentType,
-                Label = "An integration event of type 'MyEvent'",
-                UserProperties =
+                Subject = "An integration event of type 'MyEvent'",
+                ApplicationProperties =
                 {
                     { UserProperties.MessageTypeProperty, "IntegrationEvent" },
                     { UserProperties.EventTypeIdProperty, "MyEvent" }
                 }
             };
 
-            // Necessary to simulate the reception of the message
-            var propertyInfo = message.SystemProperties.GetType().GetProperty("SequenceNumber");
-            if (propertyInfo != null && propertyInfo.CanWrite)
-            {
-                propertyInfo.SetValue(message.SystemProperties, 1, null);
-            }
+            // // Necessary to simulate the reception of the message
+            // var propertyInfo = message.SystemProperties.GetType().GetProperty("SequenceNumber");
+            // if (propertyInfo != null && propertyInfo.CanWrite)
+            // {
+            //     propertyInfo.SetValue(message.SystemProperties, 1, null);
+            // }
 
             await client.TriggerMessageReception(message, cancellationToken ?? CancellationToken.None);
         }

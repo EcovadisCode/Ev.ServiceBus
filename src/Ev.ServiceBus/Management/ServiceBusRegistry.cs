@@ -1,30 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Ev.ServiceBus.Abstractions;
 
 namespace Ev.ServiceBus.Management
 {
     public class ServiceBusRegistry : IServiceBusRegistry
     {
-        private readonly SortedList<string, ReceiverWrapper> _receivers;
-        private readonly SortedList<string, SenderWrapper> _senders;
+        private readonly SortedList<string, IMessageSender> _senders;
         private readonly Dictionary<string, MessageReceptionRegistration> _receptions;
         private readonly Dictionary<Type, MessageDispatchRegistration[]> _dispatches;
 
         public ServiceBusRegistry()
         {
-            _senders = new SortedList<string, SenderWrapper>();
-            _receivers = new SortedList<string, ReceiverWrapper>();
+            _senders = new SortedList<string, IMessageSender>();
             _receptions = new Dictionary<string, MessageReceptionRegistration>();
             _dispatches = new Dictionary<Type, MessageDispatchRegistration[]>();
         }
 
         public IMessageSender GetQueueSender(string name)
         {
-            if (_senders.TryGetValue(ComputeResourceKey(ClientType.Queue, name), out var queue))
+            if (_senders.TryGetValue(ComputeResourceKey(ClientType.Queue, name), out var sender))
             {
-                return queue.Sender;
+                return sender;
             }
 
             throw new QueueSenderNotFoundException(name);
@@ -32,15 +29,15 @@ namespace Ev.ServiceBus.Management
 
         public IMessageSender GetTopicSender(string name)
         {
-            if (_senders.TryGetValue(ComputeResourceKey(ClientType.Topic, name), out var topic))
+            if (_senders.TryGetValue(ComputeResourceKey(ClientType.Topic, name), out var sender))
             {
-                return topic.Sender;
+                return sender;
             }
 
             throw new TopicSenderNotFoundException(name);
         }
 
-        private string ComputeResourceKey(ClientType clientType, string resourceId)
+        internal string ComputeResourceKey(ClientType clientType, string resourceId)
         {
             return $"{clientType}|{resourceId}";
         }
@@ -50,14 +47,9 @@ namespace Ev.ServiceBus.Management
             return $"{clientType}|{receiverName}|{payloadTypeId.ToLower()}";
         }
 
-        internal void Register(SenderWrapper senderWrapper)
+        internal void Register(IMessageSender sender)
         {
-            _senders.Add(ComputeResourceKey(senderWrapper.ClientType, senderWrapper.ResourceId), senderWrapper);
-        }
-
-        internal void Register(ReceiverWrapper receiverWrapper)
-        {
-            _receivers.Add(ComputeResourceKey(receiverWrapper.ClientType, receiverWrapper.ResourceId), receiverWrapper);
+            _senders.Add(ComputeResourceKey(sender.ClientType, sender.Name), sender);
         }
 
         internal void Register(MessageReceptionRegistration reception)
@@ -68,26 +60,6 @@ namespace Ev.ServiceBus.Management
         internal void Register(Type dispatchType, MessageDispatchRegistration[] dispatches)
         {
             _dispatches.Add(dispatchType, dispatches);
-        }
-
-        internal bool IsSenderResourceIdTaken(ClientType clientType, string resourceId)
-        {
-            return _senders.ContainsKey(ComputeResourceKey(clientType, resourceId));
-        }
-
-        internal bool IsReceiverResourceIdTaken(ClientType clientType, string resourceId)
-        {
-            return _receivers.ContainsKey(ComputeResourceKey(clientType, resourceId));
-        }
-
-        internal SenderWrapper[] GetAllSenders()
-        {
-            return _senders.Values.ToArray();
-        }
-
-        internal ReceiverWrapper[] GetAllReceivers()
-        {
-            return _receivers.Values.ToArray();
         }
 
         internal MessageReceptionRegistration? GetReceptionRegistration(string payloadTypeId, string receiverName, ClientType clientType)

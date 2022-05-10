@@ -1,13 +1,10 @@
-﻿using Ev.ServiceBus.Abstractions;
-using Microsoft.Azure.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
+using Ev.ServiceBus.Abstractions;
 
 // ReSharper disable once CheckNamespace
-namespace Ev.ServiceBus
+namespace Ev.ServiceBus;
+
+public interface IClientFactory
 {
-    public interface IClientFactory<in TClientOptions, out TClientEntity>
-        where TClientOptions : ClientOptions
-        where TClientEntity : IClientEntity
-    {
-        TClientEntity Create(TClientOptions options, ConnectionSettings connectionSettings);
-    }
+    ServiceBusClient Create(ConnectionSettings connectionSettings);
 }

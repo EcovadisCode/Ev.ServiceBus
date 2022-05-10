@@ -1,4 +1,4 @@
-﻿using Microsoft.Azure.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 
 namespace Ev.ServiceBus.Abstractions
 {
@@ -27,33 +27,10 @@ namespace Ev.ServiceBus.Abstractions
         /// Sets the default Connection to use for every resource. (this can be overriden on each and every resource you want)
         /// </summary>
         /// <param name="connectionString"></param>
-        /// <param name="receiveMode"></param>
-        /// <param name="retryPolicy"></param>
-        public void WithConnection(string connectionString, ReceiveMode receiveMode = ReceiveMode.PeekLock, RetryPolicy? retryPolicy = null)
+        /// <param name="options"></param>
+        public void WithConnection(string connectionString, ServiceBusClientOptions options)
         {
-            ConnectionSettings = new ConnectionSettings(connectionString, receiveMode, retryPolicy);
-        }
-
-        /// <summary>
-        /// Sets the default Connection to use for every resource. (this can be overriden on each and every resource you want)
-        /// </summary>
-        /// <param name="connection"></param>
-        /// <param name="receiveMode"></param>
-        /// <param name="retryPolicy"></param>
-        public void WithConnection(ServiceBusConnection connection, ReceiveMode receiveMode = ReceiveMode.PeekLock, RetryPolicy? retryPolicy = null)
-        {
-            ConnectionSettings = new ConnectionSettings(connection, receiveMode, retryPolicy);
-        }
-
-        /// <summary>
-        /// Sets the default Connection to use for every resource. (this can be overriden on each and every resource you want)
-        /// </summary>
-        /// <param name="connectionStringBuilder"></param>
-        /// <param name="receiveMode"></param>
-        /// <param name="retryPolicy"></param>
-        public void WithConnection(ServiceBusConnectionStringBuilder connectionStringBuilder, ReceiveMode receiveMode = ReceiveMode.PeekLock, RetryPolicy? retryPolicy = null)
-        {
-            ConnectionSettings = new ConnectionSettings(connectionStringBuilder, receiveMode, retryPolicy);
+            ConnectionSettings = new ConnectionSettings(connectionString, options);
         }
     }
 }

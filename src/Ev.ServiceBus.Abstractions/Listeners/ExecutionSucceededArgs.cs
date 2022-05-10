@@ -1,21 +1,20 @@
 using System;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 
-namespace Ev.ServiceBus.Abstractions
+namespace Ev.ServiceBus.Abstractions;
+
+public class ExecutionSucceededArgs : ExecutionBaseArgs
 {
-    public class ExecutionSucceededArgs : ExecutionBaseArgs
+    public ExecutionSucceededArgs(
+        ClientType clientType,
+        string resourceId,
+        Type messageHandlerType,
+        ServiceBusReceivedMessage message,
+        long executionDurationMilliseconds)
+        : base(clientType, resourceId, messageHandlerType, message)
     {
-        public ExecutionSucceededArgs(
-            ClientType clientType,
-            string resourceId,
-            Type messageHandlerType,
-            Message message,
-            long executionDurationMilliseconds)
-            : base(clientType, resourceId, messageHandlerType, message)
-        {
-            ExecutionDurationMilliseconds = executionDurationMilliseconds;
-        }
-
-        public long ExecutionDurationMilliseconds { get; }
+        ExecutionDurationMilliseconds = executionDurationMilliseconds;
     }
+
+    public long ExecutionDurationMilliseconds { get; }
 }

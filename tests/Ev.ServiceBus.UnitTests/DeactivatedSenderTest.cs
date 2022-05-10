@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -24,12 +24,12 @@ namespace Ev.ServiceBus.UnitTests
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusQueue("testQueue")
-                    .WithConnection("testConnectionString");
+                    .WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             var provider = await composer.Compose();
 
-            provider.GetQueueClientMock("testQueue").Should().BeNull();
+            provider.GetSenderMock("testQueue").Should().BeNull();
             return provider.GetRequiredService<IServiceBusRegistry>().GetQueueSender("testQueue");
         }
 
@@ -58,7 +58,7 @@ namespace Ev.ServiceBus.UnitTests
         {
             var sender = await ComposeServiceBusAndGetSender();
 
-            var message = new Message();
+            var message = new ServiceBusMessage();
             var scheduleEnqueueTimeUtc = new DateTimeOffset();
             var task = sender.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc);
 
@@ -71,8 +71,8 @@ namespace Ev.ServiceBus.UnitTests
         {
             var sender = await ComposeServiceBusAndGetSender();
 
-            var message = new Message();
-            var task = sender.SendAsync(message);
+            var message = new ServiceBusMessage();
+            var task = sender.SendMessageAsync(message);
 
             task.Should().NotBeNull();
             task.IsCompleted.Should().BeTrue();
@@ -83,8 +83,8 @@ namespace Ev.ServiceBus.UnitTests
         {
             var sender = await ComposeServiceBusAndGetSender();
 
-            var messageList = new List<Message>();
-            var task = sender.SendAsync(messageList);
+            var messageList = new List<ServiceBusMessage>();
+            var task = sender.SendMessagesAsync(messageList);
 
             task.Should().NotBeNull();
             task.IsCompleted.Should().BeTrue();

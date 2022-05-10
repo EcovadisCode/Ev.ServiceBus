@@ -1,22 +1,21 @@
 ﻿using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
-using Microsoft.Azure.ServiceBus;
 using Moq;
 
-namespace Ev.ServiceBus.UnitTests.Helpers
+namespace Ev.ServiceBus.UnitTests.Helpers;
+
+public class FakeExceptionHandler : IExceptionHandler
 {
-    public class FakeExceptionHandler : IExceptionHandler
+    private readonly Mock<IExceptionHandler> _mock;
+
+    public FakeExceptionHandler(Mock<IExceptionHandler> mock)
     {
-        private readonly Mock<IExceptionHandler> _mock;
+        _mock = mock;
+    }
 
-        public FakeExceptionHandler(Mock<IExceptionHandler> mock)
-        {
-            _mock = mock;
-        }
-
-        public Task HandleExceptionAsync(ExceptionReceivedEventArgs args)
-        {
-            return _mock.Object.HandleExceptionAsync(args);
-        }
+    public Task HandleExceptionAsync(ProcessErrorEventArgs args)
+    {
+        return _mock.Object.HandleExceptionAsync(args);
     }
 }

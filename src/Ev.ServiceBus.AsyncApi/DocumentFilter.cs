@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Ev.ServiceBus.Abstractions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Options;
+using Microsoft.VisualBasic;
 using NJsonSchema;
 using Saunter.AsyncApiSchema.v2;
 using Saunter.AsyncApiSchema.v2.Bindings;
@@ -215,31 +215,15 @@ namespace Ev.ServiceBus.AsyncApi
                 return;
             }
 
-            string endpoint;
-            if (connectionSettings.Connection != null)
-            {
-                endpoint = connectionSettings.Connection.Endpoint.ToString();
-            }
-            else if (connectionSettings.ConnectionStringBuilder != null)
-            {
-                endpoint = connectionSettings.ConnectionStringBuilder.Endpoint;
-            }
-            else if (connectionSettings.ConnectionString != null)
-            {
-                var builder = new ServiceBusConnectionStringBuilder(connectionSettings.ConnectionString);
-                endpoint = builder.Endpoint;
-            }
-            else
-            {
-                return;
-            }
+            var endpoint = connectionSettings.Endpoint;
 
-            if (endpoint == null || document.Servers.Any(o => o.Value.Url == endpoint))
+            if (string.IsNullOrWhiteSpace(endpoint) || document.Servers.Any(o => o.Value.Url == endpoint))
             {
                 return;
             }
 
             document.Servers.Add(endpoint, new Server(endpoint, "amqp"));
         }
+
     }
 }

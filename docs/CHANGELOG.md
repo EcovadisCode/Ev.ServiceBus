@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.1.0
+- CorrelationId is now created automatically and is being passed to newly published events.
+- Added method overload enabling you to publish a message with a specific correlationId.
+
+## 4.0.0
+- refactored the entire project to use [Azure.Messaging.ServiceBus](https://www.nuget.org/packages/Azure.Messaging.ServiceBus/)
+
 ## 3.7.0
 - Made the matching of payloadTypeIds less strict by making it case-insensitive.
 

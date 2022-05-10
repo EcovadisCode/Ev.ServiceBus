@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Reception;
+using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -14,7 +15,7 @@ namespace Ev.ServiceBus.UnitTests
     public class MessageMetadataTests
     {
         [Fact]
-        public async Task AScopeIsCreatedForEachMessageReceived()
+        public async Task MetadataIsProperlySet()
         {
             var composer = new Composer();
 
@@ -30,7 +31,7 @@ namespace Ev.ServiceBus.UnitTests
 
             var provider = await composer.Compose();
 
-            var clientMock = provider.GetQueueClientMock("testQueue");
+            var clientMock = provider.GetProcessorMock("testQueue");
 
             await SimulateEventReception(clientMock);
 
@@ -40,35 +41,39 @@ namespace Ev.ServiceBus.UnitTests
             var metadata = metadatas[0];
             metadata.Label.Should().Be("An integration event of type 'MyEvent'");
             metadata.ContentType.Should().Be("application/json");
-            metadata.UserProperties.Keys.Should()
+            metadata.ApplicationProperties.Keys.Should()
                 .Contain(UserProperties.MessageTypeProperty)
                 .And
                 .Contain(UserProperties.EventTypeIdProperty);
+            metadata.CorrelationId.Should().Be("8B4C4C3C-482A-4688-8458-AFF9998C0A12");
+            metadata.SessionId.Should().Be("ABB8761B-C22E-407E-801C-DFAF68916F04");
         }
 
         private async Task SimulateEventReception(
-            QueueClientMock client,
+            ProcessorMock client,
             CancellationToken? cancellationToken = null)
         {
             var parser = new PayloadSerializer();
             var result = parser.SerializeBody(new { });
-            var message = new Message(result.Body)
+            var message = new ServiceBusMessage(result.Body)
             {
                 ContentType = result.ContentType,
-                Label = "An integration event of type 'MyEvent'",
-                UserProperties =
+                Subject = "An integration event of type 'MyEvent'",
+                ApplicationProperties =
                 {
                     { UserProperties.MessageTypeProperty, "IntegrationEvent" },
                     { UserProperties.EventTypeIdProperty, "Payload" }
-                }
+                },
+                CorrelationId = "8B4C4C3C-482A-4688-8458-AFF9998C0A12",
+                SessionId = "ABB8761B-C22E-407E-801C-DFAF68916F04"
             };
 
             // Necessary to simulate the reception of the message
-            var propertyInfo = message.SystemProperties.GetType().GetProperty("SequenceNumber");
-            if (propertyInfo != null && propertyInfo.CanWrite)
-            {
-                propertyInfo.SetValue(message.SystemProperties, 1, null);
-            }
+            // var propertyInfo = message.SystemProperties.GetType().GetProperty("SequenceNumber");
+            // if (propertyInfo != null && propertyInfo.CanWrite)
+            // {
+            //     propertyInfo.SetValue(message.SystemProperties, 1, null);
+            // }
 
             await client.TriggerMessageReception(message, cancellationToken ?? CancellationToken.None);
         }

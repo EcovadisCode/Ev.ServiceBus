@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -96,7 +96,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(1);
             senders.First().ResourceId.Should().Be("topicName");
@@ -123,7 +123,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(1);
             senders.First().ResourceId.Should().Be("topicName");
@@ -137,7 +137,7 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusTopic("topicName").WithConnection("anotherConnectionString");
+                services.RegisterServiceBusTopic("topicName").WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
 
                 services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
                 {
@@ -151,7 +151,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(2);
             senders.Should().SatisfyRespectively(
@@ -178,7 +178,7 @@ namespace Ev.ServiceBus.UnitTests
 
                 services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
                     builder.RegisterDispatch<PublishedEvent>();
                 });
                 services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
@@ -189,7 +189,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(2);
             senders.Should().SatisfyRespectively(
@@ -212,11 +212,11 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusTopic("topicName").WithConnection("anotherConnectionString");
+                services.RegisterServiceBusTopic("topicName").WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
 
                 services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString2");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString2;", new ServiceBusClientOptions());
                     builder.RegisterDispatch<PublishedEvent>();
                 });
                 services.RegisterServiceBusDispatch().ToTopic("topicName", builder =>
@@ -227,7 +227,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(3);
             senders.Should().SatisfyRespectively(
@@ -267,7 +267,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(1);
             senders.First().ResourceId.Should().Be("queue");
@@ -294,7 +294,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(1);
             senders.First().ResourceId.Should().Be("queueName");
@@ -308,7 +308,7 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusQueue("queueName").WithConnection("anotherConnectionString");
+                services.RegisterServiceBusQueue("queueName").WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
 
                 services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
                 {
@@ -322,7 +322,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(2);
             senders.Should().SatisfyRespectively(
@@ -349,7 +349,7 @@ namespace Ev.ServiceBus.UnitTests
 
                 services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
                     builder.RegisterDispatch<PublishedEvent>();
                 });
                 services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
@@ -360,7 +360,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(2);
             senders.Should().SatisfyRespectively(
@@ -383,11 +383,11 @@ namespace Ev.ServiceBus.UnitTests
 
             composer.WithAdditionalServices(services =>
             {
-                services.RegisterServiceBusQueue("queueName").WithConnection("anotherConnectionString");
+                services.RegisterServiceBusQueue("queueName").WithConnection("Endpoint=anotherConnectionString;", new ServiceBusClientOptions());
 
                 services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
                 {
-                    builder.CustomizeConnection("anotherConnectionString2");
+                    builder.CustomizeConnection("Endpoint=anotherConnectionString2;", new ServiceBusClientOptions());
                     builder.RegisterDispatch<PublishedEvent>();
                 });
                 services.RegisterServiceBusDispatch().ToQueue("queueName", builder =>
@@ -398,7 +398,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await composer.Compose();
 
-            var registry = composer.Provider.GetRequiredService<IServiceBusRegistry>() as ServiceBusRegistry;
+            var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
             var senders = registry!.GetAllSenders();
             senders.Length.Should().Be(3);
             senders.Should().SatisfyRespectively(
@@ -446,7 +446,7 @@ namespace Ev.ServiceBus.UnitTests
         [InlineData(5)]
         public async Task OutgoingCustomizersTests_AllCustomizersForEventWasCalled(int countOfEventsThrown)
         {
-            var customizedMessage = new List<Message>();
+            var customizedMessage = new List<ServiceBusMessage>();
             var customizedPayload = new List<object>();
             var composer = new Composer();
 
@@ -494,7 +494,7 @@ namespace Ev.ServiceBus.UnitTests
         [InlineData(1)]
         public async Task OutgoingCustomizersTests_WhenOtherEventPublished_NoCustomizersForEventWasCalled(int countOfEventsThrown)
         {
-            var customizedMessage = new List<Message>();
+            var customizedMessage = new List<ServiceBusMessage>();
             var customizedPayload = new List<object>();
             var composer = new Composer();
 
@@ -562,23 +562,28 @@ namespace Ev.ServiceBus.UnitTests
         public async Task CustomizeConnection_ChangesAreAppliedToClient()
         {
             var composer = new Composer();
+            var serviceBusClientOptions = new ServiceBusClientOptions()
+            {
+                EnableCrossEntityTransactions = true,
+                TransportType = ServiceBusTransportType.AmqpWebSockets
+            };
 
-            var factory = new Mock<IClientFactory<TopicOptions, ITopicClient>>();
-            factory.Setup(o => o.Create(
-                    It.IsAny<TopicOptions>(),
-                    It.Is<ConnectionSettings>(settings => settings.ConnectionString == "newConnectionString"
-                                                          && settings.ReceiveMode == ReceiveMode.ReceiveAndDelete)))
-                .Returns(new Mock<ITopicClient>().Object);
+            var factory = new Mock<IClientFactory>();
+            factory.Setup(o => o.Create(It.Is<ConnectionSettings>(settings =>
+                    settings.ConnectionString == "Endpoint=newConnectionString;"
+                    && settings.Options == serviceBusClientOptions
+                    && settings.Endpoint == "newConnectionString")))
+                .Returns(new Mock<ServiceBusClient>().Object);
 
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusDispatch()
                     .ToTopic("testTopic", builder =>
                     {
-                        builder.CustomizeConnection("newConnectionString", ReceiveMode.ReceiveAndDelete, RetryPolicy.NoRetry);
+                        builder.CustomizeConnection("Endpoint=newConnectionString;", serviceBusClientOptions);
                         builder.RegisterDispatch<PublishedEvent>();
                     });
-                ServiceCollectionHelpers.OverrideClientFactory(services, factory.Object);
+                services.OverrideClientFactory(factory.Object);
             });
 
             await composer.Compose();

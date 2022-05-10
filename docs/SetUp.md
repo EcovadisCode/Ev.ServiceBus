@@ -24,7 +24,7 @@ public void ConfigureServices(IServiceCollection services)
     services.AddServiceBus<PayloadSerializer>(settings => {
         settings.Enabled = true;
         settings.ReceiveMessages = true;
-        settings.WithConnection();
+        settings.WithConnection("", new ServiceBusClientOptions());
     });
 }
 ```

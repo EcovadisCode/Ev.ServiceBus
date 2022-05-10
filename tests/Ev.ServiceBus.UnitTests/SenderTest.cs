@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -13,26 +15,26 @@ namespace Ev.ServiceBus.UnitTests
 {
     public class SenderTest
     {
-        private async Task<(IMessageSender sender, QueueClientMock clientMock)> ComposeServiceBusAndGetSender()
+        private async Task<(IMessageSender sender, SenderMock clientMock)> ComposeServiceBusAndGetSender()
         {
             var composer = new Composer();
 
             composer.WithAdditionalServices(services =>
             {
                 services.RegisterServiceBusQueue("testQueue")
-                    .WithConnection("testConnectionString");
+                    .WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
             });
 
             var provider = await composer.Compose();
 
             return (
                 provider.GetRequiredService<IServiceBusRegistry>().GetQueueSender("testQueue"),
-                provider.GetQueueClientMock("testQueue", false)
+                provider.GetSenderMock("testQueue")
             );
         }
 
         [Fact]
-        public async Task HaveProperidentifyingValues()
+        public async Task HaveProperIdentifyingValues()
         {
             var (sender, clientMock) = await ComposeServiceBusAndGetSender();
 
@@ -47,7 +49,7 @@ namespace Ev.ServiceBus.UnitTests
 
             await sender.CancelScheduledMessageAsync(16548);
 
-            clientMock.Mock.Verify(o => o.CancelScheduledMessageAsync(16548), Times.Once);
+            clientMock.Mock.Verify(o => o.CancelScheduledMessageAsync(16548, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -55,11 +57,11 @@ namespace Ev.ServiceBus.UnitTests
         {
             var (sender, clientMock) = await ComposeServiceBusAndGetSender();
 
-            var message = new Message();
+            var message = new ServiceBusMessage();
             var scheduleEnqueueTimeUtc = new DateTimeOffset();
             await sender.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc);
 
-            clientMock.Mock.Verify(o => o.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc), Times.Once);
+            clientMock.Mock.Verify(o => o.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -67,10 +69,10 @@ namespace Ev.ServiceBus.UnitTests
         {
             var (sender, clientMock) = await ComposeServiceBusAndGetSender();
 
-            var message = new Message();
-            await sender.SendAsync(message);
+            var message = new ServiceBusMessage();
+            await sender.SendMessageAsync(message);
 
-            clientMock.Mock.Verify(o => o.SendAsync(message), Times.Once);
+            clientMock.Mock.Verify(o => o.SendMessageAsync(message, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -78,10 +80,10 @@ namespace Ev.ServiceBus.UnitTests
         {
             var (sender, clientMock) = await ComposeServiceBusAndGetSender();
 
-            var messageList = new List<Message>();
-            await sender.SendAsync(messageList);
+            var messageList = new List<ServiceBusMessage>();
+            await sender.SendMessagesAsync(messageList);
 
-            clientMock.Mock.Verify(o => o.SendAsync(messageList), Times.Once);
+            clientMock.Mock.Verify(o => o.SendMessagesAsync(messageList, It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

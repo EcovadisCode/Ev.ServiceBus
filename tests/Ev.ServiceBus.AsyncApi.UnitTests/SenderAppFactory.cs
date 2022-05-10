@@ -24,7 +24,7 @@ namespace Ev.ServiceBus.AsyncApi.UnitTests
             builder.ConfigureTestServices(
                 services =>
                 {
-                    services.OverrideClientFactories();
+                    services.OverrideClientFactory();
                 });
         }
 
