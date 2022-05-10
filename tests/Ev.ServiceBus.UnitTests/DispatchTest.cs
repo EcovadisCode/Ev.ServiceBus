@@ -289,13 +289,6 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
-        public void MessageMustContainASessionId()
-        {
-            var message = GetMessageFrom("sessionQueue");
-            message?.SessionId.Should().Be("SomeSessionId");
-        }
-
-        [Fact]
         public async Task PublishDoesntAcceptNulls()
         {
             var composer = new Composer();

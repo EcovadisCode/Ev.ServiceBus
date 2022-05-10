@@ -154,10 +154,9 @@ namespace Ev.ServiceBus.UnitTests
                 });
 
             await composer.Compose();
-            var clients = composer
-                .SubscriptionFactory
-                .GetAllRegisteredClients();
-            var client = clients.First(o => o.ClientName == "testSubscription");
+            var client = composer
+                .ClientFactory
+                .GetProcessorMock("testTopic", "testSubscription");
 
             var message = TestMessageHelper.CreateEventMessage("myevent", new
             {
