@@ -129,6 +129,7 @@ namespace Ev.ServiceBus
         /// <param name="services"></param>
         /// <param name="queueName">The queue's name to register</param>
         /// <returns>The options object. You can use it to customize the registration.</returns>
+        [Obsolete($"Use {nameof(RegisterServiceBusReception)} or {nameof(RegisterServiceBusDispatch)}")]
         public static QueueOptions RegisterServiceBusQueue(this IServiceCollection services, string queueName)
         {
             RegisterBaseServices(services);
@@ -148,6 +149,7 @@ namespace Ev.ServiceBus
         /// <param name="services"></param>
         /// <param name="topicName">The topic's name to register</param>
         /// <returns>The options object. You can use it to customize the registration.</returns>
+        [Obsolete($"Use {nameof(RegisterServiceBusReception)} or {nameof(RegisterServiceBusDispatch)}")]
         public static TopicOptions RegisterServiceBusTopic(this IServiceCollection services, string topicName)
         {
             RegisterBaseServices(services);
@@ -168,6 +170,7 @@ namespace Ev.ServiceBus
         /// <param name="topicName">The topic's name related to the subscription.</param>
         /// <param name="subscriptionName">The subscription' name to register</param>
         /// <returns>The options object. You can use it to customize the registration.</returns>
+        [Obsolete($"Use {nameof(RegisterServiceBusReception)} or {nameof(RegisterServiceBusDispatch)}")]
         public static SubscriptionOptions RegisterServiceBusSubscription(this IServiceCollection services, string topicName, string subscriptionName)
         {
             RegisterBaseServices(services);
