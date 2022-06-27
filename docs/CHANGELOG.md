@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.2.0
+- Added method overloads for `RegisterDispatch` and `RegisterReception` Which are not templated.
+- Made old registration method obsolete.
+
 ## 4.1.1
 - merged v3.7.0 with v4.1.0
 

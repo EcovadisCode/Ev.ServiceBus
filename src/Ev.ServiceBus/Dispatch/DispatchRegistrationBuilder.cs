@@ -1,4 +1,5 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using System;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -35,6 +36,24 @@ namespace Ev.ServiceBus.Dispatch
         public MessageDispatchRegistration RegisterDispatch<TDispatchModel>()
         {
             var builder = new MessageDispatchRegistration(_options, typeof(TDispatchModel));
+            _services.Configure<ServiceBusOptions>(options =>
+            {
+                options.RegisterDispatch(builder);
+            });
+            return builder;
+        }
+
+        /// <summary>
+        /// Registers a class as a payload to serialize and send through the current resource.
+        /// </summary>
+        /// <returns></returns>
+        public MessageDispatchRegistration RegisterDispatch(Type dispatchModel)
+        {
+            if (dispatchModel == null)
+            {
+                throw new ArgumentNullException(nameof(dispatchModel));
+            }
+            var builder = new MessageDispatchRegistration(_options, dispatchModel);
             _services.Configure<ServiceBusOptions>(options =>
             {
                 options.RegisterDispatch(builder);
