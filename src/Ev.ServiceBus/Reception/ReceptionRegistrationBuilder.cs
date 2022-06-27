@@ -71,7 +71,7 @@ public class ReceptionRegistrationBuilder
         }
 
         var handlerInterface = typeof(IMessageReceptionHandler<>).MakeGenericType(receptionModel);
-        if (handlerType.IsAssignableFrom(handlerInterface) == false)
+        if (handlerInterface.IsAssignableFrom(handlerType) == false)
         {
             throw new ArgumentException($"{nameof(handlerType)} must implement IMessageReceptionHandler<{nameof(receptionModel)}> interface", nameof(handlerType));
         }
