@@ -69,8 +69,13 @@ public class ServiceBusEngine
         BuildDispatches();
     }
 
-    private ServiceBusClient CreateOrGetServiceBusClient(ConnectionSettings settings)
+    private ServiceBusClient? CreateOrGetServiceBusClient(ConnectionSettings settings)
     {
+        if (_options.Value.Settings.Enabled == false)
+        {
+            return null;
+        }
+
         if (_clients.TryGetValue(settings.Endpoint, out var client))
         {
             return client;
@@ -107,7 +112,7 @@ public class ServiceBusEngine
         }
 
         var duplicateEvenTypeIds = regs.GroupBy(o => new {o.Options.ClientType,
-            o.Options.ResourceId, EventTypeId = o.PayloadTypeId}).Where(o => o.Count() > 1).ToArray();
+            o.Options.ResourceId, o.PayloadTypeId}).Where(o => o.Count() > 1).ToArray();
         if (duplicateEvenTypeIds.Any())
         {
             throw new DuplicateEvenTypeIdDeclarationException(duplicateEvenTypeIds.SelectMany(o => o).ToArray());

@@ -181,13 +181,11 @@ namespace Ev.ServiceBus.UnitTests
         [Theory]
         [InlineData("topic", "MyEvent")]
         [InlineData("queue", "MyEventThroughQueue")]
-        public void MessageMustContainTheRightPayloadTypeId(string clientToCheck, string eventTypeId)
+        public void MessageMustContainTheRightPayloadTypeId(string clientToCheck, string payloadTypeId)
         {
             var message = GetMessageFrom(clientToCheck);
-            Assert.True(message?.ApplicationProperties.ContainsKey("EventTypeId"));
             Assert.True(message?.ApplicationProperties.ContainsKey("PayloadTypeId"));
-            Assert.Equal(eventTypeId, message?.ApplicationProperties["EventTypeId"]);
-            Assert.Equal(eventTypeId, message?.ApplicationProperties["PayloadTypeId"]);
+            Assert.Equal(payloadTypeId, message?.ApplicationProperties["PayloadTypeId"]);
         }
 
         [Theory]

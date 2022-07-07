@@ -14,11 +14,11 @@ namespace Ev.ServiceBus
     {
         private readonly ConnectionSettings? _connectionSettings;
         private readonly ILogger<SenderWrapper> _logger;
-        private readonly ServiceBusClient _client;
+        private readonly ServiceBusClient? _client;
         private readonly ServiceBusOptions _parentOptions;
         private readonly IServiceProvider _provider;
 
-        public SenderWrapper(ServiceBusClient client,
+        public SenderWrapper(ServiceBusClient? client,
             IClientOptions[] options,
             ServiceBusOptions parentOptions,
             IServiceProvider provider)
@@ -48,7 +48,7 @@ namespace Ev.ServiceBus
 
         public void Initialize()
         {
-            SenderClient = _client.CreateSender(ResourceId);
+            SenderClient = _client!.CreateSender(ResourceId);
             Sender = new MessageSender(SenderClient, ResourceId, ClientType, _provider.GetRequiredService<ILogger<MessageSender>>());
         }
 

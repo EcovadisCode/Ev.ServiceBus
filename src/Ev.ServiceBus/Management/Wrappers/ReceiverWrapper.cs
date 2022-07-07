@@ -18,14 +18,14 @@ namespace Ev.ServiceBus;
 public class ReceiverWrapper : IWrapper
 {
     private readonly ILogger<ReceiverWrapper> _logger;
-    private readonly ServiceBusClient _client;
+    private readonly ServiceBusClient? _client;
     private readonly ServiceBusOptions _parentOptions;
     private readonly IServiceProvider _provider;
     private readonly ComposedReceiverOptions _composedOptions;
 
     private Func<ProcessErrorEventArgs, Task>? _onExceptionReceivedHandler;
 
-    public ReceiverWrapper(ServiceBusClient client,
+    public ReceiverWrapper(ServiceBusClient? client,
         ComposedReceiverOptions options,
         ServiceBusOptions parentOptions,
         IServiceProvider provider)
@@ -95,8 +95,8 @@ public class ReceiverWrapper : IWrapper
         {
             SessionProcessorClient = _composedOptions.FirstOption switch
             {
-                QueueOptions queueOptions => _client.CreateSessionProcessor(queueOptions.QueueName, _composedOptions.SessionProcessorOptions),
-                SubscriptionOptions subscriptionOptions => _client.CreateSessionProcessor(
+                QueueOptions queueOptions => _client!.CreateSessionProcessor(queueOptions.QueueName, _composedOptions.SessionProcessorOptions),
+                SubscriptionOptions subscriptionOptions => _client!.CreateSessionProcessor(
                     subscriptionOptions.TopicName,
                     subscriptionOptions.SubscriptionName,
                     _composedOptions.SessionProcessorOptions),
@@ -110,8 +110,8 @@ public class ReceiverWrapper : IWrapper
         {
             ProcessorClient = _composedOptions.FirstOption switch
             {
-                QueueOptions queueOptions => _client.CreateProcessor(queueOptions.QueueName, _composedOptions.ProcessorOptions),
-                SubscriptionOptions subscriptionOptions => _client.CreateProcessor(
+                QueueOptions queueOptions => _client!.CreateProcessor(queueOptions.QueueName, _composedOptions.ProcessorOptions),
+                SubscriptionOptions subscriptionOptions => _client!.CreateProcessor(
                     subscriptionOptions.TopicName,
                     subscriptionOptions.SubscriptionName,
                     _composedOptions.ProcessorOptions),

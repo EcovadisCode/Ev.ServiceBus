@@ -44,7 +44,7 @@ namespace Ev.ServiceBus.UnitTests
             metadata.ApplicationProperties.Keys.Should()
                 .Contain(UserProperties.MessageTypeProperty)
                 .And
-                .Contain(UserProperties.EventTypeIdProperty);
+                .Contain(UserProperties.PayloadTypeIdProperty);
             metadata.CorrelationId.Should().Be("8B4C4C3C-482A-4688-8458-AFF9998C0A12");
             metadata.SessionId.Should().Be("ABB8761B-C22E-407E-801C-DFAF68916F04");
         }
@@ -62,7 +62,7 @@ namespace Ev.ServiceBus.UnitTests
                 ApplicationProperties =
                 {
                     { UserProperties.MessageTypeProperty, "IntegrationEvent" },
-                    { UserProperties.EventTypeIdProperty, "Payload" }
+                    { UserProperties.PayloadTypeIdProperty, "Payload" }
                 },
                 CorrelationId = "8B4C4C3C-482A-4688-8458-AFF9998C0A12",
                 SessionId = "ABB8761B-C22E-407E-801C-DFAF68916F04"
