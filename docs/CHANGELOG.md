@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.3.0
+- Removed EventTypeId related code.
+
 ## 4.2.0
 - Added method overloads for `RegisterDispatch` and `RegisterReception` Which are not templated.
 - Made old registration method obsolete.

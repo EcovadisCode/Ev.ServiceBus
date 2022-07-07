@@ -592,7 +592,7 @@ namespace Ev.ServiceBus.UnitTests
 
         public class TestEvent
         {
-            public string EventTypeId { get; set; } = "testEvent";
+            public string PayloadTypeId { get; set; } = "testEvent";
             public int EventRootId { get; set; }
         }
 

@@ -34,7 +34,7 @@ public class MessageReceptionHandler : IMessageHandler
 
     public async Task HandleMessageAsync(MessageContext context)
     {
-        var payloadTypeId = context.Message.GetPayloadTypeId() ?? context.Message.GetEventTypeId();
+        var payloadTypeId = context.Message.GetPayloadTypeId();
         if (payloadTypeId == null)
         {
             throw new MessageIsMissingPayloadTypeIdException(context);

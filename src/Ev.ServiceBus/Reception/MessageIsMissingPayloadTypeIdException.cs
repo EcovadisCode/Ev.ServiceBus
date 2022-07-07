@@ -8,7 +8,7 @@ public class MessageIsMissingPayloadTypeIdException : Exception
 {
     public MessageIsMissingPayloadTypeIdException(MessageContext messageContext)
     {
-        Message = "An incoming message is missing its 'EventTypeId' or 'PayloadTypeId' UserProperty. Processing cannot continue without this information.\n"
+        Message = "An incoming message is missing its 'PayloadTypeId' UserProperty. Processing cannot continue without this information.\n"
                   + $"context : \n"
                   + $"\tReceiver : {messageContext.ClientType} {messageContext.ResourceId}"
                   + $"\tLabel : {messageContext.Message.Subject}"

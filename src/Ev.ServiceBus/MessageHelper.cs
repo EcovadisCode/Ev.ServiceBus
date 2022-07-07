@@ -4,11 +4,6 @@ namespace Ev.ServiceBus;
 
 public static class MessageHelper
 {
-    internal static string? GetEventTypeId(this ServiceBusReceivedMessage message)
-    {
-        return TryGetValue(message, UserProperties.EventTypeIdProperty);
-    }
-
     internal static string? GetPayloadTypeId(this ServiceBusReceivedMessage message)
     {
         return TryGetValue(message, UserProperties.PayloadTypeIdProperty);
@@ -29,8 +24,7 @@ public static class MessageHelper
             ApplicationProperties =
             {
                 {UserProperties.MessageTypeProperty, "IntegrationEvent"},
-                {UserProperties.PayloadTypeIdProperty, payloadTypeId},
-                {UserProperties.EventTypeIdProperty, payloadTypeId}
+                {UserProperties.PayloadTypeIdProperty, payloadTypeId}
             }
         };
         return message;

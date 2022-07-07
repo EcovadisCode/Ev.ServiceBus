@@ -311,7 +311,7 @@ namespace Ev.ServiceBus.UnitTests
                 ApplicationProperties =
                 {
                     { UserProperties.MessageTypeProperty, "IntegrationEvent" },
-                    { UserProperties.EventTypeIdProperty, "MyEvent" }
+                    { UserProperties.PayloadTypeIdProperty, "MyEvent" }
                 }
             };
 
