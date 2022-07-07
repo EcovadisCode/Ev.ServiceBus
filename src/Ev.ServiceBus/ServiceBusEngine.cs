@@ -69,8 +69,13 @@ public class ServiceBusEngine
         BuildDispatches();
     }
 
-    private ServiceBusClient CreateOrGetServiceBusClient(ConnectionSettings settings)
+    private ServiceBusClient? CreateOrGetServiceBusClient(ConnectionSettings settings)
     {
+        if (_options.Value.Settings.Enabled == false)
+        {
+            return null;
+        }
+
         if (_clients.TryGetValue(settings.Endpoint, out var client))
         {
             return client;

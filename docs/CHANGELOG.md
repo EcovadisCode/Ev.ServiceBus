@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.3.0
 - Removed EventTypeId related code.
+- Healthchecks are now disabled when Ev.ServiceBus is disabled.
+- Connections won't be created anymore when Ev.ServiceBus is disabled.
 
 ## 4.2.0
 - Added method overloads for `RegisterDispatch` and `RegisterReception` Which are not templated.

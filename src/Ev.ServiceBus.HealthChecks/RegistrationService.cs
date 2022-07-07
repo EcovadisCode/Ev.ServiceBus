@@ -21,6 +21,11 @@ namespace Ev.ServiceBus.HealthChecks
 
         public void Configure(HealthCheckServiceOptions options)
         {
+            if (_serviceBusOptions.Value.Settings.Enabled == false)
+            {
+                return;
+            }
+
             var commonConnectionString = _serviceBusOptions.Value.Settings.ConnectionSettings?.ConnectionString;
             var resources = _serviceBusOptions.Value.Receivers.Union(_serviceBusOptions.Value.Senders).Distinct()
                 .ToArray();
