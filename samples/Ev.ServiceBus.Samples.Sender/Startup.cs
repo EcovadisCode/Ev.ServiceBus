@@ -61,6 +61,7 @@ namespace Ev.ServiceBus.Samples.Sender
             services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
             {
                 builder.RegisterDispatch<WeatherForecast>();
+                builder.RegisterDispatch<UserCreated>().CustomizePayloadTypeId("User/UserCreated");
             });
 
             services.AddHealthChecks()
