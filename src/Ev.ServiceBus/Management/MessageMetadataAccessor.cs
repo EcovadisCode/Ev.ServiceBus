@@ -10,6 +10,13 @@ internal class MessageMetadataAccessor : IMessageMetadataAccessor
 
     public void SetData(MessageContext context)
     {
-        Metadata = new MessageMetadata(context.Message, context.CancellationToken);
+        if (context.SessionArgs != null)
+        {
+            Metadata = new MessageMetadata(context.Message, context.SessionArgs, context.CancellationToken);
+        }
+        else
+        {
+            Metadata = new MessageMetadata(context.Message, context.Args!, context.CancellationToken);
+        }
     }
 }
