@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.4.0
+- Update the `IMessageMetadata` interface to expose all metadata properties of the receiving message as well as the methods to complete/abandon/deadletter/defer said message.
+
 ## 4.3.1
 - Resolved a bug where putting a '/' in PayloadTypeIds of message contracts will make the AsyncUi json not valid.
 

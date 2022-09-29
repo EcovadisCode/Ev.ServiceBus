@@ -29,13 +29,18 @@ public class SessionProcessorMock : ServiceBusSessionProcessor
     public string ResourceId { get; }
     public ServiceBusSessionProcessorOptions Options { get; }
 
-    public async Task TriggerMessageReception(ServiceBusMessage message, CancellationToken token)
+    public Task TriggerMessageReception(ServiceBusMessage message, CancellationToken token)
+    {
+        return TriggerMessageReception(message, token, new Mock<ServiceBusSessionReceiver>().Object);
+    }
+
+    public async Task TriggerMessageReception(ServiceBusMessage message, CancellationToken token, ServiceBusSessionReceiver receiver)
     {
         ServiceBusModelFactory.ServiceBusReceivedMessage();
         var ctor = typeof(ServiceBusReceivedMessage).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
             null, new []{typeof(AmqpAnnotatedMessage)}, null);
         var obj = (ServiceBusReceivedMessage) ctor!.Invoke(new object[]{message.GetRawAmqpMessage()} );
-        await OnProcessSessionMessageAsync(new ProcessSessionMessageEventArgs(obj, new Mock<ServiceBusSessionReceiver>().Object, token));
+        await OnProcessSessionMessageAsync(new ProcessSessionMessageEventArgs(obj, receiver, token));
     }
 
     public async Task TriggerExceptionOccured(ProcessErrorEventArgs args)
