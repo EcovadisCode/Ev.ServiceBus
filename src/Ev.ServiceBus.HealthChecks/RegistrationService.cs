@@ -38,7 +38,7 @@ namespace Ev.ServiceBus.HealthChecks
                     continue;
                 }
 
-                var queues = resourceGroup.Where(o => o is QueueOptions).Cast<QueueOptions>().GroupBy(o => o.QueueName);
+                var queues = resourceGroup.Where(o => o is QueueOptions).Cast<QueueOptions>().GroupBy(o => o.QueueName.ToLower());
                 foreach (var group in queues)
                 {
                     _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "queue", group.Key);
@@ -47,7 +47,7 @@ namespace Ev.ServiceBus.HealthChecks
                         null, HealthChecksBuilderExtensions.HealthCheckTags, null));
                 }
 
-                var topics = resourceGroup.Where(o => o is TopicOptions).Cast<TopicOptions>().GroupBy(o => o.TopicName);
+                var topics = resourceGroup.Where(o => o is TopicOptions).Cast<TopicOptions>().GroupBy(o => o.TopicName.ToLower());
                 foreach (var group in topics)
                 {
                     _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "topic", group.Key);
@@ -59,7 +59,7 @@ namespace Ev.ServiceBus.HealthChecks
                 var subscriptions = resourceGroup
                     .Where(o => o is SubscriptionOptions)
                     .Cast<SubscriptionOptions>()
-                    .GroupBy(o => new { o.TopicName, o.SubscriptionName });
+                    .GroupBy(o => new { TopicName = o.TopicName.ToLower(), SubscriptionName = o.SubscriptionName.ToLower() });
                 foreach (var group in subscriptions)
                 {
                     _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName} (related to topic {TopicName})", "subscription", group.Key.SubscriptionName, group.Key.TopicName);
