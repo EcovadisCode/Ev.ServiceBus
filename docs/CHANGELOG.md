@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.5.0
+- Added methods to Schedule dispatches
+- Removed usages of netcore3.1 and net5 frameworks.
+
 ## 4.4.1
 - made the registration of resources case insensitive.
 

@@ -33,11 +33,11 @@ public interface IMessageMetadata
     public string DeadLetterReason { get; }
     public string DeadLetterErrorDescription { get; }
 
-    public Task AbandonMessageAsync(IDictionary<string, object> propertiesToModify = default);
+    public Task AbandonMessageAsync(IDictionary<string, object>? propertiesToModify = default);
     public Task CompleteMessageAsync();
-    public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription = default);
-    public Task DeadLetterMessageAsync(IDictionary<string, object> propertiesToModify = default);
-    public Task DeferMessageAsync(IDictionary<string, object> propertiesToModify = default);
+    public Task DeadLetterMessageAsync(string deadLetterReason, string? deadLetterErrorDescription = default);
+    public Task DeadLetterMessageAsync(IDictionary<string, object>? propertiesToModify = default);
+    public Task DeferMessageAsync(IDictionary<string, object>? propertiesToModify = default);
 }
 
 public class MessageMetadata : IMessageMetadata
@@ -62,7 +62,7 @@ public class MessageMetadata : IMessageMetadata
         CancellationToken = token;
     }
 
-    public async Task AbandonMessageAsync(IDictionary<string, object> propertiesToModify = default)
+    public async Task AbandonMessageAsync(IDictionary<string, object>? propertiesToModify = default)
     {
         if (_sessionArgs != null)
         {
@@ -86,7 +86,7 @@ public class MessageMetadata : IMessageMetadata
         }
     }
 
-    public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription = default)
+    public async Task DeadLetterMessageAsync(string deadLetterReason, string? deadLetterErrorDescription = default)
     {
         if (_sessionArgs != null)
         {
@@ -98,7 +98,7 @@ public class MessageMetadata : IMessageMetadata
         }
     }
 
-    public async Task DeadLetterMessageAsync(IDictionary<string, object> propertiesToModify = default)
+    public async Task DeadLetterMessageAsync(IDictionary<string, object>? propertiesToModify = default)
     {
         if (_sessionArgs != null)
         {
@@ -110,7 +110,7 @@ public class MessageMetadata : IMessageMetadata
         }
     }
 
-    public async Task DeferMessageAsync(IDictionary<string, object> propertiesToModify = default)
+    public async Task DeferMessageAsync(IDictionary<string, object>? propertiesToModify = default)
     {
         if (_sessionArgs != null)
         {
