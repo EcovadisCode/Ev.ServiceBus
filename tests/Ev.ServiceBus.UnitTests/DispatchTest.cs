@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
+using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -303,7 +304,7 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
-        public void SendEventsDoesntAcceptNulls()
+        public async Task SendDispatchesDoesntAcceptNulls()
         {
             var services = new ServiceCollection();
             services.AddServiceBus<PayloadSerializer>(settings => {});
@@ -312,12 +313,102 @@ namespace Ev.ServiceBus.UnitTests
             using (var scope = provider.CreateScope())
             {
                 var eventPublisher = scope.ServiceProvider.GetService<IDispatchSender>();
-                Assert.ThrowsAsync<ArgumentNullException>(
+                await Assert.ThrowsAsync<ArgumentNullException>(
                     async () =>
                     {
                         await eventPublisher.SendDispatches(null!);
                     });
             }
+        }
+
+        [Fact]
+        public async Task SendDispatchesPaginateMessages()
+        {
+            // configure
+            var services = new ServiceCollection();
+            services.AddServiceBus<PayloadSerializer>(settings =>
+            {
+                settings.WithConnection("myConnection", new ServiceBusClientOptions());
+            });
+            services.OverrideClientFactory();
+            services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
+            {
+                builder.RegisterDispatch<SubscribedEvent>();
+            });
+            var provider = services.BuildServiceProvider();
+            await provider.SimulateStartHost(new CancellationToken());
+
+            // Act
+            var messages = new SubscribedEvent[253];
+            int i = 0;
+            while (i < 253)
+            {
+                messages[i] = new SubscribedEvent()
+                {
+                    SomeNumber = i + 1,
+                    SomeString = $"Event number {i+1}"
+                };
+                ++i;
+            }
+            using (var scope = provider.CreateScope())
+            {
+                var eventPublisher = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+                await eventPublisher.SendDispatches(messages);
+            }
+
+            // Verify
+            var factory = provider.GetRequiredService<FakeClientFactory>();
+            var mock = factory.GetSenderMock("myQueue");
+            mock.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<IEnumerable<ServiceBusMessage>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+
+            // Dispose
+            await provider.SimulateStopHost(new CancellationToken());
+        }
+
+        [Fact]
+        public async Task ScheduleDispatchesPaginateMessages()
+        {
+            // configure
+            var services = new ServiceCollection();
+            services.AddServiceBus<PayloadSerializer>(settings =>
+            {
+                settings.WithConnection("myConnection", new ServiceBusClientOptions());
+            });
+            services.OverrideClientFactory();
+            services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
+            {
+                builder.RegisterDispatch<SubscribedEvent>();
+            });
+            var provider = services.BuildServiceProvider();
+            await provider.SimulateStartHost(new CancellationToken());
+
+            // Act
+            var messages = new SubscribedEvent[253];
+            int i = 0;
+            while (i < 253)
+            {
+                messages[i] = new SubscribedEvent()
+                {
+                    SomeNumber = i + 1,
+                    SomeString = $"Event number {i+1}"
+                };
+                ++i;
+            }
+
+            var schedule = DateTimeOffset.UtcNow.AddDays(1);
+            using (var scope = provider.CreateScope())
+            {
+                var eventPublisher = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+                await eventPublisher.ScheduleDispatches(messages, schedule);
+            }
+
+            // Verify
+            var factory = provider.GetRequiredService<FakeClientFactory>();
+            var mock = factory.GetSenderMock("myQueue");
+            mock.Mock.Verify(o => o.ScheduleMessagesAsync(It.IsAny<IEnumerable<ServiceBusMessage>>(), schedule, It.IsAny<CancellationToken>()), Times.Exactly(3));
+
+            // Dispose
+            await provider.SimulateStopHost(new CancellationToken());
         }
 
         private ServiceBusMessage GetMessageFrom(string clientToCheck)

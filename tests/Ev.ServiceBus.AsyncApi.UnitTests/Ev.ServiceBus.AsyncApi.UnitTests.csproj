@@ -1,15 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
+        <TargetFramework>net6.0</TargetFramework>
 
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="5.0.12" />
-    </ItemGroup>
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+    <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.0" />
     </ItemGroup>
 

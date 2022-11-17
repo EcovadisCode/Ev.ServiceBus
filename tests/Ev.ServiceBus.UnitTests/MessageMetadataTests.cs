@@ -140,7 +140,7 @@ namespace Ev.ServiceBus.UnitTests
             }
             await client.TriggerMessageReception(message, cancellationToken ?? CancellationToken.None);
         }
-        
+
         private async Task SimulateSessionEventReception(
             SessionProcessorMock client,
             CancellationToken? cancellationToken = null,

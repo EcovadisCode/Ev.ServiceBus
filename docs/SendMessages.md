@@ -50,6 +50,14 @@ The NuGet will figure out through which queue/topic to send this object dependin
 But most of the time, you want to create those objects to send in the middle of your business code, which is transactional.
 So, if anything goes wrong after you've sent the messages, everything will be rolled back except your messages.
 
+You can also send scheduled dispatches. The messages sent that way will be stored on the queue/topic 
+and be sent to the receivers at a specific datetime of your choosing.
+```csharp
+var sender = _serviceProvider.GetService<IDispatchSender>();
+var forecast = new WeatherForecast();
+await sender.ScheduleDispatches(new []{forecast}, DateTimeOffset.UtcNow.AddDays(1));
+```
+
 #### Use the publish/dispatch pattern
 
 To counter the problem explained above, you can use two more services: 
