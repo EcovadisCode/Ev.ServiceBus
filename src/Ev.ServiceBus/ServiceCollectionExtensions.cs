@@ -3,7 +3,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Batching;
 using Ev.ServiceBus.Abstractions.MessageReception;
+using Ev.ServiceBus.Batching;
 using Ev.ServiceBus.Dispatch;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
@@ -51,6 +53,8 @@ namespace Ev.ServiceBus
 
             RegisterMessageReceptionServices(services);
 
+            RegisterMessageBatchingServices(services);
+
             services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
         }
 
@@ -83,6 +87,11 @@ namespace Ev.ServiceBus
             {
                 services.AddHostedService<ServiceBusHost>();
             }
+        }
+
+        private static void RegisterMessageBatchingServices(IServiceCollection services)
+        {
+            services.TryAddScoped<IMessageBatcher, MessageBatcher>();
         }
 
         /// <summary>
