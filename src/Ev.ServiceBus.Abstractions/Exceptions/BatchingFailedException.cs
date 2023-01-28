@@ -6,5 +6,5 @@ namespace Ev.ServiceBus.Abstractions.Exceptions;
 public class BatchingFailedException : Exception
 {
     public BatchingFailedException() { }
-    public BatchingFailedException(Exception ex) : base("Batching failed", ex) { }
+    public BatchingFailedException(Exception ex) : base($"Batching failed: {ex.Message}", ex) { }
 }

@@ -73,6 +73,7 @@ public sealed class MessageBatcher : IMessageBatcher
             catch (Exception ex)
             {
                 serviceBusMessageBatch?.Dispose();
+                // we catch BatchingFailed here
                 throw new BatchingFailedException(ex);
             }
         }
