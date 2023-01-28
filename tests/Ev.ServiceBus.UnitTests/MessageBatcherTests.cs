@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
@@ -15,11 +16,6 @@ namespace Ev.ServiceBus.UnitTests;
 
 public class MessageBatcherTests
 {
-    // queue/topic tests
-    // +batch composition tests
-    // +failing with exception tests
-    // different payload types
-
     private readonly Mock<IServiceBusRegistry> _registry;
     private readonly Mock<IMessageSender> _sender;
     private readonly ServiceBusRegistry _dispatchRegistry;
@@ -49,7 +45,7 @@ public class MessageBatcherTests
         _sender
             .Setup(x => x.CreateMessageBatchAsync(default))
             .ReturnsAsync(() => CreateServiceBusMessageBatch(batchSize));
-        var events = CreateEvents(eventsCount);
+        var events = CreateEvents(eventsCount, p => new Event { Payload = p });
 
         var batches = await _messageBatcher.CalculateBatches(events);
 
@@ -63,7 +59,7 @@ public class MessageBatcherTests
         _sender
             .Setup(x => x.CreateMessageBatchAsync(default))
             .ReturnsAsync(() => CreateServiceBusMessageBatch(2));
-        var events = CreateEvents(7);
+        var events = CreateEvents(7, p => new Event { Payload = p });
 
         var batches = await _messageBatcher.CalculateBatches(events);
 
@@ -75,6 +71,56 @@ public class MessageBatcherTests
     }
 
     [Fact]
+    public async Task CreatesBatchesWithDifferentTypes()
+    {
+        SetupTopic<Event>();
+        SetupTopic<Event2>();
+        _sender
+            .Setup(x => x.CreateMessageBatchAsync(default))
+            .ReturnsAsync(() => CreateServiceBusMessageBatch(2));
+        var events1 = CreateEvents(5, p => new Event { Payload = p });
+        var events2 = CreateEvents(3, p => new Event2 { Content = p });
+        var events = events1
+            .OfType<object>()
+            .Concat(events2)
+            .ToArray();
+
+        var batches = await _messageBatcher.CalculateBatches(events);
+
+        batches.Should().HaveCount(5);
+        batches.ElementAt(0).Should().BeEquivalentTo(new { Payload = "1" }, new { Payload = "2" });
+        batches.ElementAt(1).Should().BeEquivalentTo(new { Payload = "3" }, new { Payload = "4" });
+        batches.ElementAt(2).Should().BeEquivalentTo(new { Payload = "5" });
+        batches.ElementAt(3).Should().BeEquivalentTo(new { Content = "1" }, new { Content = "2" });
+        batches.ElementAt(4).Should().BeEquivalentTo(new { Content = "3" });
+    }
+
+    [Fact]
+    public async Task CreatesBatchesWithBothTopicAndQueue()
+    {
+        SetupTopic<Event>();
+        SetupQueue<Event2>();
+        _sender
+            .Setup(x => x.CreateMessageBatchAsync(default))
+            .ReturnsAsync(() => CreateServiceBusMessageBatch(2));
+        var events1 = CreateEvents(5, p => new Event { Payload = p });
+        var events2 = CreateEvents(3, p => new Event2 { Content = p });
+        var events = events1
+            .OfType<object>()
+            .Concat(events2)
+            .ToArray();
+
+        var batches = await _messageBatcher.CalculateBatches(events);
+
+        batches.Should().HaveCount(5);
+        batches.ElementAt(0).Should().BeEquivalentTo(new { Payload = "1" }, new { Payload = "2" });
+        batches.ElementAt(1).Should().BeEquivalentTo(new { Payload = "3" }, new { Payload = "4" });
+        batches.ElementAt(2).Should().BeEquivalentTo(new { Payload = "5" });
+        batches.ElementAt(3).Should().BeEquivalentTo(new { Content = "1" }, new { Content = "2" });
+        batches.ElementAt(4).Should().BeEquivalentTo(new { Content = "3" });
+    }
+
+    [Fact]
     public void ThrowsBatchingFailedException_When_AddingMessageToBatch_IsUnsuccessful()
     {
         SetupTopic<Event>();
@@ -82,7 +128,7 @@ public class MessageBatcherTests
             .SetupSequence(x => x.CreateMessageBatchAsync(default))
             .ReturnsAsync(CreateServiceBusMessageBatch(5))
             .ReturnsAsync(CreateServiceBusMessageBatchWhichFailsToAddMessage());
-        var events = CreateEvents(7);
+        var events = CreateEvents(7, p => new Event { Payload = p });
 
         var act = async () => await _messageBatcher.CalculateBatches(events);
 
@@ -94,6 +140,11 @@ public class MessageBatcherTests
         public string Payload { get; set; }
     }
 
+    private sealed class Event2
+    {
+        public string Content { get; set; }
+    }
+
     private sealed class MockClientOptions : ClientOptions
     {
         public MockClientOptions(string resourceId, ClientType clientType)
@@ -101,7 +152,6 @@ public class MessageBatcherTests
         {
         }
     }
-
 
     private void SetupTopic<T>()
     {
@@ -114,10 +164,21 @@ public class MessageBatcherTests
             .Register(typeof(T), new[] { new MessageDispatchRegistration(options, typeof(T)) });
     }
 
-    private static Event[] CreateEvents(int count) =>
+    private void SetupQueue<T>()
+    {
+        var resourceId = typeof(T).FullName;
+        var options = new MockClientOptions(resourceId, ClientType.Queue);
+        _registry
+            .Setup(x => x.GetQueueSender(resourceId))
+            .Returns(_sender.Object);
+        _dispatchRegistry
+            .Register(typeof(T), new[] { new MessageDispatchRegistration(options, typeof(T)) });
+    }
+
+    private static T[] CreateEvents<T>(int count, Func<string, T> factory) =>
         Enumerable
             .Range(1, count)
-            .Select(n => new Event { Payload = n.ToString() })
+            .Select(n => factory(n.ToString()))
             .ToArray();
 
     private static ServiceBusMessageBatch CreateServiceBusMessageBatchWhichFailsToAddMessage()
