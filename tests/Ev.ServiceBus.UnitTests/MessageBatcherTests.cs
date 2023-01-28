@@ -53,6 +53,23 @@ public class MessageBatcherTests
     }
 
     [Fact]
+    public async Task CreatesBatchesWithAtMost_100_Items_InBatch()
+    {
+        SetupQueue<Event>();
+        _sender
+            .Setup(x => x.CreateMessageBatchAsync(default))
+            .ReturnsAsync(CreateServiceBusMessageBatchWhichAlwaysAddsMessage);
+        var events = CreateEvents(201, p => new Event { Payload = p });
+
+        var batches = await _messageBatcher.CalculateBatches(events);
+
+        batches.Should().HaveCount(3);
+        batches.ElementAt(0).Should().HaveCount(100);
+        batches.ElementAt(1).Should().HaveCount(100);
+        batches.ElementAt(2).Should().HaveCount(1);
+    }
+
+    [Fact]
     public async Task CreatesBatchesWithCorrectComposition()
     {
         SetupTopic<Event>();
@@ -74,12 +91,12 @@ public class MessageBatcherTests
     public async Task CreatesBatchesWithDifferentTypes()
     {
         SetupTopic<Event>();
-        SetupTopic<Event2>();
+        SetupTopic<EventSecond>();
         _sender
             .Setup(x => x.CreateMessageBatchAsync(default))
             .ReturnsAsync(() => CreateServiceBusMessageBatch(2));
         var events1 = CreateEvents(5, p => new Event { Payload = p });
-        var events2 = CreateEvents(3, p => new Event2 { Content = p });
+        var events2 = CreateEvents(3, p => new EventSecond { Content = p });
         var events = events1
             .OfType<object>()
             .Concat(events2)
@@ -99,12 +116,12 @@ public class MessageBatcherTests
     public async Task CreatesBatchesWithBothTopicAndQueue()
     {
         SetupTopic<Event>();
-        SetupQueue<Event2>();
+        SetupQueue<EventSecond>();
         _sender
             .Setup(x => x.CreateMessageBatchAsync(default))
             .ReturnsAsync(() => CreateServiceBusMessageBatch(2));
         var events1 = CreateEvents(5, p => new Event { Payload = p });
-        var events2 = CreateEvents(3, p => new Event2 { Content = p });
+        var events2 = CreateEvents(3, p => new EventSecond { Content = p });
         var events = events1
             .OfType<object>()
             .Concat(events2)
@@ -121,7 +138,7 @@ public class MessageBatcherTests
     }
 
     [Fact]
-    public void ThrowsBatchingFailedException_When_AddingMessageToBatch_IsUnsuccessful()
+    public void ThrowsBatchingFailedException_When_AddingMessageToBatchFails()
     {
         SetupTopic<Event>();
         _sender
@@ -132,25 +149,36 @@ public class MessageBatcherTests
 
         var act = async () => await _messageBatcher.CalculateBatches(events);
 
-        act.Should().Throw<BatchingFailedException>();
+        act.Should()
+            .Throw<BatchingFailedException>();
     }
 
-    private sealed class Event
+    [Fact]
+    public void ThrowsBatchingFailedException_When_MessageBatchCreationFails()
     {
-        public string Payload { get; set; }
+        SetupTopic<Event>();
+        _sender
+            .Setup(x => x.CreateMessageBatchAsync(default))
+            .Throws(new ArgumentException());
+        var events = CreateEvents(5, p => new Event { Payload = p });
+
+        var act = async () => await _messageBatcher.CalculateBatches(events);
+
+        act.Should()
+            .Throw<BatchingFailedException>()
+            .WithInnerException<ArgumentException>();
     }
 
-    private sealed class Event2
+    [Fact]
+    public void ThrowsBatchingFailedException_When_NoDispatchRegistrationMatches()
     {
-        public string Content { get; set; }
-    }
+        var events = CreateEvents(5, p => new Event { Payload = p });
 
-    private sealed class MockClientOptions : ClientOptions
-    {
-        public MockClientOptions(string resourceId, ClientType clientType)
-            : base(resourceId, clientType, false)
-        {
-        }
+        var act = async () => await _messageBatcher.CalculateBatches(events);
+
+        act.Should()
+            .Throw<BatchingFailedException>()
+            .WithInnerException<DispatchRegistrationNotFoundException>();
     }
 
     private void SetupTopic<T>()
@@ -192,6 +220,17 @@ public class MessageBatcherTests
             _ => false);
     }
 
+    private static ServiceBusMessageBatch CreateServiceBusMessageBatchWhichAlwaysAddsMessage()
+    {
+        const int messageSizeLimitInBytes = 256;
+
+        return ServiceBusModelFactory.ServiceBusMessageBatch(
+            messageSizeLimitInBytes,
+            new List<ServiceBusMessage>(),
+            new CreateMessageBatchOptions { MaxSizeInBytes = messageSizeLimitInBytes },
+            _ => true);
+    }
+
     private static ServiceBusMessageBatch CreateServiceBusMessageBatch(int batchSize)
     {
         const int messageSizeLimitInBytes = 256;
@@ -211,5 +250,23 @@ public class MessageBatcherTests
 
                 return isBatchIncomplete;
             });
+    }
+    
+    private sealed class Event
+    {
+        public string Payload { get; set; }
+    }
+
+    private sealed class EventSecond
+    {
+        public string Content { get; set; }
+    }
+
+    private sealed class MockClientOptions : ClientOptions
+    {
+        public MockClientOptions(string resourceId, ClientType clientType)
+            : base(resourceId, clientType, false)
+        {
+        }
     }
 }
