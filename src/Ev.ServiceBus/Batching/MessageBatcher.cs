@@ -43,7 +43,8 @@ public sealed class MessageBatcher : IMessageBatcher
                 serviceBusMessageBatch = await sender.CreateMessageBatchAsync();
                 foreach (var messages in groupedMessages)
                 {
-                    if (serviceBusMessageBatch.Count < MaxMessagePerSend && serviceBusMessageBatch.TryAddMessage(messages.ServiceBusMessage))
+                    if (serviceBusMessageBatch.Count < MaxMessagePerSend &&
+                        serviceBusMessageBatch.TryAddMessage(messages.ServiceBusMessage))
                     {
                         currentPayloads.Add(messages.Payload);
                         continue;
@@ -70,10 +71,14 @@ public sealed class MessageBatcher : IMessageBatcher
                     serviceBusMessageBatch.Dispose();
                 }
             }
+            catch (BatchingFailedException)
+            {
+                serviceBusMessageBatch?.Dispose();
+                throw;
+            }
             catch (Exception ex)
             {
                 serviceBusMessageBatch?.Dispose();
-                // we catch BatchingFailed here
                 throw new BatchingFailedException(ex);
             }
         }
