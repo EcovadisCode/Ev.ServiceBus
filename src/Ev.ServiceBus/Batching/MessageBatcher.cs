@@ -13,9 +13,9 @@ namespace Ev.ServiceBus.Batching;
 public sealed class MessageBatcher : IMessageBatcher
 {
     private const int MaxMessagePerSend = 100;
+    private readonly IServiceBusRegistry _registry;
     private readonly IMessagePayloadSerializer _messagePayloadSerializer;
     private readonly ServiceBusRegistry _dispatchRegistry;
-    private readonly IServiceBusRegistry _registry;
 
     public MessageBatcher(
         IServiceBusRegistry registry,
@@ -29,35 +29,34 @@ public sealed class MessageBatcher : IMessageBatcher
 
     public async Task<IReadOnlyCollection<MessageBatch<T>>> CalculateBatches<T>(IEnumerable<T> payloads)
     {
-        var result = new List<MessageBatch<T>>();
+        var batches = new List<MessageBatch<T>>();
+        ServiceBusMessageBatch? serviceBusMessageBatch = default;
 
-        foreach (var groupedMessages in CreateServiceBusMessages(payloads).GroupBy(o => new { o.Registration.Options.ClientType, o.Registration.Options.ResourceId }))
+        try
         {
-            ServiceBusMessageBatch? serviceBusMessageBatch = default;
-            try
+            foreach (var groupedMessages in CreateGroupedMessages(payloads).GroupBy(m => m.RegistrationKey))
             {
                 var currentPayloads = new List<T>(MaxMessagePerSend);
                 var sender = groupedMessages.Key.ClientType == ClientType.Queue
                     ? _registry.GetQueueSender(groupedMessages.Key.ResourceId)
                     : _registry.GetTopicSender(groupedMessages.Key.ResourceId);
                 serviceBusMessageBatch = await sender.CreateMessageBatchAsync();
-                foreach (var messages in groupedMessages)
+                foreach (var message in groupedMessages)
                 {
-                    if (serviceBusMessageBatch.Count < MaxMessagePerSend &&
-                        serviceBusMessageBatch.TryAddMessage(messages.ServiceBusMessage))
+                    if (FitsInBatch(serviceBusMessageBatch, message))
                     {
-                        currentPayloads.Add(messages.Payload);
+                        currentPayloads.Add(message.Payload);
                         continue;
                     }
 
                     var messageBatch = new MessageBatch<T>(currentPayloads);
-                    result.Add(messageBatch);
+                    batches.Add(messageBatch);
                     currentPayloads.Clear();
                     serviceBusMessageBatch.Dispose();
                     serviceBusMessageBatch = await sender.CreateMessageBatchAsync();
-                    if (serviceBusMessageBatch.TryAddMessage(messages.ServiceBusMessage))
+                    if (FitsInBatch(serviceBusMessageBatch, message))
                     {
-                        currentPayloads.Add(messages.Payload);
+                        currentPayloads.Add(message.Payload);
                         continue;
                     }
 
@@ -67,26 +66,26 @@ public sealed class MessageBatcher : IMessageBatcher
                 if (currentPayloads.Any())
                 {
                     var messageBatch = new MessageBatch<T>(currentPayloads);
-                    result.Add(messageBatch);
+                    batches.Add(messageBatch);
                     serviceBusMessageBatch.Dispose();
                 }
             }
-            catch (BatchingFailedException)
-            {
-                serviceBusMessageBatch?.Dispose();
-                throw;
-            }
-            catch (Exception ex)
-            {
-                serviceBusMessageBatch?.Dispose();
-                throw new BatchingFailedException(ex);
-            }
+        }
+        catch (BatchingFailedException)
+        {
+            serviceBusMessageBatch?.Dispose();
+            throw;
+        }
+        catch (Exception ex)
+        {
+            serviceBusMessageBatch?.Dispose();
+            throw new BatchingFailedException(ex);
         }
 
-        return result;
+        return batches;
     }
 
-    private IEnumerable<PayloadWithServiceBusMessage<T>> CreateServiceBusMessages<T>(IEnumerable<T> payloads)
+    private IEnumerable<PayloadWithServiceBusMessage<T>> CreateGroupedMessages<T>(IEnumerable<T> payloads)
     {
         return
             from payload in payloads
@@ -112,17 +111,24 @@ public sealed class MessageBatcher : IMessageBatcher
         return message;
     }
 
+    private static bool FitsInBatch<T>(ServiceBusMessageBatch batch, PayloadWithServiceBusMessage<T> message)
+    {
+        return
+            batch.Count < MaxMessagePerSend &&
+            batch.TryAddMessage(message.ServiceBusMessage);
+    }
+
     private sealed class PayloadWithServiceBusMessage<T>
     {
         public PayloadWithServiceBusMessage(T payload, ServiceBusMessage serviceBusMessage, MessageDispatchRegistration registration)
         {
             Payload = payload;
             ServiceBusMessage = serviceBusMessage;
-            Registration = registration;
+            RegistrationKey = (registration.Options.ClientType, registration.Options.ResourceId);
         }
 
         public T Payload { get; }
         public ServiceBusMessage ServiceBusMessage { get; }
-        public MessageDispatchRegistration Registration { get; }
+        public (ClientType ClientType, string ResourceId) RegistrationKey { get; }
     }
 }
