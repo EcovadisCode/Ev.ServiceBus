@@ -41,6 +41,23 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task SendNoBatch([FromBody]Payload payload)
+        {
+            var rng = new Random();
+            var forecasts = Enumerable
+                .Range(0, payload.Count)
+                .Select(_ => new WeatherForecast
+                {
+                    Date = DateTime.Now.AddDays(1),
+                    TemperatureC = rng.Next(-20, 55),
+                    Summary = payload.Content
+                })
+                .ToArray();
+
+            await _sender.SendDispatches(forecasts);
+        }
+
         public sealed class Payload
         {
             public int Count { get; set; }
