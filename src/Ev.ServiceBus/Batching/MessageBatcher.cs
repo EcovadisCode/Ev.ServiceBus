@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
@@ -27,7 +28,9 @@ public sealed class MessageBatcher : IMessageBatcher
         _dispatchRegistry = dispatchRegistry;
     }
 
-    public async Task<IReadOnlyCollection<MessageBatch<T>>> CalculateBatches<T>(IEnumerable<T> payloads)
+    public async Task<IReadOnlyCollection<MessageBatch<T>>> CalculateBatches<T>(
+        IEnumerable<T> payloads,
+        CancellationToken cancellationToken = default)
     {
         var batches = new List<MessageBatch<T>>();
         ServiceBusMessageBatch? serviceBusMessageBatch = default;
@@ -40,7 +43,7 @@ public sealed class MessageBatcher : IMessageBatcher
                 var sender = groupedMessages.Key.ClientType == ClientType.Queue
                     ? _registry.GetQueueSender(groupedMessages.Key.ResourceId)
                     : _registry.GetTopicSender(groupedMessages.Key.ResourceId);
-                serviceBusMessageBatch = await sender.CreateMessageBatchAsync();
+                serviceBusMessageBatch = await sender.CreateMessageBatchAsync(cancellationToken);
                 foreach (var message in groupedMessages)
                 {
                     if (FitsInBatch(serviceBusMessageBatch, message))
@@ -53,7 +56,7 @@ public sealed class MessageBatcher : IMessageBatcher
                     batches.Add(messageBatch);
                     currentPayloads.Clear();
                     serviceBusMessageBatch.Dispose();
-                    serviceBusMessageBatch = await sender.CreateMessageBatchAsync();
+                    serviceBusMessageBatch = await sender.CreateMessageBatchAsync(cancellationToken);
                     if (FitsInBatch(serviceBusMessageBatch, message))
                     {
                         currentPayloads.Add(message.Payload);
