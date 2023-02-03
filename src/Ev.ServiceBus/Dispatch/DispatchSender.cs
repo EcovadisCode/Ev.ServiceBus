@@ -51,11 +51,41 @@ namespace Ev.ServiceBus.Dispatch
             }
 
             var dispatches = CreateMessagesToSend(messagePayloads);
-
-            await PaginateAndSendMessages(dispatches, async (sender, page) =>
+            foreach (var messagesPerResource in dispatches)
             {
-                await sender.SendMessagesAsync(page, token).ConfigureAwait(false);
-            });
+                await BatchAndSendMessages(messagesPerResource, token, async (sender, batch) =>
+                {
+                    await sender.SendMessagesAsync(batch, token).ConfigureAwait(false);
+                });
+            }
+        }
+
+        private async Task BatchAndSendMessages(MessagesPerResource dispatches, CancellationToken token, Func<IMessageSender, ServiceBusMessageBatch, Task> senderAction)
+        {
+            var batches = new List<ServiceBusMessageBatch>();
+            var batch = await dispatches.Sender.CreateMessageBatchAsync(token);
+            batches.Add(batch);
+            foreach (var messageToSend in dispatches.Messages)
+            {
+                if (batch.TryAddMessage(messageToSend.Message))
+                {
+                    continue;
+                }
+                batch = await dispatches.Sender.CreateMessageBatchAsync(token);
+                batches.Add(batch);
+                if (batch.TryAddMessage(messageToSend.Message))
+                {
+                    continue;
+                }
+
+                throw new ArgumentOutOfRangeException($"A message is too big to fit in a single batch");
+            }
+
+            foreach (var pageMessages in batches)
+            {
+                await senderAction.Invoke(dispatches.Sender, pageMessages);
+                pageMessages.Dispose();
+            }
         }
 
         /// <inheritdoc />
@@ -79,34 +109,37 @@ namespace Ev.ServiceBus.Dispatch
             }
 
             var dispatches = CreateMessagesToSend(messagePayloads);
-            await PaginateAndSendMessages(dispatches, async (sender, page) =>
+            foreach (var messagesPerResource in dispatches)
             {
-                await sender.ScheduleMessagesAsync(page, scheduledEnqueueTime, token).ConfigureAwait(false);
-            });
+                await PaginateAndSendMessages(messagesPerResource, async (sender, page) =>
+                {
+                    await sender.ScheduleMessagesAsync(page, scheduledEnqueueTime, token).ConfigureAwait(false);
+                });
+            }
         }
 
-        private async Task PaginateAndSendMessages(MessageToSend[] dispatches, Func<IMessageSender, IEnumerable<ServiceBusMessage>, Task> senderAction)
+        private async Task PaginateAndSendMessages(MessagesPerResource dispatches, Func<IMessageSender, IEnumerable<ServiceBusMessage>, Task> senderAction)
         {
-            foreach (var groupedDispatch in dispatches
-                         .GroupBy(o => new { o.Registration.Options.ClientType, o.Registration.Options.ResourceId }))
-            {
-                var sender = groupedDispatch.Key.ClientType == ClientType.Queue
-                    ? _registry.GetQueueSender(groupedDispatch.Key.ResourceId)
-                    : _registry.GetTopicSender(groupedDispatch.Key.ResourceId);
-
-                var paginatedMessages = groupedDispatch.Select(o => o.Message)
-                    .Select((x, i) => new
-                    {
-                        Item = x,
-                        Index = i
-                    })
-                    .GroupBy(x => x.Index / MaxMessagePerSend, x => x.Item);
-
-                foreach (var pageMessages in paginatedMessages)
+            var paginatedMessages = dispatches.Messages.Select(o => o.Message)
+                .Select((x, i) => new
                 {
-                    await senderAction.Invoke(sender, pageMessages.Select(m => m).ToArray());
-                }
+                    Item = x,
+                    Index = i
+                })
+                .GroupBy(x => x.Index / MaxMessagePerSend, x => x.Item);
+
+            foreach (var pageMessages in paginatedMessages)
+            {
+                await senderAction.Invoke(dispatches.Sender, pageMessages.Select(m => m).ToArray());
             }
+        }
+
+        private class MessagesPerResource
+        {
+            public MessageToSend[] Messages { get; set; }
+            public ClientType ClientType { get; set; }
+            public string ResourceId { get; set; }
+            public IMessageSender Sender { get; set; }
         }
 
         private class MessageToSend
@@ -121,7 +154,7 @@ namespace Ev.ServiceBus.Dispatch
             public MessageDispatchRegistration Registration { get; }
         }
 
-        private MessageToSend[] CreateMessagesToSend(IEnumerable<Abstractions.Dispatch> messagePayloads)
+        private MessagesPerResource[] CreateMessagesToSend(IEnumerable<Abstractions.Dispatch> messagePayloads)
         {
             var dispatches =
                 (
@@ -133,7 +166,22 @@ namespace Ev.ServiceBus.Dispatch
                     select new MessageToSend(message, eventPublicationRegistration)
                 )
                 .ToArray();
-            return dispatches;
+
+            var messagesPerResource = (
+                from dispatch in dispatches
+                group dispatch by new { dispatch.Registration.Options.ClientType, dispatch.Registration.Options.ResourceId } into gr
+                let sender = gr.Key.ClientType == ClientType.Queue
+                    ? _registry.GetQueueSender(gr.Key.ResourceId)
+                    : _registry.GetTopicSender(gr.Key.ResourceId)
+                select new MessagesPerResource()
+                {
+                    Messages = gr.ToArray(),
+                    ClientType = gr.Key.ClientType,
+                    ResourceId = gr.Key.ResourceId,
+                    Sender = sender
+                }).ToArray();
+
+            return messagesPerResource;
         }
 
         private ServiceBusMessage CreateMessage(

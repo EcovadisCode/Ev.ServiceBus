@@ -26,10 +26,10 @@ namespace Ev.ServiceBus.Mvc.UnitTests
 
             response.StatusCode.Should().Be(StatusCodes.Status200OK);
             var queue = factory.Services.GetSenderMock("myqueue");
-            queue.Mock.Verify(o => o.SendMessagesAsync(It.Is<ServiceBusMessage[]>(messages => messages.Length == 1), It.IsAny<CancellationToken>()), Times.Once);
+            queue.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Once);
 
             var topic = factory.Services.GetSenderMock("mytopic");
-            topic.Mock.Verify(o => o.SendMessagesAsync(It.Is<ServiceBusMessage[]>(messages => messages.Length == 5), It.IsAny<CancellationToken>()), Times.Once);
+            topic.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -1,4 +1,6 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using System.Collections.Generic;
+using System.Threading;
+using Azure.Messaging.ServiceBus;
 using Moq;
 
 namespace Ev.ServiceBus.TestHelpers;
@@ -9,6 +11,8 @@ public class SenderMock
     {
         QueueOrTopicName = queueOrTopicName;
         Mock = new Mock<ServiceBusSender>();
+        Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, new List<ServiceBusMessage>()));
     }
 
     public string QueueOrTopicName { get; }
