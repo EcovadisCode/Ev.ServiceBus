@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.6.0
+- Changed the dispatch Sender to use ServiceBusMessageBatch and optimize message sending. 
+
 ## 4.5.0
 - Added methods to Schedule dispatches
 - Removed usages of netcore3.1 and net5 frameworks.

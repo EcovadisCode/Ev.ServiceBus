@@ -77,6 +77,8 @@ public class Composer : IDisposable
         foreach (var sender in _listOfDispatchSenders)
         {
             var messageSender = new Mock<IMessageSender>();
+            messageSender.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, new List<ServiceBusMessage>()));
             switch (sender.Key)
             {
                 case SenderType.Queue:

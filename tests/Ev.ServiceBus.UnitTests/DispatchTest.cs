@@ -28,6 +28,11 @@ namespace Ev.ServiceBus.UnitTests
 
         public DispatchTest()
         {
+            var createMessageBatchOptions = new CreateMessageBatchOptions()
+            {
+                MaxSizeInBytes = 1000
+            };
+
             _sentMessagesToTopic = new List<ServiceBusMessage>();
             _sentMessagesToQueue = new List<ServiceBusMessage>();
             _sentMessagesToQueueSession = new List<ServiceBusMessage>();
@@ -78,13 +83,8 @@ namespace Ev.ServiceBus.UnitTests
                     _sentMessagesToTopic.Add(message);
                 });
 
-            topicClient.Mock
-                .Setup(o => o.SendMessagesAsync(It.IsAny<IEnumerable<ServiceBusMessage>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
-                .Callback((IEnumerable<ServiceBusMessage> messages, CancellationToken token) =>
-                {
-                    _sentMessagesToTopic.AddRange(messages);
-                });
+            topicClient.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToTopic, createMessageBatchOptions));
 
             var queueClient = _composer.ClientFactory.GetSenderMock("testQueue");
             queueClient.Mock
@@ -94,14 +94,9 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     _sentMessagesToQueue.Add(message);
                 });
+            queueClient.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToQueue, createMessageBatchOptions));
 
-            queueClient.Mock
-                .Setup(o => o.SendMessagesAsync(It.IsAny<IEnumerable<ServiceBusMessage>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
-                .Callback((IEnumerable<ServiceBusMessage> messages, CancellationToken token) =>
-                {
-                    _sentMessagesToQueue.AddRange(messages);
-                });
             var queueClientSession = _composer.ClientFactory.GetSenderMock("testQueueSession");
             queueClientSession.Mock
                 .Setup(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
@@ -110,14 +105,8 @@ namespace Ev.ServiceBus.UnitTests
                 {
                     _sentMessagesToQueueSession.Add(message);
                 });
-
-            queueClientSession.Mock
-                .Setup(o => o.SendMessagesAsync(It.IsAny<IEnumerable<ServiceBusMessage>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
-                .Callback((IEnumerable<ServiceBusMessage> messages, CancellationToken token) =>
-                {
-                    _sentMessagesToQueueSession.AddRange(messages);
-                });
+            queueClientSession.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToQueueSession, createMessageBatchOptions));
 
             SimulatePublication().GetAwaiter().GetResult();
         }
@@ -339,9 +328,9 @@ namespace Ev.ServiceBus.UnitTests
             await provider.SimulateStartHost(new CancellationToken());
 
             // Act
-            var messages = new SubscribedEvent[253];
+            var messages = new SubscribedEvent[10000];
             int i = 0;
-            while (i < 253)
+            while (i < 10000)
             {
                 messages[i] = new SubscribedEvent()
                 {
@@ -359,7 +348,7 @@ namespace Ev.ServiceBus.UnitTests
             // Verify
             var factory = provider.GetRequiredService<FakeClientFactory>();
             var mock = factory.GetSenderMock("myQueue");
-            mock.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<IEnumerable<ServiceBusMessage>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+            mock.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
 
             // Dispose
             await provider.SimulateStopHost(new CancellationToken());
