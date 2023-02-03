@@ -67,6 +67,19 @@ public class MessageDispatchRegistration
         return this;
     }
 
+    /// <summary>
+    /// Apply registered customizers to a given message
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="payload"></param>
+    public void ApplyCustomizers(ServiceBusMessage message, object payload)
+    {
+        foreach (var customizer in OutgoingMessageCustomizers)
+        {
+            customizer?.Invoke(message, payload);
+        }
+    }
+
     public override bool Equals(object? obj)
     {
         var reg = obj as MessageDispatchRegistration;

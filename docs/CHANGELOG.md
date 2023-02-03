@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.6.1
+- Made some internal methods public in IServiceBusRegistry class
+
 ## 4.6.0
 - Changed the dispatch Sender to use ServiceBusMessageBatch and optimize message sending. 
 
