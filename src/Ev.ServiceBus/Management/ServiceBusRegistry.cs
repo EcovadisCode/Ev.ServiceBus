@@ -17,6 +17,7 @@ namespace Ev.ServiceBus.Management
             _dispatches = new Dictionary<Type, MessageDispatchRegistration[]>();
         }
 
+        /// <inheritdoc />
         public IMessageSender GetQueueSender(string name)
         {
             if (_senders.TryGetValue(ComputeResourceKey(ClientType.Queue, name), out var sender))
@@ -27,6 +28,7 @@ namespace Ev.ServiceBus.Management
             throw new QueueSenderNotFoundException(name);
         }
 
+        /// <inheritdoc />
         public IMessageSender GetTopicSender(string name)
         {
             if (_senders.TryGetValue(ComputeResourceKey(ClientType.Topic, name), out var sender))
@@ -35,6 +37,17 @@ namespace Ev.ServiceBus.Management
             }
 
             throw new TopicSenderNotFoundException(name);
+        }
+
+        /// <inheritdoc />
+        public IMessageSender GetSender(ClientType clientType, string resourceId)
+        {
+            if (_senders.TryGetValue(ComputeResourceKey(clientType, resourceId), out var sender))
+            {
+                return sender;
+            }
+
+            throw new TopicSenderNotFoundException(resourceId);
         }
 
         internal string ComputeResourceKey(ClientType clientType, string resourceId)
@@ -62,7 +75,8 @@ namespace Ev.ServiceBus.Management
             _dispatches.Add(dispatchType, dispatches);
         }
 
-        internal MessageReceptionRegistration? GetReceptionRegistration(string payloadTypeId, string receiverName, ClientType clientType)
+        /// <inheritdoc />
+        public MessageReceptionRegistration? GetReceptionRegistration(string payloadTypeId, string receiverName, ClientType clientType)
         {
             if (_receptions.TryGetValue(ComputeReceptionKey(payloadTypeId, receiverName, clientType), out var registrations))
             {
@@ -72,7 +86,8 @@ namespace Ev.ServiceBus.Management
             return null;
         }
 
-        internal MessageDispatchRegistration[] GetDispatchRegistrations(Type messageType)
+        /// <inheritdoc />
+        public MessageDispatchRegistration[] GetDispatchRegistrations(Type messageType)
         {
             if (_dispatches.TryGetValue(messageType, out var registrations))
             {
