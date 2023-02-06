@@ -6,4 +6,5 @@ internal class MessageContext : IMessageContext
 {
     public string? CorrelationId { get; set; }
     public string? SessionId { get; set; }
+    public string? MessageId { get; set; }
 }

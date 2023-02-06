@@ -80,7 +80,8 @@ namespace Ev.ServiceBus.Dispatch
             _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto)
             {
                 SessionId = context.SessionId,
-                CorrelationId = context.CorrelationId
+                CorrelationId = context.CorrelationId,
+                MessageId = context.MessageId
             });
         }
     }

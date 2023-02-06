@@ -277,6 +277,27 @@ namespace Ev.ServiceBus.UnitTests
         }
 
         [Fact]
+        public async Task ShouldManuallySetIdOfTheMessage()
+        {
+            var composer = new Composer();
+            var messageId = Guid.NewGuid().ToString();
+
+            await composer.Compose();
+            _sentMessagesToQueue.Clear();
+
+            using var scope = _composer.Provider.CreateScope();
+            var eventPublisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
+            var eventDispatcher = scope.ServiceProvider.GetRequiredService<IMessageDispatcher>();
+
+            eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
+                context => context.MessageId = messageId);
+            await eventDispatcher.ExecuteDispatches();
+
+            _sentMessagesToQueue.Should().HaveCount(1);
+            _sentMessagesToQueue[0].MessageId.Should().Be(messageId);
+        }
+
+        [Fact]
         public async Task PublishDoesntAcceptNulls()
         {
             var composer = new Composer();
