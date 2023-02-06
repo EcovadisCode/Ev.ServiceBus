@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.7.0
+- Added the MessageId property to the MessageContext class to allow MessageId customization on publish
+
 ## 4.6.1
 - Made some internal methods public in IServiceBusRegistry class
 
