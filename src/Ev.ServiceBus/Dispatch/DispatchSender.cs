@@ -195,6 +195,11 @@ namespace Ev.ServiceBus.Dispatch
             message.SessionId = dispatch.SessionId;
             message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
 
+            if (!string.IsNullOrWhiteSpace(dispatch.MessageId))
+            {
+                message.MessageId = dispatch.MessageId;
+            }
+
             foreach (var customizer in registration.OutgoingMessageCustomizers)
             {
                 customizer?.Invoke(message, dispatch.Payload);
