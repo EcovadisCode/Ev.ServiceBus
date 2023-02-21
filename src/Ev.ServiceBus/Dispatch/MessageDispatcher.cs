@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
@@ -36,11 +37,14 @@ namespace Ev.ServiceBus.Dispatch
                 throw new ArgumentNullException(nameof(messageDto));
             }
 
-            _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto));
+            _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto)
+            {
+                DiagnosticId = Activity.Current?.Id
+            });
         }
 
         /// <inheritdoc />
-        public void Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId)
+        public void Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId, string? diagnosticId = null)
         {
             if (messageDto == null)
             {
@@ -54,7 +58,8 @@ namespace Ev.ServiceBus.Dispatch
 
             _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto)
             {
-                SessionId = sessionId
+                SessionId = sessionId,
+                DiagnosticId = diagnosticId ?? Activity.Current?.Id
             });
         }
 
@@ -81,7 +86,8 @@ namespace Ev.ServiceBus.Dispatch
             {
                 SessionId = context.SessionId,
                 CorrelationId = context.CorrelationId,
-                MessageId = context.MessageId
+                MessageId = context.MessageId,
+                DiagnosticId = context.DiagnosticId ?? Activity.Current?.Id
             });
         }
     }

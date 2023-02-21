@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.8.0
+- Added DiagnosticID (traceparent) support for publisher / dispatcher
+
 ## 4.7.0
 - Added the MessageId property to the MessageContext class to allow MessageId customization on publish
 
