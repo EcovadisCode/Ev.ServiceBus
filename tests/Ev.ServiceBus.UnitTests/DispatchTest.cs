@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -7,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Extensions;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
@@ -295,6 +297,69 @@ namespace Ev.ServiceBus.UnitTests
 
             _sentMessagesToQueue.Should().HaveCount(1);
             _sentMessagesToQueue[0].MessageId.Should().Be(messageId);
+        }
+
+        [Fact]
+        public async Task ShouldManuallySetDiagnosticIdOfTheMessage()
+        {
+            var composer = new Composer();
+            var diagnosticsId = DiagnosticIdHelper.GetNewId();
+
+            await composer.Compose();
+            _sentMessagesToQueue.Clear();
+
+            using var scope = _composer.Provider.CreateScope();
+            var eventPublisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
+            var eventDispatcher = scope.ServiceProvider.GetRequiredService<IMessageDispatcher>();
+
+            eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
+                context => context.DiagnosticId = diagnosticsId);
+            await eventDispatcher.ExecuteDispatches();
+
+            _sentMessagesToQueue.Should().HaveCount(1);
+            _sentMessagesToQueue[0].GetDiagnosticId().Should().Be(diagnosticsId);
+        }
+
+        [Fact]
+        public async Task ShouldDiagnosticIdBeEmptyIfWasNotSetOfTheMessage()
+        {
+            var composer = new Composer();
+
+            await composer.Compose();
+            _sentMessagesToQueue.Clear();
+
+            using var scope = _composer.Provider.CreateScope();
+            var eventPublisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
+            var eventDispatcher = scope.ServiceProvider.GetRequiredService<IMessageDispatcher>();
+
+            eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
+                context => {});
+            await eventDispatcher.ExecuteDispatches();
+
+            _sentMessagesToQueue.Should().HaveCount(1);
+            _sentMessagesToQueue[0].GetDiagnosticId().Should().BeNull();
+        }
+
+        [Fact]
+        public async Task ShouldDiagnosticIdBeNotEmptyIfActivityWasSet()
+        {
+            var composer = new Composer();
+
+            await composer.Compose();
+            _sentMessagesToQueue.Clear();
+
+            using var scope = _composer.Provider.CreateScope();
+            var eventPublisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
+            var eventDispatcher = scope.ServiceProvider.GetRequiredService<IMessageDispatcher>();
+            var activity = new Activity("test");
+            activity.Start();
+            eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
+                context => {});
+            await eventDispatcher.ExecuteDispatches();
+
+            _sentMessagesToQueue.Should().HaveCount(1);
+            _sentMessagesToQueue[0].GetDiagnosticId().Should().Be(activity.Id);
+            activity.Stop();
         }
 
         [Fact]

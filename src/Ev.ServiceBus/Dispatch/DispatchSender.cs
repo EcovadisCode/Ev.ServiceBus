@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Extensions;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Management;
 
@@ -194,7 +195,8 @@ namespace Ev.ServiceBus.Dispatch
 
             message.SessionId = dispatch.SessionId;
             message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
-
+            if(dispatch.DiagnosticId != null)
+                message.SetDiagnosticIdIfIsNot(dispatch.DiagnosticId);
             if (!string.IsNullOrWhiteSpace(dispatch.MessageId))
             {
                 message.MessageId = dispatch.MessageId;

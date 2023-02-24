@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
+using Ev.ServiceBus.Abstractions.Extensions;
 
 namespace Ev.ServiceBus.Abstractions.MessageReception;
 
@@ -11,6 +12,7 @@ public interface IMessageMetadata
     public string ContentType { get; }
     public string CorrelationId { get; }
     public string SessionId { get; }
+    public string? DiagnosticId { get; }
     public CancellationToken CancellationToken { get; }
     public IReadOnlyDictionary<string, object> ApplicationProperties { get; }
     public string MessageId { get; }
@@ -143,6 +145,7 @@ public class MessageMetadata : IMessageMetadata
     public string DeadLetterErrorDescription => _message.DeadLetterErrorDescription;
     public string SessionId => _message.SessionId;
     public string CorrelationId => _message.CorrelationId;
+    public string? DiagnosticId => _message.GetDiagnosticId();
     public string ContentType => _message.ContentType;
     public IReadOnlyDictionary<string, object> ApplicationProperties => _message.ApplicationProperties;
     public CancellationToken CancellationToken { get; }
