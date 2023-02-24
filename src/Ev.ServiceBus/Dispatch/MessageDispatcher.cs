@@ -44,7 +44,7 @@ namespace Ev.ServiceBus.Dispatch
         }
 
         /// <inheritdoc />
-        public void Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId, string? diagnosticId = null)
+        public void Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId)
         {
             if (messageDto == null)
             {
@@ -59,7 +59,7 @@ namespace Ev.ServiceBus.Dispatch
             _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto)
             {
                 SessionId = sessionId,
-                DiagnosticId = diagnosticId ?? Activity.Current?.Id
+                DiagnosticId = Activity.Current?.Id
             });
         }
 
