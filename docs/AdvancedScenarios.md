@@ -131,3 +131,29 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     });
 }
 ```
+
+## Distributed tracing and correlation through Service Bus messaging support in case of publish / dispatch mechanism
+Distributed tracing and correlation through Service Bus messaging is automatically supported by the library. It is supported according assumptions described [here](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-end-to-end-tracing?tabs=net-standard-sdk-2).
+While message publishing `treceparent` value is automatically get from `Activity.Current.Id` in case if any publication is executed in any Activity scope.
+If do you need pass another value manually while the publication. You can do this by set `IMessageContext` - what is possible in by using one of overloaded `Publish` method of `IMessagePublisher` interface implementation.
+
+```csharp
+public class MyMessageSender
+        {
+
+            private readonly IMessagePublisher _eventPublisher;
+
+            public MyMessageSender(IMessagePublisher eventPublisher)
+            {
+                _eventPublisher = eventPublisher;
+            }
+
+            public async Task PublishMyMessage(MyEvent @event, string myCustomDiagnosticsId)
+            {
+                _eventPublisher.Publish(
+                    @event,
+                    // here you can pas the function that will set your custom value of diagnostic id
+                    context => context.DiagnosticId = myCustomDiagnosticsId);
+            }
+        }
+```
