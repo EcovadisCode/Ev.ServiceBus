@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 ### Removed
 
+## 4.8.1
+- Changed - Azure.ServiceBus nuget updated to v 7.12.0
+
 ## 4.8.0
 - Added DiagnosticID (traceparent) support for publisher / dispatcher in case of end to end tracing (according: [Distributed tracing and correlation through Service Bus messaging](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-end-to-end-tracing?tabs=net-standard-sdk-2))  
 
