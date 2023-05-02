@@ -5,13 +5,8 @@ namespace Ev.ServiceBus.Abstractions;
 
 public class ExecutionSucceededArgs : ExecutionBaseArgs
 {
-    public ExecutionSucceededArgs(
-        ClientType clientType,
-        string resourceId,
-        Type messageHandlerType,
-        ServiceBusReceivedMessage message,
-        long executionDurationMilliseconds)
-        : base(clientType, resourceId, messageHandlerType, message)
+    public ExecutionSucceededArgs(MessageContext context, Type messageHandlerType, long executionDurationMilliseconds)
+        : base(context, messageHandlerType)
     {
         ExecutionDurationMilliseconds = executionDurationMilliseconds;
     }

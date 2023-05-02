@@ -7,11 +7,9 @@ using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
-using Ev.ServiceBus.Dispatch;
 using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MessageContext = Ev.ServiceBus.Abstractions.MessageContext;
 
 namespace Ev.ServiceBus;
 
@@ -137,7 +135,9 @@ public class ReceiverWrapper : IWrapper
     /// <returns></returns>
     private async Task OnMessageReceived(MessageContext context)
     {
-        var sw = new Stopwatch();
+        using var scope = _provider.CreateScope();
+        TrySetReceptionRegistrationOnContext(context, scope);
+
         var scopeValues = new Dictionary<string, string>
         {
             ["EVSB_Client"] = ClientType.ToString(),
@@ -145,15 +145,16 @@ public class ReceiverWrapper : IWrapper
             ["EVSB_Handler"] = _composedOptions.MessageHandlerType.FullName!,
             ["EVSB_MessageId"] = context.Message.MessageId,
             ["EVSB_SessionId"] = context.SessionArgs?.SessionId ?? "none",
+            ["EVSB_PayloadTypeId"] = context.PayloadTypeId ?? "none",
+            ["EVSB_ReceptionHandler"] = context.ReceptionRegistration?.HandlerType.FullName ?? "none"
         };
         using (_logger.BeginScope(scopeValues))
-        using (var scope = _provider.CreateScope())
         {
-            var metadataAccessor =
-                (MessageMetadataAccessor)scope.ServiceProvider.GetRequiredService<IMessageMetadataAccessor>();
+            var metadataAccessor = (MessageMetadataAccessor)scope.ServiceProvider.GetRequiredService<IMessageMetadataAccessor>();
             metadataAccessor.SetData(context);
+
             var listeners = scope.ServiceProvider.GetRequiredService<IEnumerable<IServiceBusEventListener>>();
-            var executionStartedArgs = new ExecutionStartedArgs(ClientType, ResourceId, _composedOptions.MessageHandlerType, context.Message);
+            var executionStartedArgs = new ExecutionStartedArgs(context, _composedOptions.MessageHandlerType);
             foreach (var listener in listeners)
             {
                 await listener.OnExecutionStart(executionStartedArgs).ConfigureAwait(false);
@@ -161,6 +162,7 @@ public class ReceiverWrapper : IWrapper
             _logger.LogInformation("[Ev.ServiceBus] New message received from {EVSB_Client} '{EVSB_ResourceId}' : {EVSB_MessageLabel}", ClientType, ResourceId, context.Message.Subject);
 
             var messageHandler = (IMessageHandler) scope.ServiceProvider.GetRequiredService(_composedOptions.MessageHandlerType);
+            var sw = new Stopwatch();
             sw.Start();
             try
             {
@@ -168,7 +170,7 @@ public class ReceiverWrapper : IWrapper
             }
             catch (Exception ex) when (LogError(ex))
             {
-                var executionFailedArgs = new ExecutionFailedArgs(ClientType, ResourceId, _composedOptions.MessageHandlerType, context.Message, ex);
+                var executionFailedArgs = new ExecutionFailedArgs(context, _composedOptions.MessageHandlerType, ex);
                 foreach (var listener in listeners)
                 {
                     await listener.OnExecutionFailed(executionFailedArgs).ConfigureAwait(false);
@@ -179,12 +181,24 @@ public class ReceiverWrapper : IWrapper
             {
                 sw.Stop();
             }
-            var executionSucceededArgs = new ExecutionSucceededArgs(ClientType, ResourceId, _composedOptions.MessageHandlerType, context.Message, sw.ElapsedMilliseconds);
+            var executionSucceededArgs = new ExecutionSucceededArgs(context, _composedOptions.MessageHandlerType, sw.ElapsedMilliseconds);
             foreach (var listener in listeners)
             {
                 await listener.OnExecutionSuccess(executionSucceededArgs).ConfigureAwait(false);
             }
             _logger.LogInformation("[Ev.ServiceBus] Message finished execution in {EVSB_Duration} milliseconds", sw.ElapsedMilliseconds);
+        }
+    }
+
+    private void TrySetReceptionRegistrationOnContext(MessageContext context, IServiceScope scope)
+    {
+        if (context.PayloadTypeId != null)
+        {
+            var registry = scope.ServiceProvider.GetRequiredService<ServiceBusRegistry>();
+            var receptionRegistration = registry.GetReceptionRegistration(context.PayloadTypeId,
+                context.ResourceId,
+                context.ClientType);
+            context.ReceptionRegistration = receptionRegistration;
         }
     }
 

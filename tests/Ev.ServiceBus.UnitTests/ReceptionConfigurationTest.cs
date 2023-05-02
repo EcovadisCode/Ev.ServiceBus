@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
@@ -8,6 +9,7 @@ using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 using Composer = Ev.ServiceBus.UnitTests.Helpers.Composer;
@@ -55,9 +57,15 @@ namespace Ev.ServiceBus.UnitTests
                 .FromSubscription("topic", "sub",
                     builder =>
                     {
-                        var reg = builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
-                        reg.PayloadTypeId.Should().Be("SubscribedEvent");
+                        builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
                     });
+            var provider = services.BuildServiceProvider();
+            var options = provider.GetRequiredService<IOptions<ServiceBusOptions>>();
+
+            options.Value.ReceptionRegistrations.Count.Should().Be(1);
+
+            var registration = options.Value.ReceptionRegistrations.First();
+            registration.PayloadTypeId.Should().Be("SubscribedEvent");
         }
 
         [Fact]

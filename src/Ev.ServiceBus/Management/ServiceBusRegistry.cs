@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Ev.ServiceBus.Abstractions;
 
 namespace Ev.ServiceBus.Management
@@ -95,6 +96,11 @@ namespace Ev.ServiceBus.Management
             }
 
             throw new DispatchRegistrationNotFoundException(messageType);
+        }
+
+        public MessageReceptionRegistration[] GetReceptionRegistrations()
+        {
+            return _receptions.Values.ToArray();
         }
     }
 }

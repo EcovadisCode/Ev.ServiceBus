@@ -34,17 +34,12 @@ public class MessageReceptionHandler : IMessageHandler
 
     public async Task HandleMessageAsync(MessageContext context)
     {
-        var payloadTypeId = context.Message.GetPayloadTypeId();
-        if (payloadTypeId == null)
+        if (context.PayloadTypeId == null)
         {
             throw new MessageIsMissingPayloadTypeIdException(context);
         }
 
-        var receptionRegistration = _registry.GetReceptionRegistration(payloadTypeId,
-            context.ResourceId,
-            context.ClientType);
-
-        if (receptionRegistration == null)
+        if (context.ReceptionRegistration == null)
         {
             return;
         }
@@ -55,26 +50,18 @@ public class MessageReceptionHandler : IMessageHandler
             return;
         }
 
-        var @event = _messagePayloadSerializer.DeSerializeBody(context.Message.Body.ToArray(), receptionRegistration.PayloadType);
-        var methodInfo = _callHandlerInfo.MakeGenericMethod(receptionRegistration.PayloadType);
-        var scopeValues = new Dictionary<string, string>
-        {
-            ["EVSB_PayloadTypeId"] = receptionRegistration.PayloadTypeId,
-            ["EVSB_ReceptionHandler"] = receptionRegistration.HandlerType.FullName!
-        };
+        var @event = _messagePayloadSerializer.DeSerializeBody(context.Message.Body.ToArray(), context.ReceptionRegistration.PayloadType);
+        var methodInfo = _callHandlerInfo.MakeGenericMethod(context.ReceptionRegistration.PayloadType);
         var sw = new Stopwatch();
-        using (_logger.BeginScope(scopeValues))
-        {
-            _logger.LogDebug("[Ev.ServiceBus] Executing {EVSB_PayloadTypeId}:{EVSB_ReceptionHandler} handler",
-                receptionRegistration.PayloadTypeId, receptionRegistration.HandlerType.FullName);
-            sw.Start();
-            await ((Task) methodInfo.Invoke(this, new[] { receptionRegistration, @event, context.CancellationToken })!).ConfigureAwait(false);
-            sw.Stop();
-            _logger.LogInformation(
-                "[Ev.ServiceBus] Execution of {EVSB_PayloadTypeId}:{EVSB_ReceptionHandler} reception handler successful in {EVSB_Duration} milliseconds",
-                receptionRegistration.PayloadTypeId, receptionRegistration.HandlerType.FullName,
-                sw.ElapsedMilliseconds);
-        }
+        _logger.LogDebug("[Ev.ServiceBus] Executing {EVSB_PayloadTypeId}:{EVSB_ReceptionHandler} handler",
+            context.ReceptionRegistration.PayloadTypeId, context.ReceptionRegistration.HandlerType.FullName);
+        sw.Start();
+        await ((Task) methodInfo.Invoke(this, new[] { context.ReceptionRegistration, @event, context.CancellationToken })!).ConfigureAwait(false);
+        sw.Stop();
+        _logger.LogInformation(
+            "[Ev.ServiceBus] Execution of {EVSB_PayloadTypeId}:{EVSB_ReceptionHandler} reception handler successful in {EVSB_Duration} milliseconds",
+            context.ReceptionRegistration.PayloadTypeId, context.ReceptionRegistration.HandlerType.FullName,
+            sw.ElapsedMilliseconds);
     }
 
     private async Task CallHandler<TMessagePayload>(MessageReceptionRegistration messageReceptionRegistration,
