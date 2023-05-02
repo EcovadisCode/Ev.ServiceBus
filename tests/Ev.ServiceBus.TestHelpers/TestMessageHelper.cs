@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
 
 namespace Ev.ServiceBus.TestHelpers;

@@ -1,10 +1,10 @@
 ﻿using Azure.Messaging.ServiceBus;
 
-namespace Ev.ServiceBus;
+namespace Ev.ServiceBus.Abstractions;
 
 public static class MessageHelper
 {
-    internal static string? GetPayloadTypeId(this ServiceBusReceivedMessage message)
+    public static string? GetPayloadTypeId(this ServiceBusReceivedMessage message)
     {
         return TryGetValue(message, UserProperties.PayloadTypeIdProperty);
     }
@@ -15,7 +15,7 @@ public static class MessageHelper
         return value as string;
     }
 
-    internal static ServiceBusMessage CreateMessage(string contentType, byte[] body, string payloadTypeId)
+    public static ServiceBusMessage CreateMessage(string contentType, byte[] body, string payloadTypeId)
     {
         var message = new ServiceBusMessage(body)
         {

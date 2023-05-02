@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using Ev.ServiceBus.Abstractions.Configuration;
 
 [assembly: InternalsVisibleTo("Ev.ServiceBus")]
 
@@ -79,9 +80,9 @@ namespace Ev.ServiceBus.Abstractions
             _receivers.Add(subscription);
         }
 
-        internal void RegisterReception(MessageReceptionRegistration reception)
+        internal void RegisterReception(MessageReceptionBuilder reception)
         {
-            _receptionRegistrations.Add(reception);
+            _receptionRegistrations.Add(reception.Build());
         }
 
         internal void RegisterDispatch(MessageDispatchRegistration dispatch)

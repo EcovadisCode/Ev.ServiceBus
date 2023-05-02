@@ -13,6 +13,7 @@ public class MessageContext
         ResourceId = resourceId;
         Message = args.Message;
         CancellationToken = args.CancellationToken;
+        PayloadTypeId = Message.GetPayloadTypeId();
     }
 
     public MessageContext(ProcessMessageEventArgs args, ClientType clientType, string resourceId)
@@ -22,6 +23,7 @@ public class MessageContext
         ResourceId = resourceId;
         Message = args.Message;
         CancellationToken = args.CancellationToken;
+        PayloadTypeId = Message.GetPayloadTypeId();
     }
 
     public ServiceBusReceivedMessage Message { get; }
@@ -30,4 +32,7 @@ public class MessageContext
     public ClientType ClientType { get; }
     public string ResourceId { get; }
     public ProcessMessageEventArgs? Args { get; }
+
+    public string? PayloadTypeId { get; internal set; }
+    public MessageReceptionRegistration? ReceptionRegistration { get; internal set; }
 }

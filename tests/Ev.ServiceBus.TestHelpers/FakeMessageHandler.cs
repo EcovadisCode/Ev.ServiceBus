@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Reception;
 using Moq;
 
 namespace Ev.ServiceBus.UnitTests.Helpers

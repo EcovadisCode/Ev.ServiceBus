@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 
 namespace Ev.ServiceBus.Abstractions
 {
@@ -31,23 +30,6 @@ namespace Ev.ServiceBus.Abstractions
         /// <summary>
         /// The unique identifier of this payload's type.
         /// </summary>
-        public string PayloadTypeId { get; private set; }
-
-        /// <summary>
-        /// Sets the PayloadTypeId (by default it will take the <see cref="MemberInfo.Name"/> of the payload <see cref="Type"/> object)
-        /// </summary>
-        /// <param name="payloadTypeId"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public MessageReceptionRegistration CustomizePayloadTypeId(string payloadTypeId)
-        {
-            if (payloadTypeId == null)
-            {
-                throw new ArgumentNullException(nameof(payloadTypeId));
-            }
-
-            PayloadTypeId = payloadTypeId;
-            return this;
-        }
+        public string PayloadTypeId { get; internal set; }
     }
 }

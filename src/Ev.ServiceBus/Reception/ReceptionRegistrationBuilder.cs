@@ -1,6 +1,7 @@
 ﻿using System;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -42,11 +43,11 @@ public class ReceptionRegistrationBuilder
     /// <typeparam name="TReceptionModel">The class to deserialize the message into</typeparam>
     /// <typeparam name="THandler">The handler that will receive the deserialized object</typeparam>
     /// <returns></returns>
-    public MessageReceptionRegistration RegisterReception<TReceptionModel, THandler>()
+    public MessageReceptionBuilder RegisterReception<TReceptionModel, THandler>()
         where THandler : class, IMessageReceptionHandler<TReceptionModel>
     {
         _services.TryAddScoped<THandler>();
-        var builder = new MessageReceptionRegistration(_options, typeof(TReceptionModel), typeof(THandler));
+        var builder = new MessageReceptionBuilder(_options, typeof(TReceptionModel), typeof(THandler));
         _services.Configure<ServiceBusOptions>(options =>
         {
             options.RegisterReception(builder);
@@ -58,7 +59,7 @@ public class ReceptionRegistrationBuilder
     /// Registers a class as a payload to receive and deserialize through the current resource.
     /// </summary>
     /// <returns></returns>
-    public MessageReceptionRegistration RegisterReception(Type receptionModel, Type handlerType)
+    public MessageReceptionBuilder RegisterReception(Type receptionModel, Type handlerType)
     {
         if (receptionModel == null)
         {
@@ -77,7 +78,7 @@ public class ReceptionRegistrationBuilder
         }
 
         _services.TryAddScoped(handlerType);
-        var builder = new MessageReceptionRegistration(_options, receptionModel, handlerType);
+        var builder = new MessageReceptionBuilder(_options, receptionModel, handlerType);
         _services.Configure<ServiceBusOptions>(options =>
         {
             options.RegisterReception(builder);

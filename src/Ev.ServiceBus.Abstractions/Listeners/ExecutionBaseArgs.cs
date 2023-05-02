@@ -7,19 +7,17 @@ namespace Ev.ServiceBus.Abstractions
 {
     public abstract class ExecutionBaseArgs
     {
-        protected ExecutionBaseArgs(
-            ClientType clientType,
-            string resourceId,
-            Type messageHandlerType,
-            ServiceBusReceivedMessage message)
+        protected ExecutionBaseArgs(MessageContext context, Type messageHandlerType)
         {
-            ClientType = clientType;
-            ResourceId = resourceId;
+            ClientType = context.ClientType;
+            ResourceId = context.ResourceId;
             MessageHandlerType = messageHandlerType;
-            MessageLabel = message.Subject;
-            MessageApplicationProperties = message.ApplicationProperties.ToDictionary(pair => pair.Key, pair => pair.Value);
+            MessageLabel = context.Message.Subject;
+            MessageApplicationProperties = context.Message.ApplicationProperties.ToDictionary(pair => pair.Key, pair => pair.Value);
+            ReceptionRegistration = context.ReceptionRegistration;
         }
 
+        public MessageReceptionRegistration? ReceptionRegistration { get; }
         public ClientType ClientType { get; }
         public string ResourceId { get; }
         public Type MessageHandlerType { get; }
