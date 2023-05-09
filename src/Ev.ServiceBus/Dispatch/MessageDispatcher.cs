@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 
@@ -19,11 +20,11 @@ namespace Ev.ServiceBus.Dispatch
         }
 
         /// <inheritdoc />
-        public async Task ExecuteDispatches()
+        public async Task ExecuteDispatches(CancellationToken token)
         {
             if (_dispatchesToSend.Any())
             {
-                await _sender.SendDispatches(_dispatchesToSend).ConfigureAwait(false);
+                await _sender.SendDispatches(_dispatchesToSend, token).ConfigureAwait(false);
 
                 _dispatchesToSend.Clear();
             }

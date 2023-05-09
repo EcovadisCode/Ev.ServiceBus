@@ -46,7 +46,8 @@ namespace Ev.ServiceBus.Samples.Sender
                     // Provide a connection string here !
                     settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=", new ServiceBusClientOptions());
                 })
-                .PopulateAsyncApiSchemaWithEvServiceBus();
+                .PopulateAsyncApiSchemaWithEvServiceBus()
+                .RegisterDispatchExtender<MyDispatchExtender>();
 
             // For this sample to work, you need have an Azure service bus namespace created with the following resources:
             // - A queue named "myqueue"

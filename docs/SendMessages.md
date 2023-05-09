@@ -126,3 +126,21 @@ public void ConfigureServices(IServiceCollection services)
     });
 }
 ```
+
+You can also register a dispatch extender that will be executed on every messages that will be sent : 
+```csharp
+public class MyDispatchExtender : IDispatchExtender
+{
+    void ExtendDispatch(ServiceBusMessage message, object dispatchPayload)
+    {
+        // message is the created message ready to be sent
+        // payload is the object the message was created from
+    }
+}
+
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddServiceBus<PayloadSerializer>(settings => { })
+        .RegisterDispatchExtender<MyDispatchExtender>();
+}
+```
