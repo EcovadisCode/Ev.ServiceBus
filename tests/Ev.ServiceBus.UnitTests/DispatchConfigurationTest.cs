@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
@@ -73,7 +74,7 @@ namespace Ev.ServiceBus.UnitTests
             publisher.Publish(new PublishedEvent());
             await Assert.ThrowsAsync<DispatchRegistrationNotFoundException>(async () =>
             {
-                await dispatcher.ExecuteDispatches();
+                await dispatcher.ExecuteDispatches(CancellationToken.None);
             });
         }
 
@@ -477,7 +478,7 @@ namespace Ev.ServiceBus.UnitTests
                 eventPublisher.Publish(new TestEvent() {EventRootId = i});
             }
 
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             // Assert
             Assert.All(customizedMessage, Assert.NotNull);
@@ -525,7 +526,7 @@ namespace Ev.ServiceBus.UnitTests
                 eventPublisher.Publish(new TestEvent() {EventRootId = i});
             }
 
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             // Assert
             Assert.Empty(customizedMessage);

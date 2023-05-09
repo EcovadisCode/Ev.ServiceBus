@@ -18,17 +18,20 @@ namespace Ev.ServiceBus.Dispatch
         private readonly ServiceBusRegistry _dispatchRegistry;
         private readonly IServiceBusRegistry _registry;
         private readonly IMessageMetadataAccessor _messageMetadataAccessor;
+        private readonly IEnumerable<IDispatchExtender> _dispatchCustomizers;
 
         public DispatchSender(
             IServiceBusRegistry registry,
             IMessagePayloadSerializer messagePayloadSerializer,
             ServiceBusRegistry dispatchRegistry,
-            IMessageMetadataAccessor messageMetadataAccessor)
+            IMessageMetadataAccessor messageMetadataAccessor,
+            IEnumerable<IDispatchExtender> dispatchCustomizers)
         {
             _registry = registry;
             _messagePayloadSerializer = messagePayloadSerializer;
             _dispatchRegistry = dispatchRegistry;
             _messageMetadataAccessor = messageMetadataAccessor;
+            _dispatchCustomizers = dispatchCustomizers;
         }
 
         /// <inheritdoc />
@@ -207,6 +210,10 @@ namespace Ev.ServiceBus.Dispatch
                 customizer?.Invoke(message, dispatch.Payload);
             }
 
+            foreach (var dispatchCustomizer in _dispatchCustomizers)
+            {
+                dispatchCustomizer.ExtendDispatch(message, dispatch.Payload);
+            }
             return message;
         }
     }

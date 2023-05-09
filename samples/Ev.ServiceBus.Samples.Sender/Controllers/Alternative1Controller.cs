@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Sample.Contracts;
@@ -27,7 +28,7 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
             _dispatcher = dispatcher;
         }
 
-        public async Task PushWeather(int count = 5)
+        public async Task PushWeather(CancellationToken token, int count = 5)
         {
             var rng = new Random();
             var forecasts = Enumerable.Range(1, count).Select(index => new WeatherForecast
@@ -47,7 +48,7 @@ namespace Ev.ServiceBus.Samples.Sender.Controllers
             }
 
             // Messages are sent in batch when you call _dispatcher.ExecuteDispatches()
-            await _dispatcher.ExecuteDispatches();
+            await _dispatcher.ExecuteDispatches(token);
         }
     }
 }

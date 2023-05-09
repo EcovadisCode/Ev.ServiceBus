@@ -1,4 +1,5 @@
 ﻿using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Dispatch;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ev.ServiceBus
@@ -20,6 +21,18 @@ namespace Ev.ServiceBus
         public ServiceBusBuilder RegisterEventListener<TEventListener>() where TEventListener : class, IServiceBusEventListener
         {
             Services.AddScoped<IServiceBusEventListener, TEventListener>();
+            return this;
+        }
+
+        /// <summary>
+        /// Registers a listener that will be called on every dispatch sending giving you the ability to update the outgoing message before sending.
+        /// </summary>
+        /// <typeparam name="TExtenderService"></typeparam>
+        /// <returns></returns>
+        public ServiceBusBuilder RegisterDispatchExtender<TExtenderService>()
+            where TExtenderService : class, IDispatchExtender
+        {
+            Services.AddScoped<IDispatchExtender, TExtenderService>();
             return this;
         }
     }

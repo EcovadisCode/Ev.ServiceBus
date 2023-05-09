@@ -136,7 +136,7 @@ namespace Ev.ServiceBus.UnitTests
                     SomeString = "hello"
                 }, "SomeSessionId");
 
-                await eventDispatcher.ExecuteDispatches();
+                await eventDispatcher.ExecuteDispatches(CancellationToken.None);
             }
         }
 
@@ -246,10 +246,10 @@ namespace Ev.ServiceBus.UnitTests
 
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" });
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 2, SomeString = "string2" });
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 3, SomeString = "string3" });
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             _sentMessagesToQueue.Should().HaveCount(3);
             _sentMessagesToQueue[0].CorrelationId.Should().NotBeEmpty();
@@ -272,7 +272,7 @@ namespace Ev.ServiceBus.UnitTests
 
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
                 context => context.CorrelationId = correlationId);
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             _sentMessagesToQueue.Should().HaveCount(1);
             _sentMessagesToQueue[0].CorrelationId.Should().Be(correlationId);
@@ -293,7 +293,7 @@ namespace Ev.ServiceBus.UnitTests
 
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
                 context => context.MessageId = messageId);
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             _sentMessagesToQueue.Should().HaveCount(1);
             _sentMessagesToQueue[0].MessageId.Should().Be(messageId);
@@ -314,7 +314,7 @@ namespace Ev.ServiceBus.UnitTests
 
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
                 context => context.DiagnosticId = diagnosticsId);
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             _sentMessagesToQueue.Should().HaveCount(1);
             _sentMessagesToQueue[0].GetDiagnosticId().Should().Be(diagnosticsId);
@@ -334,7 +334,7 @@ namespace Ev.ServiceBus.UnitTests
 
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
                 context => {});
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             _sentMessagesToQueue.Should().HaveCount(1);
             _sentMessagesToQueue[0].GetDiagnosticId().Should().BeNull();
@@ -355,7 +355,7 @@ namespace Ev.ServiceBus.UnitTests
             activity.Start();
             eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" },
                 context => {});
-            await eventDispatcher.ExecuteDispatches();
+            await eventDispatcher.ExecuteDispatches(CancellationToken.None);
 
             _sentMessagesToQueue.Should().HaveCount(1);
             _sentMessagesToQueue[0].GetDiagnosticId().Should().Be(activity.Id);
