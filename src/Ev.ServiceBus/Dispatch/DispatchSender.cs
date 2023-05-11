@@ -196,6 +196,12 @@ namespace Ev.ServiceBus.Dispatch
             var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
             var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
 
+            dispatch.ApplicationProperties.Remove(UserProperties.PayloadTypeIdProperty);
+            foreach (var dispatchApplicationProperty in dispatch.ApplicationProperties)
+            {
+                message.ApplicationProperties[dispatchApplicationProperty.Key] = dispatchApplicationProperty.Value;
+            }
+
             message.SessionId = dispatch.SessionId;
             message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
             if(dispatch.DiagnosticId != null)
