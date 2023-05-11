@@ -25,6 +25,6 @@ namespace Ev.ServiceBus.Abstractions
         /// <param name="messageDto">The object to send through Service Bus</param>
         /// <param name="messageContextConfiguration">Configurator of message context</param>
         /// <typeparam name="TMessagePayload">A type of object that is registered within Ev.ServiceBus</typeparam>
-        void Publish<TMessagePayload>(TMessagePayload messageDto, Action<IMessageContext> messageContextConfiguration);
+        void Publish<TMessagePayload>(TMessagePayload messageDto, Action<IDispatchContext> messageContextConfiguration);
     }
 }

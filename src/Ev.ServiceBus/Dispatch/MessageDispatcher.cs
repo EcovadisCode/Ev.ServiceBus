@@ -67,7 +67,7 @@ namespace Ev.ServiceBus.Dispatch
         /// <inheritdoc />
         public void Publish<TMessagePayload>(
             TMessagePayload messageDto,
-            Action<IMessageContext> messageContextConfiguration)
+            Action<IDispatchContext> messageContextConfiguration)
         {
             if (messageDto == null)
             {
@@ -79,11 +79,11 @@ namespace Ev.ServiceBus.Dispatch
                 throw new ArgumentNullException(nameof(messageContextConfiguration));
             }
 
-            var context = new MessageContext();
+            var context = new DispatchContext();
 
             messageContextConfiguration.Invoke(context);
 
-            _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto)
+            _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto, context)
             {
                 SessionId = context.SessionId,
                 CorrelationId = context.CorrelationId,
