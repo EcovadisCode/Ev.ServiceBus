@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.DependencyInjection
             params string[] tags)
         {
             HealthCheckTags.AddRange(tags);
-            builder.Services.TryAddSingleton<IConfigureOptions<HealthCheckServiceOptions>, RegistrationService>();
+            builder.Services.AddSingleton<IConfigureOptions<HealthCheckServiceOptions>, RegistrationService>();
             return builder;
         }
     }
