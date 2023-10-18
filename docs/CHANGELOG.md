@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.11.1
+- Fixed a bug about .AddEvServiceBusChecks(), if didn't you call that before any other code that registers IConfigureOptions<HealthCheckServiceOptions>, it would not be registered.
+
 ## 4.11.0
 - Improved `IMessagePublisher.Publish<TMessagePayload>(TMessagePayload messageDto, Action<IDispatchContext> messageContextConfiguration)` method to be able to set custom application properties to a dispatch
 
