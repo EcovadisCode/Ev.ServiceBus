@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
         <IsPackable>true</IsPackable>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>This package links Ev.ServiceBus and Microsoft.Extensions.Diagnostics.HealthChecks NuGet packages. 
@@ -11,10 +11,16 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup >
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
         <PackageReference Include="AspNetCore.HealthChecks.AzureServiceBus" Version="6.0.1-rc2.1" />
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="6.0.0" />
     </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+        <PackageReference Include="AspNetCore.HealthChecks.AzureServiceBus" Version="6.0.1-rc2.1" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0" />
+    </ItemGroup>
+    
     <ItemGroup>
       <ProjectReference Include="..\Ev.ServiceBus\Ev.ServiceBus.csproj" />
     </ItemGroup>
