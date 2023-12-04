@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.12.0
+- Added .NET 8 support
+- Changed - Azure.ServiceBus nuget updated to v 7.17.0
+
 ## 4.11.1
 - Fixed a bug about .AddEvServiceBusChecks(), if didn't you call that before any other code that registers IConfigureOptions<HealthCheckServiceOptions>, it would not be registered.
 
