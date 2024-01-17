@@ -33,24 +33,22 @@ public class ReceiverWrapper
         _logger = _provider.GetRequiredService<ILogger<ReceiverWrapper>>();
     }
 
-    public string ResourceId => _composedOptions.ResourceId;
-    public ClientType ClientType => _composedOptions.ClientType;
-
+    internal string ResourceId => _composedOptions.ResourceId;
     internal ServiceBusProcessor? ProcessorClient { get; private set; }
     internal ServiceBusSessionProcessor? SessionProcessorClient { get; private set; }
 
     public async Task Initialize()
     {
-        _logger.LogInformation("[Ev.ServiceBus] Initialization of receiver client '{ResourceId}': Start", ResourceId);
+        _logger.LogInformation("[Ev.ServiceBus] Initialization of receiver client '{ResourceId}': Start", _composedOptions.ResourceId);
         if (_parentOptions.Settings.Enabled == false)
         {
             _logger.LogInformation(
-                "[Ev.ServiceBus] Initialization of client '{ResourceId}': Client deactivated through configuration", ResourceId);
+                "[Ev.ServiceBus] Initialization of client '{ResourceId}': Client deactivated through configuration", _composedOptions.ResourceId);
             return;
         }
 
         await RegisterMessageHandler();
-        _logger.LogInformation("[Ev.ServiceBus] Initialization of client '{ResourceId}': Success", ResourceId);
+        _logger.LogInformation("[Ev.ServiceBus] Initialization of client '{ResourceId}': Success", _composedOptions.ResourceId);
     }
 
     public async Task CloseAsync(CancellationToken cancellationToken)
@@ -63,7 +61,7 @@ public class ReceiverWrapper
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Client {ResourceId} couldn't close properly");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Client {_composedOptions.ResourceId} couldn't close properly");
             }
         }
 
@@ -75,7 +73,7 @@ public class ReceiverWrapper
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Client {ResourceId} couldn't close properly");
+                _logger.LogError(ex, $"[Ev.ServiceBus] Client {_composedOptions.ResourceId} couldn't close properly");
             }
         }
     }
@@ -173,7 +171,7 @@ public class ReceiverWrapper
         _logger.LogError(exceptionEvent.Exception,
             "[Ev.ServiceBus] Exception occured during message treatment of {ClientType} '{ResourceId}'.\n"
             + "Message : {ExceptionMessage}\n"
-            + "Context:\n{ContextJson}", _composedOptions.ClientType, ResourceId, exceptionEvent.Exception.Message, json);
+            + "Context:\n{ContextJson}", _composedOptions.ClientType, _composedOptions.ResourceId, exceptionEvent.Exception.Message, json);
 
         await _onExceptionReceivedHandler!(exceptionEvent);
     }

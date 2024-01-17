@@ -119,7 +119,8 @@ public class MessageReceptionHandler
         }
     }
 
-    private async Task CallHandler<TMessagePayload>(MessageReceptionRegistration messageReceptionRegistration,
+    private async Task CallHandler<TMessagePayload>(
+        MessageReceptionRegistration messageReceptionRegistration,
         TMessagePayload @event,
         CancellationToken token)
     {

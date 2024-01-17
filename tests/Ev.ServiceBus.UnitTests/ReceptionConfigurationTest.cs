@@ -112,7 +112,6 @@ public class ReceptionConfigurationTest
             receiver =>
             {
                 receiver.ResourceId.Should().Be("queueName");
-                receiver.ClientType.Should().Be(ClientType.Queue);
             });
     }
 
@@ -142,7 +141,6 @@ public class ReceptionConfigurationTest
             receiver =>
             {
                 receiver.ResourceId.Should().Be("queueName");
-                receiver.ClientType.Should().Be(ClientType.Queue);
             });
     }
 
@@ -174,12 +172,10 @@ public class ReceptionConfigurationTest
             receiver =>
             {
                 receiver.ResourceId.Should().Be("queueName");
-                receiver.ClientType.Should().Be(ClientType.Queue);
             },
             receiver =>
             {
                 receiver.ResourceId.Should().Be("queueName_2");
-                receiver.ClientType.Should().Be(ClientType.Queue);
             });
     }
 
@@ -209,7 +205,6 @@ public class ReceptionConfigurationTest
             receiver =>
             {
                 receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
-                receiver.ClientType.Should().Be(ClientType.Subscription);
             });
     }
 
@@ -241,12 +236,10 @@ public class ReceptionConfigurationTest
             receiver =>
             {
                 receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName");
-                receiver.ClientType.Should().Be(ClientType.Subscription);
             },
             receiver =>
             {
                 receiver.ResourceId.Should().Be("topicName/Subscriptions/subscriptionName_2");
-                receiver.ClientType.Should().Be(ClientType.Subscription);
             });
     }
 
