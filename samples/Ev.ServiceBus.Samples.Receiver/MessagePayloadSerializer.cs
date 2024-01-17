@@ -5,31 +5,30 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace Ev.ServiceBus.Samples.Receiver
+namespace Ev.ServiceBus.Samples.Receiver;
+
+public class MessagePayloadSerializer : IMessagePayloadSerializer
 {
-    public class MessagePayloadSerializer : IMessagePayloadSerializer
+    private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
     {
-        private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        Formatting = Formatting.None,
+        Converters =
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver(),
-            Formatting = Formatting.None,
-            Converters =
-            {
-                new StringEnumConverter()
-            },
-            NullValueHandling = NullValueHandling.Ignore
-        };
+            new StringEnumConverter()
+        },
+        NullValueHandling = NullValueHandling.Ignore
+    };
 
-        public SerializationResult SerializeBody(object objectToSerialize)
-        {
-            var json = JsonConvert.SerializeObject(objectToSerialize, Formatting.None, Settings);
-            return new SerializationResult("application/json", Encoding.UTF8.GetBytes(json));
-        }
+    public SerializationResult SerializeBody(object objectToSerialize)
+    {
+        var json = JsonConvert.SerializeObject(objectToSerialize, Formatting.None, Settings);
+        return new SerializationResult("application/json", Encoding.UTF8.GetBytes(json));
+    }
 
-        public object DeSerializeBody(byte[] content, Type typeToCreate)
-        {
-            var @string = Encoding.UTF8.GetString(content);
-            return JsonConvert.DeserializeObject(@string, typeToCreate, Settings)!;
-        }
+    public object DeSerializeBody(byte[] content, Type typeToCreate)
+    {
+        var @string = Encoding.UTF8.GetString(content);
+        return JsonConvert.DeserializeObject(@string, typeToCreate, Settings)!;
     }
 }

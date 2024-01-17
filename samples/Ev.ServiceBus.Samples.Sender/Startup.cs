@@ -10,85 +10,85 @@ using Microsoft.Extensions.Hosting;
 using Saunter;
 using Saunter.AsyncApiSchema.v2;
 
-namespace Ev.ServiceBus.Samples.Sender
+namespace Ev.ServiceBus.Samples.Sender;
+
+public class Startup
 {
-    public class Startup
+    private readonly IConfiguration _configuration;
+
+    public Startup(IConfiguration configuration)
     {
-        private readonly IConfiguration _configuration;
+        _configuration = configuration;
+    }
 
-        public Startup(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
+    // This method gets called by the runtime. Use this method to add services to the container.
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddMvc()
+            .AddServiceBusMvcIntegration();
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMvc()
-                .AddServiceBusMvcIntegration();
-
-            services.AddAsyncApiSchemaGeneration(
-                options =>
+        services.AddAsyncApiSchemaGeneration(
+            options =>
+            {
+                options.AsyncApi = new AsyncApiDocument()
                 {
-                    options.AsyncApi = new AsyncApiDocument()
+                    Info = new Info("Receiver API", "1.0.0")
                     {
-                        Info = new Info("Receiver API", "1.0.0")
-                        {
-                            Description = "Sample sender project",
-                        }
-                    };
-                });
+                        Description = "Sample sender project",
+                    }
+                };
+            });
 
-            services.AddControllers();
-            services.AddServiceBus<MessagePayloadSerializer>(
+        services.AddControllers();
+        services.AddServiceBus(
                 settings =>
                 {
                     // Provide a connection string here !
                     settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=", new ServiceBusClientOptions());
                 })
-                .PopulateAsyncApiSchemaWithEvServiceBus()
-                .RegisterDispatchExtender<MyDispatchExtender>();
+            .PopulateAsyncApiSchemaWithEvServiceBus()
+            .RegisterDispatchExtender<MyDispatchExtender>()
+            .WithPayloadSerializer<MessagePayloadSerializer>();
 
-            // For this sample to work, you need have an Azure service bus namespace created with the following resources:
-            // - A queue named "myqueue"
-            // - A topic named "mytopic" and under it :
-            //     - A subscription named "mysubscription"
-            //     - A subscription named "mysecondsubscription"
-            services.RegisterServiceBusDispatch().ToQueue(ServiceBusResources.MyQueue, builder =>
-            {
-                builder.RegisterDispatch<WeatherForecast[]>();
-            });
-
-            services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
-            {
-                builder.RegisterDispatch<WeatherForecast>();
-                builder.RegisterDispatch<UserCreated>().CustomizePayloadTypeId("User/UserCreated");
-            });
-
-            services.AddHealthChecks()
-                .AddEvServiceBusChecks();
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        // For this sample to work, you need have an Azure service bus namespace created with the following resources:
+        // - A queue named "myqueue"
+        // - A topic named "mytopic" and under it :
+        //     - A subscription named "mysubscription"
+        //     - A subscription named "mysecondsubscription"
+        services.RegisterServiceBusDispatch().ToQueue(ServiceBusResources.MyQueue, builder =>
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            builder.RegisterDispatch<WeatherForecast[]>();
+        });
 
-            app.UseHttpsRedirection();
+        services.RegisterServiceBusDispatch().ToTopic(ServiceBusResources.MyTopic, builder =>
+        {
+            builder.RegisterDispatch<WeatherForecast>();
+            builder.RegisterDispatch<UserCreated>().CustomizePayloadTypeId("User/UserCreated");
+        });
 
-            app.UseRouting();
+        services.AddHealthChecks()
+            .AddEvServiceBusChecks();
+    }
 
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-                endpoints.MapAsyncApiDocuments();
-                endpoints.MapAsyncApiUi();
-            });
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
         }
+
+        app.UseHttpsRedirection();
+
+        app.UseRouting();
+
+        app.UseAuthorization();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+            endpoints.MapAsyncApiDocuments();
+            endpoints.MapAsyncApiUi();
+        });
     }
 }

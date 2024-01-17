@@ -79,17 +79,6 @@ public class Composer : IDisposable
             var messageSender = new Mock<IMessageSender>();
             messageSender.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, new List<ServiceBusMessage>()));
-            switch (sender.Key)
-            {
-                case SenderType.Queue:
-                    serviceBusRegistry.Setup(s => s.GetQueueSender(sender.Value))
-                        .Returns(messageSender.Object);
-                    break;
-                case SenderType.Topic:
-                    serviceBusRegistry.Setup(s => s.GetTopicSender(sender.Value))
-                        .Returns(messageSender.Object);
-                    break;
-            }
         }
         services.AddSingleton(s => serviceBusRegistry.Object);
     }
@@ -98,7 +87,7 @@ public class Composer : IDisposable
     {
         var services = new ServiceCollection();
 
-        var builder = services.AddServiceBus<PayloadSerializer>(_defaultSettings);
+        var builder = services.AddServiceBus(_defaultSettings);
         _additionalOptions(builder);
 
         ComposeSenders(services);

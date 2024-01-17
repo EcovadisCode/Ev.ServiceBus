@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Management;
+using Ev.ServiceBus.Reception;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Ev.ServiceBus;
 
-public class ReceiverWrapper : IWrapper
+public class ReceiverWrapper
 {
     private readonly ILogger<ReceiverWrapper> _logger;
     private readonly ServiceBusClient? _client;
@@ -51,7 +49,7 @@ public class ReceiverWrapper : IWrapper
             return;
         }
 
-        await RegisterMessageHandler().ConfigureAwait(false);
+        await RegisterMessageHandler();
         _logger.LogInformation("[Ev.ServiceBus] Initialization of client '{ResourceId}': Success", ResourceId);
     }
 
@@ -61,7 +59,7 @@ public class ReceiverWrapper : IWrapper
         {
             try
             {
-                await ProcessorClient.CloseAsync(cancellationToken).ConfigureAwait(false);
+                await ProcessorClient.CloseAsync(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -73,7 +71,7 @@ public class ReceiverWrapper : IWrapper
         {
             try
             {
-                await SessionProcessorClient.CloseAsync(cancellationToken).ConfigureAwait(false);
+                await SessionProcessorClient.CloseAsync(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -102,7 +100,7 @@ public class ReceiverWrapper : IWrapper
             };
             SessionProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
             SessionProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
-            await SessionProcessorClient.StartProcessingAsync().ConfigureAwait(false);
+            await SessionProcessorClient.StartProcessingAsync();
         }
         else
         {
@@ -117,7 +115,7 @@ public class ReceiverWrapper : IWrapper
             };
             ProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
             ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
-            await ProcessorClient.StartProcessingAsync().ConfigureAwait(false);
+            await ProcessorClient.StartProcessingAsync();
         }
 
         _onExceptionReceivedHandler = _ => Task.CompletedTask;
@@ -138,80 +136,22 @@ public class ReceiverWrapper : IWrapper
         using var scope = _provider.CreateScope();
         TrySetReceptionRegistrationOnContext(context, scope);
 
-        var scopeValues = new Dictionary<string, string>
-        {
-            ["EVSB_Client"] = ClientType.ToString(),
-            ["EVSB_ResourceId"] = ResourceId,
-            ["EVSB_Handler"] = _composedOptions.MessageHandlerType.FullName!,
-            ["EVSB_MessageId"] = context.Message.MessageId,
-            ["EVSB_SessionId"] = context.SessionArgs?.SessionId ?? "none",
-            ["EVSB_PayloadTypeId"] = context.PayloadTypeId ?? "none",
-            ["EVSB_ReceptionHandler"] = context.ReceptionRegistration?.HandlerType.FullName ?? "none"
-        };
-        using (_logger.BeginScope(scopeValues))
-        {
-            var metadataAccessor = (MessageMetadataAccessor)scope.ServiceProvider.GetRequiredService<IMessageMetadataAccessor>();
-            metadataAccessor.SetData(context);
-
-            var listeners = scope.ServiceProvider.GetRequiredService<IEnumerable<IServiceBusEventListener>>();
-            var executionStartedArgs = new ExecutionStartedArgs(context, _composedOptions.MessageHandlerType);
-            foreach (var listener in listeners)
-            {
-                await listener.OnExecutionStart(executionStartedArgs).ConfigureAwait(false);
-            }
-            _logger.LogInformation("[Ev.ServiceBus] New message received from {EVSB_Client} '{EVSB_ResourceId}' : {EVSB_MessageLabel}", ClientType, ResourceId, context.Message.Subject);
-
-            var messageHandler = (IMessageHandler) scope.ServiceProvider.GetRequiredService(_composedOptions.MessageHandlerType);
-            var sw = new Stopwatch();
-            sw.Start();
-            try
-            {
-                await messageHandler.HandleMessageAsync(context).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (LogError(ex))
-            {
-                var executionFailedArgs = new ExecutionFailedArgs(context, _composedOptions.MessageHandlerType, ex);
-                foreach (var listener in listeners)
-                {
-                    await listener.OnExecutionFailed(executionFailedArgs).ConfigureAwait(false);
-                }
-                throw;
-            }
-            finally
-            {
-                sw.Stop();
-            }
-            var executionSucceededArgs = new ExecutionSucceededArgs(context, _composedOptions.MessageHandlerType, sw.ElapsedMilliseconds);
-            foreach (var listener in listeners)
-            {
-                await listener.OnExecutionSuccess(executionSucceededArgs).ConfigureAwait(false);
-            }
-            _logger.LogInformation("[Ev.ServiceBus] Message finished execution in {EVSB_Duration} milliseconds", sw.ElapsedMilliseconds);
-        }
+        var handler = scope.ServiceProvider.GetRequiredService<MessageReceptionHandler>();
+        await handler.HandleMessageAsync(context);
     }
 
     private void TrySetReceptionRegistrationOnContext(MessageContext context, IServiceScope scope)
     {
-        if (context.PayloadTypeId != null)
+        if (context.PayloadTypeId == null)
         {
-            var registry = scope.ServiceProvider.GetRequiredService<ServiceBusRegistry>();
-            var receptionRegistration = registry.GetReceptionRegistration(context.PayloadTypeId,
-                context.ResourceId,
-                context.ClientType);
-            context.ReceptionRegistration = receptionRegistration;
+            return;
         }
-    }
 
-    /// <summary>
-    ///     workaround to attach the log scope to the logged exception
-    ///     https://andrewlock.net/how-to-include-scopes-when-logging-exceptions-in-asp-net-core/
-    /// </summary>
-    /// <param name="ex"></param>
-    /// <returns></returns>
-    private bool LogError(Exception ex)
-    {
-        _logger.LogError(ex, ex.Message);
-        return true;
+        var registry = scope.ServiceProvider.GetRequiredService<ServiceBusRegistry>();
+        var receptionRegistration = registry.GetReceptionRegistration(context.PayloadTypeId,
+            context.ResourceId,
+            context.ClientType);
+        context.ReceptionRegistration = receptionRegistration;
     }
 
     /// <summary>
@@ -235,13 +175,13 @@ public class ReceiverWrapper : IWrapper
             + "Message : {ExceptionMessage}\n"
             + "Context:\n{ContextJson}", _composedOptions.ClientType, ResourceId, exceptionEvent.Exception.Message, json);
 
-        await _onExceptionReceivedHandler!(exceptionEvent).ConfigureAwait(false);
+        await _onExceptionReceivedHandler!(exceptionEvent);
     }
 
     private async Task CallDefinedExceptionHandler(ProcessErrorEventArgs exceptionEvent)
     {
         var userDefinedExceptionHandler =
             (IExceptionHandler) _provider.GetService(_composedOptions.ExceptionHandlerType!)!;
-        await userDefinedExceptionHandler!.HandleExceptionAsync(exceptionEvent).ConfigureAwait(false);
+        await userDefinedExceptionHandler!.HandleExceptionAsync(exceptionEvent);
     }
 }

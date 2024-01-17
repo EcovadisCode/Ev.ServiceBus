@@ -7,130 +7,129 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Xunit;
 
-namespace Ev.ServiceBus.HealthChecks.UnitTests
+namespace Ev.ServiceBus.HealthChecks.UnitTests;
+
+public class TopicChecksTest
 {
-    public class TopicChecksTest
+    private const string TagOne = nameof(TagOne);
+    private const string TagTwo = nameof(TagTwo);
+
+    [Fact]
+    public void TopicWithNoConnectionStringWillBeIgnored_case1()
     {
-        private const string TagOne = nameof(TagOne);
-        private const string TagTwo = nameof(TagTwo);
+        var services = new ServiceCollection();
 
-        [Fact]
-        public void TopicWithNoConnectionStringWillBeIgnored_case1()
+        services.AddServiceBus(settings =>
         {
-            var services = new ServiceCollection();
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-            });
+        services.AddHealthChecks().AddEvServiceBusChecks();
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
-
-            services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
-            {
-                builder.RegisterDispatch<StudentCreated>();
-            });
-
-            var provider = services.BuildServiceProvider();
-
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(0);
-        }
-
-        [Fact]
-        public void TopicWithConnectionStringWillBeRegistered_case1()
+        services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
         {
-            var services = new ServiceCollection();
+            builder.RegisterDispatch<StudentCreated>();
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            });
+        var provider = services.BuildServiceProvider();
 
-            services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
 
-            services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
-            {
-                builder.RegisterDispatch<StudentCreated>();
-            });
+        healthOptions.Value.Registrations.Count.Should().Be(0);
+    }
 
-            var provider = services.BuildServiceProvider();
+    [Fact]
+    public void TopicWithConnectionStringWillBeRegistered_case1()
+    {
+        var services = new ServiceCollection();
 
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(1);
-            var reg = healthOptions.Value.Registrations.First();
-            reg.Name.Should().Be("Topic:topic");
-            reg.Tags.Should().HaveCount(3);
-            reg.Tags.Should().Contain("Ev.ServiceBus");
-            reg.Tags.Should().Contain(TagOne);
-            reg.Tags.Should().Contain(TagTwo);
-        }
-
-        [Fact]
-        public void TopicWithConnectionStringWillBeRegistered_case2()
+        services.AddServiceBus(settings =>
         {
-            var services = new ServiceCollection();
+            settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-            });
+        services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
 
-            services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
-
-            services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterDispatch<StudentCreated>();
-            });
-
-            var provider = services.BuildServiceProvider();
-
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(1);
-            var reg = healthOptions.Value.Registrations.First();
-            reg.Name.Should().Be("Topic:topic");
-            reg.Tags.Should().HaveCount(3);
-            reg.Tags.Should().Contain("Ev.ServiceBus");
-            reg.Tags.Should().Contain(TagOne);
-            reg.Tags.Should().Contain(TagTwo);
-        }
-
-        [Fact]
-        public void OnlyOneTopicWillBeRegistered_case1()
+        services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
         {
-            var services = new ServiceCollection();
+            builder.RegisterDispatch<StudentCreated>();
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-            });
+        var provider = services.BuildServiceProvider();
 
-            services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
 
-            services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterDispatch<StudentCreated>();
-            });
+        healthOptions.Value.Registrations.Count.Should().Be(1);
+        var reg = healthOptions.Value.Registrations.First();
+        reg.Name.Should().Be("Topic:topic");
+        reg.Tags.Should().HaveCount(3);
+        reg.Tags.Should().Contain("Ev.ServiceBus");
+        reg.Tags.Should().Contain(TagOne);
+        reg.Tags.Should().Contain(TagTwo);
+    }
 
-            services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterDispatch<CourseCreated>();
-            });
+    [Fact]
+    public void TopicWithConnectionStringWillBeRegistered_case2()
+    {
+        var services = new ServiceCollection();
 
-            var provider = services.BuildServiceProvider();
+        services.AddServiceBus(settings =>
+        {
+        });
 
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
+        services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
 
-            healthOptions.Value.Registrations.Count.Should().Be(1);
-            var reg = healthOptions.Value.Registrations.First();
-            reg.Name.Should().Be("Topic:topic");
-            reg.Tags.Should().HaveCount(3);
-            reg.Tags.Should().Contain("Ev.ServiceBus");
-            reg.Tags.Should().Contain(TagOne);
-            reg.Tags.Should().Contain(TagTwo);
-        }
+        services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterDispatch<StudentCreated>();
+        });
+
+        var provider = services.BuildServiceProvider();
+
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
+
+        healthOptions.Value.Registrations.Count.Should().Be(1);
+        var reg = healthOptions.Value.Registrations.First();
+        reg.Name.Should().Be("Topic:topic");
+        reg.Tags.Should().HaveCount(3);
+        reg.Tags.Should().Contain("Ev.ServiceBus");
+        reg.Tags.Should().Contain(TagOne);
+        reg.Tags.Should().Contain(TagTwo);
+    }
+
+    [Fact]
+    public void OnlyOneTopicWillBeRegistered_case1()
+    {
+        var services = new ServiceCollection();
+
+        services.AddServiceBus(settings =>
+        {
+        });
+
+        services.AddHealthChecks().AddEvServiceBusChecks(TagOne, TagTwo);
+
+        services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterDispatch<StudentCreated>();
+        });
+
+        services.RegisterServiceBusDispatch().ToTopic("topic", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterDispatch<CourseCreated>();
+        });
+
+        var provider = services.BuildServiceProvider();
+
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
+
+        healthOptions.Value.Registrations.Count.Should().Be(1);
+        var reg = healthOptions.Value.Registrations.First();
+        reg.Name.Should().Be("Topic:topic");
+        reg.Tags.Should().HaveCount(3);
+        reg.Tags.Should().Contain("Ev.ServiceBus");
+        reg.Tags.Should().Contain(TagOne);
+        reg.Tags.Should().Contain(TagTwo);
     }
 }

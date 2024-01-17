@@ -17,7 +17,6 @@ public class ComposedReceiverOptions
         ExceptionHandlerType = options.FirstOrDefault(o => o.ExceptionHandlerType != null)?.ExceptionHandlerType;
         SessionMode = false;
         ConnectionSettings = options.First().ConnectionSettings;
-        MessageHandlerType = options.First().MessageHandlerType!;
         FirstOption = options.First();
 
         ProcessorOptions = new ServiceBusProcessorOptions();
@@ -38,7 +37,6 @@ public class ComposedReceiverOptions
     }
 
     public IMessageReceiverOptions FirstOption { get; }
-    public Type MessageHandlerType { get; }
     public bool SessionMode { get; }
     public string ResourceId { get; }
     public ClientType ClientType { get; }

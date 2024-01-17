@@ -2,10 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
-using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.UnitTests.Helpers;
-using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 
@@ -20,9 +17,21 @@ public class TopicClientHandlingTest
 
         composer.WithAdditionalServices(services =>
         {
-            services.RegisterServiceBusTopic("testtopic1").WithConnection("Endpoint=testConnectionString1;", new ServiceBusClientOptions());
-            services.RegisterServiceBusTopic("testtopic2").WithConnection("Endpoint=testConnectionString2;", new ServiceBusClientOptions());
-            services.RegisterServiceBusTopic("testtopic3").WithConnection("Endpoint=testConnectionString3;", new ServiceBusClientOptions());
+            services.RegisterServiceBusDispatch().ToTopic("testtopic1", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
+            services.RegisterServiceBusDispatch().ToTopic("testtopic2", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString2;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
+            services.RegisterServiceBusDispatch().ToTopic("testtopic3", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString3;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
         });
 
         var provider = await composer.Compose();
@@ -48,9 +57,21 @@ public class TopicClientHandlingTest
 
         composer.WithAdditionalServices(services =>
         {
-            services.RegisterServiceBusTopic("testtopic1").WithConnection("Endpoint=testConnectionString1;", new ServiceBusClientOptions());
-            services.RegisterServiceBusTopic("testtopic2").WithConnection("Endpoint=testConnectionString2;", new ServiceBusClientOptions());
-            services.RegisterServiceBusTopic("testtopic3").WithConnection("Endpoint=testConnectionString3;", new ServiceBusClientOptions());
+            services.RegisterServiceBusDispatch().ToTopic("testtopic1", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
+            services.RegisterServiceBusDispatch().ToTopic("testtopic2", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString2;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
+            services.RegisterServiceBusDispatch().ToTopic("testtopic3", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString3;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
         });
 
         var provider = await composer.Compose();
@@ -76,9 +97,21 @@ public class TopicClientHandlingTest
 
         composer.WithAdditionalServices(services =>
         {
-            services.RegisterServiceBusTopic("testtopic1").WithConnection("Endpoint=testConnectionString1;", new ServiceBusClientOptions());
-            services.RegisterServiceBusTopic("testtopic2").WithConnection("Endpoint=testConnectionString2;", new ServiceBusClientOptions());
-            services.RegisterServiceBusTopic("testtopic3").WithConnection("Endpoint=testConnectionString3;", new ServiceBusClientOptions());
+            services.RegisterServiceBusDispatch().ToTopic("testtopic1", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
+            services.RegisterServiceBusDispatch().ToTopic("testtopic2", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString2;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
+            services.RegisterServiceBusDispatch().ToTopic("testtopic3", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString3;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
         });
 
         var provider = await composer.Compose();
@@ -98,22 +131,4 @@ public class TopicClientHandlingTest
             clientMock.Mock.Verify(o => o.CloseAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
     }
-
-    [Fact]
-    public async Task ThrowsExceptionWhenAQueueSenderIsNotFound()
-    {
-        var composer = new Composer();
-
-        var provider = await composer.Compose();
-
-        var registry = provider.GetService<IServiceBusRegistry>();
-
-        var ex = Assert.Throws<TopicSenderNotFoundException>(
-            () =>
-            {
-                registry.GetTopicSender("notARegisteredTopicName");
-            });
-        ex.TopicName.Should().Be("notARegisteredTopicName");
-    }
-
 }

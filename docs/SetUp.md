@@ -21,7 +21,7 @@ public class PayloadSerializer : IMessagePayloadSerializer
 
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus<PayloadSerializer>(settings => {
+    services.AddServiceBus(settings => {
         settings.Enabled = true;
         settings.ReceiveMessages = true;
         settings.WithConnection("", new ServiceBusClientOptions());
@@ -46,7 +46,7 @@ Calling `settings.WithConnection()` will setup a default connection that all you
 For everything to work as expected, you have to ensure that `ServiceBusHost` is started and properly stopped.
 
 ```csharp
-services.AddServiceBus<PayloadSerializer>(settings => {});
+services.AddServiceBus(settings => {});
 var serviceProvider = services.BuildServiceProvider();
 
 var hostedServices = serviceProvider.GetServices<IHostedService>();

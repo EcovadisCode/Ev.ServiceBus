@@ -15,7 +15,7 @@ examples :
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus<PayloadSerializer>(settings => {
+    services.AddServiceBus(settings => {
         settings.WithConnection(serviceBusConnectionString, ReceiveMode.ReceiveAndDelete);
         settings.WithConnection(new ServiceBusConnection(), ReceiveMode.PeekLock, new CustomRetryPolicy());
         settings.WithConnection(new ServiceBusConnectionStringBuilder());
@@ -32,7 +32,7 @@ you can override the default connection by calling `.WithConnection()` on the re
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus<PayloadSerializer>(settings => {
+    services.AddServiceBus(settings => {
         settings.WithConnection(serviceBusConnectionString);
     });
 
@@ -63,6 +63,49 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
+## Custom serialization of messages
+
+By default, System.Text.Json is used to serialize and deserialize messages.
+If you want to provide another serialization/deserialization logic you can do using the following method :
+
+```csharp
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddServiceBus(settings => { })
+            .WithPayloadSerializer<NewtonsoftJsonPayloadSerializer>();
+    }
+}
+
+public class NewtonsoftJsonPayloadSerializer : IMessagePayloadSerializer
+{
+    private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        Formatting = Formatting.None,
+        Converters =
+        {
+            new StringEnumConverter()
+        },
+        NullValueHandling = NullValueHandling.Ignore
+    };
+
+    public SerializationResult SerializeBody(object objectToSerialize)
+    {
+        var json = JsonConvert.SerializeObject(objectToSerialize, Formatting.None, Settings);
+        return new SerializationResult("application/json", Encoding.UTF8.GetBytes(json));
+    }
+
+    public object DeSerializeBody(byte[] content, Type typeToCreate)
+    {
+        var @string = Encoding.UTF8.GetString(content);
+        return JsonConvert.DeserializeObject(@string, typeToCreate, Settings)!;
+    }
+}
+```
+
+
 ## Listening to internal events
 
 You can register a listener class that will be called every time the execution of a message starts, is successful and/or has failed. 
@@ -70,7 +113,7 @@ You can register a listener class that will be called every time the execution o
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus<PayloadSerializer>(settings => {
+    services.AddServiceBus(settings => {
         settings.WithConnection(serviceBusConnectionString);
     })
     .RegisterEventListener<ServiceBusEventListener>();
@@ -133,6 +176,7 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 ```
 
 ## Distributed tracing and correlation through Service Bus messaging support in case of publish / dispatch mechanism
+
 Distributed tracing and correlation through Service Bus messaging is automatically supported by the library. It is supported according assumptions described [here](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-end-to-end-tracing?tabs=net-standard-sdk-2).
 While message publishing `treceparent` value is automatically get from `Activity.Current.Id` in case if any publication is executed in any Activity scope.
 If do you need pass another value manually while the publication. You can do this by set `IMessageContext` - what is possible in by using one of overloaded `Publish` method of `IMessagePublisher` interface implementation.

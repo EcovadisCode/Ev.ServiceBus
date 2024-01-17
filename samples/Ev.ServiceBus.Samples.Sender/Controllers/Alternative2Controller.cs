@@ -5,42 +5,41 @@ using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Sample.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Ev.ServiceBus.Samples.Sender.Controllers
+namespace Ev.ServiceBus.Samples.Sender.Controllers;
+
+[ApiController]
+[Route("[controller]/[action]")]
+public class Alternative2Controller : ControllerBase
 {
-    [ApiController]
-    [Route("[controller]/[action]")]
-    public class Alternative2Controller : ControllerBase
+    private readonly IDispatchSender _sender;
+
+    private static readonly string[] Summaries =
     {
-        private readonly IDispatchSender _sender;
+        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    };
 
-        private static readonly string[] Summaries =
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
+    public Alternative2Controller(IDispatchSender sender)
+    {
+        _sender = sender;
+    }
 
-        public Alternative2Controller(IDispatchSender sender)
-        {
-            _sender = sender;
-        }
-
-        public async Task PushWeather(int count = 5)
-        {
-            var rng = new Random();
-            var forecasts = Enumerable.Range(1, count).Select(index => new WeatherForecast
-                {
-                    Date = DateTime.Now.AddDays(index),
-                    TemperatureC = rng.Next(-20, 55),
-                    Summary = Summaries[rng.Next(Summaries.Length)]
-                })
-                .ToArray();
-
-            // Messages here are sent right away
-            await _sender.SendDispatches(new []{forecasts});
-
-            foreach (var forecast in forecasts)
+    public async Task PushWeather(int count = 5)
+    {
+        var rng = new Random();
+        var forecasts = Enumerable.Range(1, count).Select(index => new WeatherForecast
             {
-                await _sender.SendDispatches(new []{forecast});
-            }
+                Date = DateTime.Now.AddDays(index),
+                TemperatureC = rng.Next(-20, 55),
+                Summary = Summaries[rng.Next(Summaries.Length)]
+            })
+            .ToArray();
+
+        // Messages here are sent right away
+        await _sender.SendDispatches(new []{forecasts});
+
+        foreach (var forecast in forecasts)
+        {
+            await _sender.SendDispatches(new []{forecast});
         }
     }
 }

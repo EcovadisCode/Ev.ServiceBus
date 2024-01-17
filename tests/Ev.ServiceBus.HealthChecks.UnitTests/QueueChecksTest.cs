@@ -7,150 +7,149 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Xunit;
 
-namespace Ev.ServiceBus.HealthChecks.UnitTests
+namespace Ev.ServiceBus.HealthChecks.UnitTests;
+
+public class QueueChecksTest
 {
-    public class QueueChecksTest
+    [Fact]
+    public void QueueWithNoConnectionStringWillBeIgnored_case1()
     {
-        [Fact]
-        public void QueueWithNoConnectionStringWillBeIgnored_case1()
+        var services = new ServiceCollection();
+
+        services.AddServiceBus(settings =>
         {
-            var services = new ServiceCollection();
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-            });
+        services.AddHealthChecks().AddEvServiceBusChecks();
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
-
-            services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
-            {
-                builder.RegisterDispatch<StudentCreated>();
-            });
-
-            var provider = services.BuildServiceProvider();
-
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(0);
-        }
-
-        [Fact]
-        public void QueueWithConnectionStringWillBeRegistered_case1()
+        services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
         {
-            var services = new ServiceCollection();
+            builder.RegisterDispatch<StudentCreated>();
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            });
+        var provider = services.BuildServiceProvider();
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
 
-            services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
-            {
-                builder.RegisterDispatch<StudentCreated>();
-            });
+        healthOptions.Value.Registrations.Count.Should().Be(0);
+    }
 
-            var provider = services.BuildServiceProvider();
+    [Fact]
+    public void QueueWithConnectionStringWillBeRegistered_case1()
+    {
+        var services = new ServiceCollection();
 
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(1);
-            var reg = healthOptions.Value.Registrations.First();
-            reg.Name.Should().Be("Queue:queue");
-            reg.Tags.Should().Contain("Ev.ServiceBus");
-        }
-
-        [Fact]
-        public void QueueWithConnectionStringWillBeRegistered_case2()
+        services.AddServiceBus(settings =>
         {
-            var services = new ServiceCollection();
+            settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-            });
+        services.AddHealthChecks().AddEvServiceBusChecks();
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
-
-            services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterDispatch<StudentCreated>();
-            });
-
-            var provider = services.BuildServiceProvider();
-
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(1);
-            var reg = healthOptions.Value.Registrations.First();
-            reg.Name.Should().Be("Queue:queue");
-            reg.Tags.Should().Contain("Ev.ServiceBus");
-        }
-
-        [Fact]
-        public void OnlyOneQueueWillBeRegistered_case1()
+        services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
         {
-            var services = new ServiceCollection();
+            builder.RegisterDispatch<StudentCreated>();
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-            });
+        var provider = services.BuildServiceProvider();
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
 
-            services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterDispatch<StudentCreated>();
-            });
-            services.RegisterServiceBusReception().FromQueue("queue", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterReception<StudentCreated, StudentCreatedHandler>();
-            });
+        healthOptions.Value.Registrations.Count.Should().Be(1);
+        var reg = healthOptions.Value.Registrations.First();
+        reg.Name.Should().Be("Queue:queue");
+        reg.Tags.Should().Contain("Ev.ServiceBus");
+    }
 
-            var provider = services.BuildServiceProvider();
+    [Fact]
+    public void QueueWithConnectionStringWillBeRegistered_case2()
+    {
+        var services = new ServiceCollection();
 
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
-
-            healthOptions.Value.Registrations.Count.Should().Be(1);
-            var reg = healthOptions.Value.Registrations.First();
-            reg.Name.Should().Be("Queue:queue");
-            reg.Tags.Should().Contain("Ev.ServiceBus");
-        }
-
-        [Fact]
-        public void OnlyOneQueueWillBeRegistered_case2()
+        services.AddServiceBus(settings =>
         {
-            var services = new ServiceCollection();
+        });
 
-            services.AddServiceBus<PayloadSerializer>(settings =>
-            {
-            });
+        services.AddHealthChecks().AddEvServiceBusChecks();
 
-            services.AddHealthChecks().AddEvServiceBusChecks();
+        services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterDispatch<StudentCreated>();
+        });
 
-            services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterDispatch<StudentCreated>();
-            });
+        var provider = services.BuildServiceProvider();
 
-            services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
-            {
-                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                builder.RegisterDispatch<CourseCreated>();
-            });
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
 
-            var provider = services.BuildServiceProvider();
+        healthOptions.Value.Registrations.Count.Should().Be(1);
+        var reg = healthOptions.Value.Registrations.First();
+        reg.Name.Should().Be("Queue:queue");
+        reg.Tags.Should().Contain("Ev.ServiceBus");
+    }
 
-            var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
+    [Fact]
+    public void OnlyOneQueueWillBeRegistered_case1()
+    {
+        var services = new ServiceCollection();
 
-            healthOptions.Value.Registrations.Count.Should().Be(1);
-            var reg = healthOptions.Value.Registrations.First();
-            reg.Name.Should().Be("Queue:queue");
-            reg.Tags.Should().Contain("Ev.ServiceBus");
-        }
+        services.AddServiceBus(settings =>
+        {
+        });
+
+        services.AddHealthChecks().AddEvServiceBusChecks();
+
+        services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterDispatch<StudentCreated>();
+        });
+        services.RegisterServiceBusReception().FromQueue("queue", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterReception<StudentCreated, StudentCreatedHandler>();
+        });
+
+        var provider = services.BuildServiceProvider();
+
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
+
+        healthOptions.Value.Registrations.Count.Should().Be(1);
+        var reg = healthOptions.Value.Registrations.First();
+        reg.Name.Should().Be("Queue:queue");
+        reg.Tags.Should().Contain("Ev.ServiceBus");
+    }
+
+    [Fact]
+    public void OnlyOneQueueWillBeRegistered_case2()
+    {
+        var services = new ServiceCollection();
+
+        services.AddServiceBus(settings =>
+        {
+        });
+
+        services.AddHealthChecks().AddEvServiceBusChecks();
+
+        services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterDispatch<StudentCreated>();
+        });
+
+        services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
+        {
+            builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            builder.RegisterDispatch<CourseCreated>();
+        });
+
+        var provider = services.BuildServiceProvider();
+
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
+
+        healthOptions.Value.Registrations.Count.Should().Be(1);
+        var reg = healthOptions.Value.Registrations.First();
+        reg.Name.Should().Be("Queue:queue");
+        reg.Tags.Should().Contain("Ev.ServiceBus");
     }
 }

@@ -140,7 +140,7 @@ public class MyDispatchExtender : IDispatchExtender
 
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddServiceBus<PayloadSerializer>(settings => { })
+    services.AddServiceBus(settings => { })
         .RegisterDispatchExtender<MyDispatchExtender>();
 }
 ```

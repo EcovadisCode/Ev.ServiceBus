@@ -4,9 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Ev.ServiceBus.Abstractions;
 
-namespace Ev.ServiceBus.UnitTests.Helpers;
+namespace Ev.ServiceBus;
 
-public class PayloadSerializer : IMessagePayloadSerializer
+public class TextJsonPayloadSerializer : IMessagePayloadSerializer
 {
     internal static readonly JsonSerializerOptions Settings = new JsonSerializerOptions()
     {

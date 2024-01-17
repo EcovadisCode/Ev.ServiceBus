@@ -11,6 +11,7 @@ public class SenderMock
     {
         QueueOrTopicName = queueOrTopicName;
         Mock = new Mock<ServiceBusSender>();
+        Mock.SetupGet(o => o.EntityPath).Returns(queueOrTopicName);
         Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, new List<ServiceBusMessage>()));
     }

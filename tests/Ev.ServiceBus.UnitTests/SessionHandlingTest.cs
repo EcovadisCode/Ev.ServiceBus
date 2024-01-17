@@ -83,7 +83,7 @@ public class SessionHandlingTest
     public async Task DefinedOptionsAreSetProperly()
     {
         var services = new ServiceCollection();
-        services.AddServiceBus<PayloadSerializer>(settings =>
+        services.AddServiceBus(settings =>
         {
             settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
         });

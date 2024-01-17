@@ -13,73 +13,72 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace Ev.ServiceBus.Mvc.UnitTests
+namespace Ev.ServiceBus.Mvc.UnitTests;
+
+public class DispatchTest
 {
-    public class DispatchTest
+    [Fact]
+    public async Task EventsAreSentAtTheEndOfTheRequestExecution()
     {
-        [Fact]
-        public async Task EventsAreSentAtTheEndOfTheRequestExecution()
+        var factory = new AppFactory();
+        var client = factory.CreateClient();
+        var response = await client.GetAsync("weatherforecast/pushWeather");
+
+        response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        var queue = factory.Services.GetSenderMock("myqueue");
+        queue.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        var topic = factory.Services.GetSenderMock("mytopic");
+        topic.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task FailingRequestsDoNotSendEvents()
+    {
+        var factory = new AppFactory();
+        var client = factory.CreateClient();
+        var response = await client.GetAsync("failing/pushWeather");
+
+        response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        var queue = factory.Services.GetSenderMock("myqueue");
+        queue.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessage[]>(), It.IsAny<CancellationToken>()), Times.Never);
+
+        var topic = factory.Services.GetSenderMock("mytopic");
+        topic.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessage[]>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private class AppFactory : WebApplicationFactory<Startup>
+    {
+        protected override IWebHostBuilder CreateWebHostBuilder()
         {
-            var factory = new AppFactory();
-            var client = factory.CreateClient();
-            var response = await client.GetAsync("weatherforecast/pushWeather");
-
-            response.StatusCode.Should().Be(StatusCodes.Status200OK);
-            var queue = factory.Services.GetSenderMock("myqueue");
-            queue.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Once);
-
-            var topic = factory.Services.GetSenderMock("mytopic");
-            topic.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Once);
+            return WebHost.CreateDefaultBuilder()
+                .UseUrls("http://localhost")
+                .UseStartup<Startup>();
         }
 
-        [Fact]
-        public async Task FailingRequestsDoNotSendEvents()
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            var factory = new AppFactory();
-            var client = factory.CreateClient();
-            var response = await client.GetAsync("failing/pushWeather");
+            SetupConsoleLogging(builder);
 
-            response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
-            var queue = factory.Services.GetSenderMock("myqueue");
-            queue.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessage[]>(), It.IsAny<CancellationToken>()), Times.Never);
-
-            var topic = factory.Services.GetSenderMock("mytopic");
-            topic.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessage[]>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        private class AppFactory : WebApplicationFactory<Startup>
-        {
-            protected override IWebHostBuilder CreateWebHostBuilder()
-            {
-                return WebHost.CreateDefaultBuilder()
-                    .UseUrls("http://localhost")
-                    .UseStartup<Startup>();
-            }
-
-            protected override void ConfigureWebHost(IWebHostBuilder builder)
-            {
-                SetupConsoleLogging(builder);
-
-                builder.ConfigureTestServices(
-                    services =>
-                    {
-                        services.OverrideClientFactory();
-                    });
-            }
-
-            private static void SetupConsoleLogging(IWebHostBuilder builder)
-            {
-                builder.ConfigureLogging(loggingBuilder =>
+            builder.ConfigureTestServices(
+                services =>
                 {
-                    loggingBuilder.AddConsole(options =>
-                    {
-#pragma warning disable 618
-                        options.DisableColors = false;
-                        options.IncludeScopes = true;
-#pragma warning restore 618
-                    });
+                    services.OverrideClientFactory();
                 });
-            }
+        }
+
+        private static void SetupConsoleLogging(IWebHostBuilder builder)
+        {
+            builder.ConfigureLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddConsole(options =>
+                {
+#pragma warning disable 618
+                    options.DisableColors = false;
+                    options.IncludeScopes = true;
+#pragma warning restore 618
+                });
+            });
         }
     }
 }

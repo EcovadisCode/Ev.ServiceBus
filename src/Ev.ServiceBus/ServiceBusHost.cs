@@ -4,29 +4,28 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Ev.ServiceBus
+namespace Ev.ServiceBus;
+
+public class ServiceBusHost : IHostedService
 {
-    public class ServiceBusHost : IHostedService
+    private readonly IServiceProvider _serviceProvider;
+
+    public ServiceBusHost(IServiceProvider serviceProvider)
     {
-        private readonly IServiceProvider _serviceProvider;
+        _serviceProvider = serviceProvider;
+    }
 
-        public ServiceBusHost(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        var engine = _serviceProvider.GetRequiredService<ServiceBusEngine>();
 
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            var engine = _serviceProvider.GetRequiredService<ServiceBusEngine>();
+        await engine.StartAll();
+    }
 
-            await engine.StartAll();
-        }
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        var engine = _serviceProvider.GetRequiredService<ServiceBusEngine>();
 
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            var engine = _serviceProvider.GetRequiredService<ServiceBusEngine>();
-
-            await engine.StopAll(cancellationToken).ConfigureAwait(false);
-        }
+        await engine.StopAll(cancellationToken);
     }
 }
