@@ -75,6 +75,8 @@ public static class ServiceCollectionExtensions
         }
 
         services.TryAddSingleton<ServiceBusEngine>();
+        services.TryAddSingleton<MessageSenderFactory>();
+        services.TryAddSingleton<ReceiverWrapperFactory>();
         services.TryAddSingleton<IClientFactory, ClientFactory>();
 
         if (services.Any(o => o.ImplementationType == typeof(ServiceBusHost)) == false)

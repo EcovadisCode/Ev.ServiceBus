@@ -34,8 +34,7 @@ public class ReceiverWrapper
     }
 
     internal string ResourceId => _composedOptions.ResourceId;
-    internal ServiceBusProcessor? ProcessorClient { get; private set; }
-    internal ServiceBusSessionProcessor? SessionProcessorClient { get; private set; }
+    private ServiceBusProcessor? ProcessorClient { get; set; }
 
     public async Task Initialize()
     {
@@ -51,7 +50,7 @@ public class ReceiverWrapper
         _logger.LogInformation("[Ev.ServiceBus] Initialization of client '{ResourceId}': Success", _composedOptions.ResourceId);
     }
 
-    public async Task CloseAsync(CancellationToken cancellationToken)
+    public virtual async Task CloseAsync(CancellationToken cancellationToken)
     {
         if (ProcessorClient != null && ProcessorClient.IsClosed == false)
         {
@@ -64,57 +63,27 @@ public class ReceiverWrapper
                 _logger.LogError(ex, $"[Ev.ServiceBus] Client {_composedOptions.ResourceId} couldn't close properly");
             }
         }
-
-        if (SessionProcessorClient != null && SessionProcessorClient.IsClosed == false)
-        {
-            try
-            {
-                await SessionProcessorClient.CloseAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Client {_composedOptions.ResourceId} couldn't close properly");
-            }
-        }
     }
 
-    private async Task RegisterMessageHandler()
+    protected virtual async Task RegisterMessageHandler()
     {
         if (_parentOptions.Settings.ReceiveMessages == false)
         {
             return;
         }
 
-        if (_composedOptions.SessionMode)
+        ProcessorClient = _composedOptions.FirstOption switch
         {
-            SessionProcessorClient = _composedOptions.FirstOption switch
-            {
-                QueueOptions queueOptions => _client!.CreateSessionProcessor(queueOptions.QueueName, _composedOptions.SessionProcessorOptions),
-                SubscriptionOptions subscriptionOptions => _client!.CreateSessionProcessor(
-                    subscriptionOptions.TopicName,
-                    subscriptionOptions.SubscriptionName,
-                    _composedOptions.SessionProcessorOptions),
-                _ => SessionProcessorClient
-            };
-            SessionProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
-            SessionProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
-            await SessionProcessorClient.StartProcessingAsync();
-        }
-        else
-        {
-            ProcessorClient = _composedOptions.FirstOption switch
-            {
-                QueueOptions queueOptions => _client!.CreateProcessor(queueOptions.QueueName, _composedOptions.ProcessorOptions),
-                SubscriptionOptions subscriptionOptions => _client!.CreateProcessor(
-                    subscriptionOptions.TopicName,
-                    subscriptionOptions.SubscriptionName,
-                    _composedOptions.ProcessorOptions),
-                _ => ProcessorClient
-            };
-            ProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
-            ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
-            await ProcessorClient.StartProcessingAsync();
-        }
+            QueueOptions queueOptions => _client!.CreateProcessor(queueOptions.QueueName, _composedOptions.ProcessorOptions),
+            SubscriptionOptions subscriptionOptions => _client!.CreateProcessor(
+                subscriptionOptions.TopicName,
+                subscriptionOptions.SubscriptionName,
+                _composedOptions.ProcessorOptions),
+            _ => ProcessorClient
+        };
+        ProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
+        ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
+        await ProcessorClient.StartProcessingAsync();
 
         _onExceptionReceivedHandler = _ => Task.CompletedTask;
 
@@ -129,7 +98,7 @@ public class ReceiverWrapper
     ///     Will create a scope & call the message handler associated with this <see cref="ReceiverWrapper" />.
     /// </summary>
     /// <returns></returns>
-    private async Task OnMessageReceived(MessageContext context)
+    protected async Task OnMessageReceived(MessageContext context)
     {
         using var scope = _provider.CreateScope();
         TrySetReceptionRegistrationOnContext(context, scope);
@@ -157,7 +126,7 @@ public class ReceiverWrapper
     /// </summary>
     /// <param name="exceptionEvent"></param>
     /// <returns></returns>
-    private async Task OnExceptionOccured(ProcessErrorEventArgs exceptionEvent)
+    protected async Task OnExceptionOccured(ProcessErrorEventArgs exceptionEvent)
     {
         var json = JsonSerializer.Serialize(new
         {
@@ -176,7 +145,7 @@ public class ReceiverWrapper
         await _onExceptionReceivedHandler!(exceptionEvent);
     }
 
-    private async Task CallDefinedExceptionHandler(ProcessErrorEventArgs exceptionEvent)
+    protected async Task CallDefinedExceptionHandler(ProcessErrorEventArgs exceptionEvent)
     {
         var userDefinedExceptionHandler =
             (IExceptionHandler) _provider.GetService(_composedOptions.ExceptionHandlerType!)!;

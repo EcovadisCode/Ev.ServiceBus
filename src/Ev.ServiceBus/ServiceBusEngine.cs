@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -17,27 +14,22 @@ public class ServiceBusEngine
 {
     private readonly ILogger<ServiceBusEngine> _logger;
     private readonly IOptions<ServiceBusOptions> _options;
-    private readonly IServiceProvider _provider;
     private readonly ServiceBusRegistry _registry;
-    private readonly IClientFactory _clientFactory;
-    private readonly SortedList<string,ServiceBusClient> _clients;
-    private readonly SortedList<string, ReceiverWrapper> _receivers;
-    private readonly SortedList<string, ServiceBusSender> _senders;
+    private readonly MessageSenderFactory _messageSenderFactory;
+    private readonly ReceiverWrapperFactory _receiverWrapperFactory;
 
-    public ServiceBusEngine(ILogger<ServiceBusEngine> logger,
+    public ServiceBusEngine(
+        ILogger<ServiceBusEngine> logger,
         IOptions<ServiceBusOptions> options,
         ServiceBusRegistry registry,
-        IClientFactory clientFactory,
-        IServiceProvider provider)
+        MessageSenderFactory messageSenderFactory,
+        ReceiverWrapperFactory receiverWrapperFactory)
     {
         _logger = logger;
         _options = options;
         _registry = registry;
-        _clientFactory = clientFactory;
-        _provider = provider;
-        _clients = new SortedList<string, ServiceBusClient>();
-        _receivers = new SortedList<string, ReceiverWrapper>();
-        _senders = new SortedList<string, ServiceBusSender>();
+        _messageSenderFactory = messageSenderFactory;
+        _receiverWrapperFactory = receiverWrapperFactory;
     }
 
     public async Task StartAll()
@@ -57,34 +49,18 @@ public class ServiceBusEngine
         {
             try
             {
-                CreateOrGetServiceBusClient(_options.Value.Settings.ConnectionSettings);
+                _registry.CreateOrGetServiceBusClient(_options.Value.Settings.ConnectionSettings);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Initialization of common connection failed");
             }
         }
+
         BuildSenders();
         await BuildReceivers();
         BuildReceptions();
         BuildDispatches();
-    }
-
-    private ServiceBusClient? CreateOrGetServiceBusClient(ConnectionSettings settings)
-    {
-        if (_options.Value.Settings.Enabled == false)
-        {
-            return null;
-        }
-
-        if (_clients.TryGetValue(settings.Endpoint, out var client))
-        {
-            return client;
-        }
-
-        client = _clientFactory.Create(settings);
-        _clients.Add(settings.Endpoint, client);
-        return client;
     }
 
     private void BuildDispatches()
@@ -130,63 +106,17 @@ public class ServiceBusEngine
         var receiversByName = _options.Value.Receivers.GroupBy(o => new { o.ResourceId, o.ClientType }).ToArray();
         foreach (var groupByName in receiversByName)
         {
-            // we group by connection to have one SenderWrapper by connection
+            // we group by connection to have one ReceiverWrapper by connection
             foreach (var groupByConnection in groupByName.GroupBy(o => o.ConnectionSettings))
             {
-                await RegisterReceiver(groupByConnection.ToArray());
+                var receiverOptions = new ComposedReceiverOptions(groupByConnection.ToArray());
+                var receiverWrapper = await _receiverWrapperFactory.CreateReceiver(receiverOptions);
+                if (receiverWrapper != null)
+                {
+                    _registry.Register(receiverOptions.ClientType, receiverOptions.ResourceId, receiverWrapper);
+                }
             }
         }
-    }
-
-    private async Task RegisterReceiver(ReceiverOptions[] receivers)
-    {
-        var resourceId = receivers.First().ResourceId;
-        var clientType = receivers.First().ClientType;
-        if (IsReceiverResourceIdTaken(clientType, resourceId))
-        {
-            resourceId = GetNewReceiverResourceId(clientType, resourceId);
-            foreach (var sender in receivers)
-            {
-                sender.UpdateResourceId(resourceId);
-            }
-        }
-
-        var receiverOptions = new ComposedReceiverOptions(receivers.Cast<IMessageReceiverOptions>().ToArray());
-
-        try
-        {
-            var connectionSettings = receiverOptions.ConnectionSettings ?? _options.Value.Settings.ConnectionSettings;
-            if (connectionSettings == null)
-            {
-                throw new MissingConnectionException(receiverOptions.ResourceId, ClientType.Topic);
-            }
-
-            var client = CreateOrGetServiceBusClient(connectionSettings);
-            var receiverWrapper = new ReceiverWrapper(
-                client,
-                receiverOptions,
-                _options.Value,
-                _provider);
-            await receiverWrapper.Initialize();
-            _receivers.Add(_registry.ComputeResourceKey(receiverOptions.ClientType, receiverOptions.ResourceId), receiverWrapper);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Ev.ServiceBus] Initialization of client '{ResourceId}': Failed", receiverOptions.ResourceId);
-        }
-    }
-
-    private string GetNewReceiverResourceId(ClientType clientType, string resourceId)
-    {
-        var newResourceId = resourceId;
-        var suffix = 2;
-        while (IsReceiverResourceIdTaken(clientType, newResourceId))
-        {
-            newResourceId = $"{resourceId}_{suffix}";
-            ++suffix;
-        }
-
-        return newResourceId;
     }
 
     private void BuildSenders()
@@ -199,77 +129,18 @@ public class ServiceBusEngine
             // we group by connection to have one SenderWrapper by connection
             foreach (var groupByConnection in groupByName.GroupBy(o => o.ConnectionSettings))
             {
-                RegisterSender(groupByConnection.ToArray());
+                var messageSender = _messageSenderFactory.CreateSender(groupByConnection.ToArray());
+                _registry.Register(messageSender);
             }
         }
-    }
-
-    private void RegisterSender(ClientOptions[] senderOptions)
-    {
-        var options = (IClientOptions)senderOptions.First();
-        _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Start", options.ResourceId);
-        if (IsSenderResourceIdTaken(options.ClientType, options.ResourceId))
-        {
-            var resourceId = GetNewSenderResourceId(options.ClientType, options.ResourceId);
-            foreach (var sender in senderOptions)
-            {
-                sender.UpdateResourceId(resourceId);
-            }
-        }
-
-        if (_options.Value.Settings.Enabled == false)
-        {
-            _registry.Register(new DeactivatedSender(options.ResourceId, options.ClientType));
-
-            _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Client deactivated through configuration", options.ResourceId);
-            return;
-        }
-
-        try
-        {
-            var connectionSettings = options.ConnectionSettings ?? _options.Value.Settings.ConnectionSettings;
-            if (connectionSettings == null)
-            {
-                throw new MissingConnectionException(senderOptions.First().ResourceId, ClientType.Topic);
-            }
-
-            var client = CreateOrGetServiceBusClient(connectionSettings);
-
-            var senderClient = client!.CreateSender(options.ResourceId);
-            _senders.Add(_registry.ComputeResourceKey(options.ClientType, options.ResourceId), senderClient);
-
-            var messageSender = new MessageSender(senderClient, options.ResourceId, options.ClientType, _provider.GetRequiredService<ILogger<MessageSender>>());
-            _registry.Register(messageSender);
-
-            _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Success", options.ResourceId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Failed", senderOptions.First().ResourceId);
-            _registry.Register(new UnavailableSender(options.ResourceId, options.ClientType));
-        }
-    }
-
-    private string GetNewSenderResourceId(ClientType clientType, string resourceId)
-    {
-        var newResourceId = resourceId;
-        var suffix = 2;
-        while (IsSenderResourceIdTaken(clientType, newResourceId))
-        {
-            newResourceId = $"{resourceId}_{suffix}";
-            ++suffix;
-        }
-
-        return newResourceId;
     }
 
     public async Task StopAll(CancellationToken cancellationToken)
     {
         _logger.LogInformation("[Ev.ServiceBus] Stopping azure service bus clients");
 
-        await Task.WhenAll(_senders.Select(async o =>
+        await Task.WhenAll(_registry.GetAllSenderClients().Select(async senderClient =>
         {
-            var (resourceId, senderClient) = o;
             if (senderClient.IsClosed == true)
             {
                 return;
@@ -281,30 +152,11 @@ public class ServiceBusEngine
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Ev.ServiceBus] Client {ResourceId} couldn't close properly", resourceId);
+                _logger.LogError(ex, "[Ev.ServiceBus] Client {ResourceId} couldn't close properly", senderClient.EntityPath);
             }
         }).ToArray());
 
-        await Task.WhenAll(_receivers.Select(o => o.Value.CloseAsync(cancellationToken)).ToArray());
+        await Task.WhenAll(_registry.GetAllReceivers().Select(o => o.CloseAsync(cancellationToken)).ToArray());
     }
 
-    private bool IsSenderResourceIdTaken(ClientType clientType, string resourceId)
-    {
-        return _senders.ContainsKey(_registry.ComputeResourceKey(clientType, resourceId));
-    }
-
-    private bool IsReceiverResourceIdTaken(ClientType clientType, string resourceId)
-    {
-        return _receivers.ContainsKey(_registry.ComputeResourceKey(clientType, resourceId));
-    }
-
-    internal ServiceBusSender[] GetAllSenders()
-    {
-        return _senders.Select(o => o.Value).ToArray();
-    }
-
-    internal ReceiverWrapper[] GetAllReceivers()
-    {
-        return _receivers.Select(o => o.Value).ToArray();
-    }
 }

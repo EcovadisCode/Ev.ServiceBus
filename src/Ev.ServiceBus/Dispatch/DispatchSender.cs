@@ -174,7 +174,7 @@ public class DispatchSender : IDispatchSender
         var messagesPerResource = (
             from dispatch in dispatches
             group dispatch by new { dispatch.Registration.Options.ClientType, dispatch.Registration.Options.ResourceId } into gr
-            let sender = _registry.GetSender(gr.Key.ClientType, gr.Key.ResourceId)
+            let sender = _registry.GetMessageSender(gr.Key.ClientType, gr.Key.ResourceId)
             select new MessagesPerResource()
             {
                 Messages = gr.ToArray(),

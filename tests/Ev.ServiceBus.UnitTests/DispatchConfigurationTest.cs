@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -96,8 +97,8 @@ public class DispatchConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
-        var senders = registry!.GetAllSenders();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
+        var senders = registry!.GetAllSenderClients();
         senders.Length.Should().Be(1);
         senders.First().EntityPath.Should().Be("topicName");
     }
@@ -122,8 +123,8 @@ public class DispatchConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
-        var senders = registry!.GetAllSenders();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
+        var senders = registry!.GetAllSenderClients();
         senders.Length.Should().Be(2);
         senders.Should().SatisfyRespectively(
             sender =>
@@ -155,8 +156,8 @@ public class DispatchConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
-        var senders = registry!.GetAllSenders();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
+        var senders = registry!.GetAllSenderClients();
         senders.Length.Should().Be(1);
         senders.First().EntityPath.Should().Be("queue");
     }
@@ -182,8 +183,8 @@ public class DispatchConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
-        var senders = registry!.GetAllSenders();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
+        var senders = registry!.GetAllSenderClients();
         senders.Length.Should().Be(2);
         senders.Should().SatisfyRespectively(
             sender =>

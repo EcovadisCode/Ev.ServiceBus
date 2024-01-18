@@ -7,41 +7,50 @@ namespace Ev.ServiceBus;
 
 public class ComposedReceiverOptions
 {
-    private readonly IMessageReceiverOptions[] _options;
-
-    public ComposedReceiverOptions(IMessageReceiverOptions[] options)
+    public ComposedReceiverOptions(ReceiverOptions[] allOptions)
     {
-        _options = options;
-        ResourceId = options.First().ResourceId;
-        ClientType = options.First().ClientType;
-        ExceptionHandlerType = options.FirstOrDefault(o => o.ExceptionHandlerType != null)?.ExceptionHandlerType;
+        AllOptions = allOptions;
+        ResourceId = allOptions.First().ResourceId;
+        ClientType = allOptions.First().ClientType;
+        ExceptionHandlerType = allOptions.FirstOrDefault(o => o.ExceptionHandlerType != null)?.ExceptionHandlerType;
         SessionMode = false;
-        ConnectionSettings = options.First().ConnectionSettings;
-        FirstOption = options.First();
+        ConnectionSettings = allOptions.First().ConnectionSettings;
+        FirstOption = allOptions.First();
 
         ProcessorOptions = new ServiceBusProcessorOptions();
-        foreach (var config in _options.Select(o => o.ServiceBusProcessorOptions))
+        foreach (var config in AllOptions.Select(o => o.ServiceBusProcessorOptions))
         {
             config?.Invoke(ProcessorOptions);
         }
 
-        if (_options.Any(o=> o.SessionProcessorOptions != null))
+        if (AllOptions.Any(o=> o.SessionProcessorOptions != null))
         {
             SessionMode = true;
             SessionProcessorOptions = new ServiceBusSessionProcessorOptions();
-            foreach (var config in _options.Select(o => o.SessionProcessorOptions))
+            foreach (var config in AllOptions.Select(o => o.SessionProcessorOptions))
             {
                 config?.Invoke(SessionProcessorOptions);
             }
         }
     }
 
-    public IMessageReceiverOptions FirstOption { get; }
+    public ReceiverOptions[] AllOptions { get; }
+
+    public ReceiverOptions FirstOption { get; }
     public bool SessionMode { get; }
-    public string ResourceId { get; }
+    public string ResourceId { get; private set; }
     public ClientType ClientType { get; }
     public Type? ExceptionHandlerType { get; }
     public ServiceBusProcessorOptions ProcessorOptions { get; }
     public ServiceBusSessionProcessorOptions? SessionProcessorOptions { get; }
     public ConnectionSettings? ConnectionSettings { get; }
+
+    internal void UpdateResourceId(string resourceId)
+    {
+        ResourceId = resourceId;
+        foreach (var receiver in AllOptions)
+        {
+            receiver.UpdateResourceId(resourceId);
+        }
+    }
 }

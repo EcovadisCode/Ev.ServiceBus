@@ -34,7 +34,7 @@ public class DeactivatedSenderTest
         var provider = await composer.Compose();
 
         provider.GetSenderMock("testQueue").Should().BeNull();
-        return provider.GetRequiredService<ServiceBusRegistry>().GetSender(ClientType.Queue, "testQueue");
+        return provider.GetRequiredService<ServiceBusRegistry>().GetMessageSender(ClientType.Queue, "testQueue");
     }
 
     [Fact]

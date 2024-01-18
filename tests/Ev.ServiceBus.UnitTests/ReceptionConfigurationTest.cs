@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
@@ -105,7 +106,7 @@ public class ReceptionConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
         var receivers = registry!.GetAllReceivers();
         receivers.Length.Should().Be(1);
         receivers.Should().SatisfyRespectively(
@@ -134,7 +135,7 @@ public class ReceptionConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
         var receivers = registry!.GetAllReceivers();
         receivers.Length.Should().Be(1);
         receivers.Should().SatisfyRespectively(
@@ -165,7 +166,7 @@ public class ReceptionConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
         var receivers = registry!.GetAllReceivers();
         receivers.Length.Should().Be(2);
         receivers.Should().SatisfyRespectively(
@@ -198,7 +199,7 @@ public class ReceptionConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
         var receivers = registry!.GetAllReceivers();
         receivers.Length.Should().Be(1);
         receivers.Should().SatisfyRespectively(
@@ -229,7 +230,7 @@ public class ReceptionConfigurationTest
 
         await composer.Compose();
 
-        var registry = composer.Provider.GetRequiredService<ServiceBusEngine>();
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
         var receivers = registry!.GetAllReceivers();
         receivers.Length.Should().Be(2);
         receivers.Should().SatisfyRespectively(
