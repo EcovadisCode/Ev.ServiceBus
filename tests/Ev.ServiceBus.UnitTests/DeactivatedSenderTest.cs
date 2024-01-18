@@ -3,91 +3,94 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Ev.ServiceBus.UnitTests
+namespace Ev.ServiceBus.UnitTests;
+
+public class DeactivatedSenderTest
 {
-    public class DeactivatedSenderTest
+    private async Task<IMessageSender> ComposeServiceBusAndGetSender()
     {
-        private async Task<IMessageSender> ComposeServiceBusAndGetSender()
-        {
-            var composer = new Composer();
+        var composer = new Composer();
 
-            composer.WithDefaultSettings(
-                settings =>
-                {
-                    settings.Enabled = false;
-                });
-            composer.WithAdditionalServices(services =>
+        composer.WithDefaultSettings(
+            settings =>
             {
-                services.RegisterServiceBusQueue("testQueue")
-                    .WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                settings.Enabled = false;
             });
-
-            var provider = await composer.Compose();
-
-            provider.GetSenderMock("testQueue").Should().BeNull();
-            return provider.GetRequiredService<IServiceBusRegistry>().GetQueueSender("testQueue");
-        }
-
-        [Fact]
-        public async Task HaveProperidentifyingValues()
+        composer.WithAdditionalServices(services =>
         {
-            var sender = await ComposeServiceBusAndGetSender();
+            services.RegisterServiceBusDispatch().ToQueue("testQueue", builder =>
+            {
+                builder.CustomizeConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                builder.RegisterDispatch<NoiseEvent>();
+            });
+        });
 
-            sender.Name.Should().Be("testQueue");
-            sender.ClientType.Should().Be(ClientType.Queue);
-        }
+        var provider = await composer.Compose();
 
-        [Fact]
-        public async Task CallsCancelScheduledMessageAsync()
-        {
-            var sender = await ComposeServiceBusAndGetSender();
+        provider.GetSenderMock("testQueue").Should().BeNull();
+        return provider.GetRequiredService<ServiceBusRegistry>().GetMessageSender(ClientType.Queue, "testQueue");
+    }
 
-            var task = sender.CancelScheduledMessageAsync(16548);
+    [Fact]
+    public async Task HaveProperIdentifyingValues()
+    {
+        var sender = await ComposeServiceBusAndGetSender();
 
-            task.Should().NotBeNull();
-            task.IsCompleted.Should().BeTrue();
-        }
+        sender.Name.Should().Be("testQueue");
+        sender.ClientType.Should().Be(ClientType.Queue);
+    }
 
-        [Fact]
-        public async Task CallsScheduleMessageAsync()
-        {
-            var sender = await ComposeServiceBusAndGetSender();
+    [Fact]
+    public async Task CallsCancelScheduledMessageAsync()
+    {
+        var sender = await ComposeServiceBusAndGetSender();
 
-            var message = new ServiceBusMessage();
-            var scheduleEnqueueTimeUtc = new DateTimeOffset();
-            var task = sender.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc);
+        var task = sender.CancelScheduledMessageAsync(16548);
 
-            task.Should().NotBeNull();
-            task.IsCompleted.Should().BeTrue();
-        }
+        task.Should().NotBeNull();
+        task.IsCompleted.Should().BeTrue();
+    }
 
-        [Fact]
-        public async Task CallsSendAsync()
-        {
-            var sender = await ComposeServiceBusAndGetSender();
+    [Fact]
+    public async Task CallsScheduleMessageAsync()
+    {
+        var sender = await ComposeServiceBusAndGetSender();
 
-            var message = new ServiceBusMessage();
-            var task = sender.SendMessageAsync(message);
+        var message = new ServiceBusMessage();
+        var scheduleEnqueueTimeUtc = new DateTimeOffset();
+        var task = sender.ScheduleMessageAsync(message, scheduleEnqueueTimeUtc);
 
-            task.Should().NotBeNull();
-            task.IsCompleted.Should().BeTrue();
-        }
+        task.Should().NotBeNull();
+        task.IsCompleted.Should().BeTrue();
+    }
 
-        [Fact]
-        public async Task CallsSendAsyncList()
-        {
-            var sender = await ComposeServiceBusAndGetSender();
+    [Fact]
+    public async Task CallsSendAsync()
+    {
+        var sender = await ComposeServiceBusAndGetSender();
 
-            var messageList = new List<ServiceBusMessage>();
-            var task = sender.SendMessagesAsync(messageList);
+        var message = new ServiceBusMessage();
+        var task = sender.SendMessageAsync(message);
 
-            task.Should().NotBeNull();
-            task.IsCompleted.Should().BeTrue();
-        }
+        task.Should().NotBeNull();
+        task.IsCompleted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CallsSendAsyncList()
+    {
+        var sender = await ComposeServiceBusAndGetSender();
+
+        var messageList = new List<ServiceBusMessage>();
+        var task = sender.SendMessagesAsync(messageList);
+
+        task.Should().NotBeNull();
+        task.IsCompleted.Should().BeTrue();
     }
 }

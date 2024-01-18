@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.0
+- Removed obsolete methods and related code :
+  - `services.RegisterServiceBusQueue("queueName");`
+  - `services.RegisterServiceBusTopic("topicName");`
+  - `services.RegisterServiceBusSubscription("topicName", "subscriptionName");`
+- Ev.ServiceBus doesn't require you to define a payload serializer anymore. By default, System.Text.Json will be used as a serializer.
+- Added `services.AddServiceBus().WithPayloadSerializer<TMessagePayloadSerializer>();` that allows you to specify a serializer.
+
 ## 4.12.0
 - Added .NET 8 support
 - Changed - Azure.ServiceBus nuget updated to v 7.17.0

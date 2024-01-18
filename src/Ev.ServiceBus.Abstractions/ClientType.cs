@@ -1,9 +1,8 @@
-﻿namespace Ev.ServiceBus.Abstractions
+﻿namespace Ev.ServiceBus.Abstractions;
+
+public enum ClientType
 {
-    public enum ClientType
-    {
-        Queue = 1,
-        Topic,
-        Subscription
-    }
+    Queue = 1,
+    Topic,
+    Subscription
 }

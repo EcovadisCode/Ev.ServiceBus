@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Ev.ServiceBus.UnitTests.Helpers
+namespace Ev.ServiceBus.UnitTests.Helpers;
+
+public class EventStore
 {
-    public class EventStore
+    public EventStore()
     {
-        public EventStore()
-        {
-            Events = new List<Item>();
-        }
+        Events = new List<Item>();
+    }
 
-        public List<Item> Events { get; }
+    public List<Item> Events { get; }
 
-        public class Item
-        {
-            public Type HandlerType { get; set; }
-            public object Event { get; set; }
-        }
+    public class Item
+    {
+        public Type HandlerType { get; set; }
+        public object Event { get; set; }
     }
 }

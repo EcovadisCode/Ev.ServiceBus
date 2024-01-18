@@ -24,7 +24,7 @@ public class ReceptionRegistrationBuilder
     /// <param name="config"></param>
     public void CustomizeMessageHandling(Action<ServiceBusProcessorOptions> config)
     {
-        _options.ToMessageReceptionHandling(config);
+        _options.WithCustomHandlerOptions(config);
     }
 
     /// <summary>

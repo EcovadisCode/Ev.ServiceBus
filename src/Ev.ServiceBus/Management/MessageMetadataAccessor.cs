@@ -1,15 +1,13 @@
-using System.Threading;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
-using Ev.ServiceBus.Reception;
 
 namespace Ev.ServiceBus.Management;
 
-internal class MessageMetadataAccessor : IMessageMetadataAccessor
+public class MessageMetadataAccessor : IMessageMetadataAccessor
 {
     public IMessageMetadata? Metadata { get; private set; }
 
-    public void SetData(MessageContext context)
+    internal void SetData(MessageContext context)
     {
         if (context.SessionArgs != null)
         {
