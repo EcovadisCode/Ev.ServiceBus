@@ -52,13 +52,13 @@ public class ServiceBusOptions
     /// </summary>
     public ReadOnlyCollection<MessageDispatchRegistration> DispatchRegistrations { get; }
 
-    /// <summary>
-    ///     Registers a queue that can be used to send or receive messages.
-    /// </summary>
-    /// <param name="queue">The name of the queue. It must be unique.</param>
-    internal void RegisterQueue(QueueOptions queue)
+    internal void RegisterQueueSender(QueueOptions queue)
     {
         _senders.Add(queue);
+    }
+
+    internal void RegisterQueueReceiver(QueueOptions queue)
+    {
         _receivers.Add(queue);
     }
 
