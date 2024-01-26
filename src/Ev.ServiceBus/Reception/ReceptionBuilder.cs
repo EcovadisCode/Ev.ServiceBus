@@ -32,7 +32,7 @@ public class ReceptionBuilder
         _services.Configure<ServiceBusOptions>(
             options =>
             {
-                options.RegisterQueue(queue);
+                options.RegisterQueueReceiver(queue);
             });
         var builder = new ReceptionRegistrationBuilder(_services, queue);
         settings(builder);

@@ -30,7 +30,7 @@ public class DispatchBuilder
         _services.Configure<ServiceBusOptions>(
             opts =>
             {
-                opts.RegisterQueue(queue);
+                opts.RegisterQueueSender(queue);
             });
         var builder = new DispatchRegistrationBuilder(_services, queue);
         settings(builder);

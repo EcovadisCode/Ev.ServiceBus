@@ -138,6 +138,29 @@ public class DispatchConfigurationTest
     }
 
     [Fact]
+    public async Task RegisteringAQueueDispatchWontRegisterAReceiver()
+    {
+        var composer = new Composer();
+
+        composer.WithAdditionalServices(services =>
+        {
+            services.RegisterServiceBusDispatch().ToQueue("queue", builder =>
+            {
+                builder.RegisterDispatch<PublishedEvent>();
+            });
+        });
+
+        await composer.Compose();
+
+        var registry = composer.Provider.GetRequiredService<ServiceBusRegistry>();
+        var senders = registry!.GetAllSenderClients();
+        senders.Length.Should().Be(1);
+        senders.First().EntityPath.Should().Be("queue");
+        var receiver = registry!.GetAllReceivers();
+        receiver.Length.Should().Be(0);
+    }
+
+    [Fact]
     public async Task CanRegisterSameQueueSenderTwice()
     {
         var composer = new Composer();
@@ -161,7 +184,6 @@ public class DispatchConfigurationTest
         senders.Length.Should().Be(1);
         senders.First().EntityPath.Should().Be("queue");
     }
-
 
     [Fact]
     public async Task CanRegisterSameQueueSenderTwice_Case2()
