@@ -12,6 +12,8 @@ public abstract class ExecutionBaseArgs
         MessageLabel = context.Message.Subject;
         MessageApplicationProperties = context.Message.ApplicationProperties.ToDictionary(pair => pair.Key, pair => pair.Value);
         ReceptionRegistration = context.ReceptionRegistration;
+        MessageBody = context.Message.Body.ToArray();
+        MessageContentType = context.Message.ContentType;
     }
 
     public MessageReceptionRegistration? ReceptionRegistration { get; }
@@ -19,4 +21,6 @@ public abstract class ExecutionBaseArgs
     public string ResourceId { get; }
     public IDictionary<string, object> MessageApplicationProperties { get; }
     public string MessageLabel { get; }
+    public byte[] MessageBody { get; }
+    public string MessageContentType { get; }
 }
