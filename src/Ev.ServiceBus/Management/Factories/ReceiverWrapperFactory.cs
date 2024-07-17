@@ -67,7 +67,7 @@ public class ReceiverWrapperFactory
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Ev.ServiceBus] Initialization of client '{ResourceId}': Failed", receiverOptions.ResourceId);
+            _logger.ReceiverClientFailedToInitialize(receiverOptions.ResourceId, ex);
         }
 
         return null;

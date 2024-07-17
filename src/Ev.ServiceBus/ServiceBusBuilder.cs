@@ -1,5 +1,4 @@
-﻿using System;
-using Ev.ServiceBus.Abstractions;
+﻿using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Dispatch;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

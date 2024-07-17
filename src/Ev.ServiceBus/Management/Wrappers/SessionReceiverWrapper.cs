@@ -10,7 +10,7 @@ namespace Ev.ServiceBus;
 
 public class SessionReceiverWrapper : ReceiverWrapper
 {
-    private readonly ILogger<SessionReceiverWrapper> _logger;
+    private readonly ILogger<LoggingExtensions.ServiceBusClientManagement> _logger;
     private readonly ServiceBusClient? _client;
     private readonly ServiceBusOptions _parentOptions;
     private readonly IServiceProvider _provider;
@@ -28,7 +28,7 @@ public class SessionReceiverWrapper : ReceiverWrapper
         _composedOptions = options;
         _parentOptions = parentOptions;
         _provider = provider;
-        _logger = _provider.GetRequiredService<ILogger<SessionReceiverWrapper>>();
+        _logger = _provider.GetRequiredService<ILogger<LoggingExtensions.ServiceBusClientManagement>>();
     }
 
     private ServiceBusSessionProcessor? SessionProcessorClient { get; set; }
@@ -43,7 +43,7 @@ public class SessionReceiverWrapper : ReceiverWrapper
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Client {_composedOptions.ResourceId} couldn't close properly");
+                _logger.ReceiverClientFailedToClose(_composedOptions.ResourceId, ex);
             }
         }
     }

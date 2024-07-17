@@ -12,38 +12,32 @@ namespace Ev.ServiceBus;
 
 public class ServiceBusEngine
 {
-    private readonly ILogger<ServiceBusEngine> _logger;
+    private readonly ILogger<LoggingExtensions.ServiceBusClientManagement> _serviceBusClientManagementLogger;
+    private readonly ILogger<LoggingExtensions.ServiceBusEngine> _serviceBusEngineLogger;
     private readonly IOptions<ServiceBusOptions> _options;
     private readonly ServiceBusRegistry _registry;
     private readonly MessageSenderFactory _messageSenderFactory;
     private readonly ReceiverWrapperFactory _receiverWrapperFactory;
 
     public ServiceBusEngine(
-        ILogger<ServiceBusEngine> logger,
         IOptions<ServiceBusOptions> options,
         ServiceBusRegistry registry,
         MessageSenderFactory messageSenderFactory,
-        ReceiverWrapperFactory receiverWrapperFactory)
+        ReceiverWrapperFactory receiverWrapperFactory, 
+        ILogger<LoggingExtensions.ServiceBusClientManagement> serviceBusClientManagementLogger,
+        ILogger<LoggingExtensions.ServiceBusEngine> serviceBusEngineLogger)
     {
-        _logger = logger;
         _options = options;
         _registry = registry;
         _messageSenderFactory = messageSenderFactory;
         _receiverWrapperFactory = receiverWrapperFactory;
+        _serviceBusClientManagementLogger = serviceBusClientManagementLogger;
+        _serviceBusEngineLogger = serviceBusEngineLogger;
     }
 
     public async Task StartAll()
     {
-        _logger.LogInformation("[Ev.ServiceBus] Starting azure service bus clients");
-
-        if (_options.Value.Settings.Enabled == false)
-        {
-            _logger.LogInformation("[Ev.ServiceBus] Reception and dispatch of messages have been deactivated through configuration.");
-        }
-        if (_options.Value.Settings.Enabled && _options.Value.Settings.ReceiveMessages == false)
-        {
-            _logger.LogInformation("[Ev.ServiceBus] Reception of messages have been deactivated through configuration.");
-        }
+        _serviceBusEngineLogger.EngineStarting(_options.Value.Settings.Enabled, _options.Value.Settings.ReceiveMessages);
 
         if (_options.Value.Settings.ConnectionSettings != null)
         {
@@ -53,7 +47,7 @@ public class ServiceBusEngine
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Initialization of common connection failed");
+                _serviceBusEngineLogger.FailedToConnectToServiceBus(ex);
             }
         }
 
@@ -137,7 +131,7 @@ public class ServiceBusEngine
 
     public async Task StopAll(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("[Ev.ServiceBus] Stopping azure service bus clients");
+        _serviceBusEngineLogger.EngineStopping();
 
         await Task.WhenAll(_registry.GetAllSenderClients().Select(async senderClient =>
         {
@@ -152,7 +146,7 @@ public class ServiceBusEngine
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[Ev.ServiceBus] Client {ResourceId} couldn't close properly", senderClient.EntityPath);
+                _serviceBusClientManagementLogger.SenderClientFailedToClose(senderClient.EntityPath, ex);
             }
         }).ToArray());
 

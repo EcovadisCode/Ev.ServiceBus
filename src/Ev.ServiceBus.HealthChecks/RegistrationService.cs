@@ -10,10 +10,10 @@ namespace Ev.ServiceBus.HealthChecks;
 
 public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
 {
-    private readonly ILogger<RegistrationService> _logger;
+    private readonly ILogger<LoggingExtensions.HealthChecks> _logger;
     private readonly IOptions<ServiceBusOptions> _serviceBusOptions;
 
-    public RegistrationService(IOptions<ServiceBusOptions> serviceBusOptions, ILogger<RegistrationService> logger)
+    public RegistrationService(IOptions<ServiceBusOptions> serviceBusOptions, ILogger<LoggingExtensions.HealthChecks> logger)
     {
         _serviceBusOptions = serviceBusOptions;
         _logger = logger;
@@ -42,6 +42,7 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
             foreach (var group in queues)
             {
                 _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "queue", group.Key);
+                _logger.AddingHealthCheck("Queue", group.Key);
                 options.Registrations.Add(new HealthCheckRegistration($"Queue:{group.Key}",
                     sp => (IHealthCheck) new AzureServiceBusQueueHealthCheck(connectionString, group.Key),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
@@ -50,7 +51,7 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
             var topics = resourceGroup.Where(o => o is TopicOptions).Cast<TopicOptions>().GroupBy(o => o.TopicName.ToLower());
             foreach (var group in topics)
             {
-                _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "topic", group.Key);
+                _logger.AddingHealthCheck("Topic", group.Key);
                 options.Registrations.Add(new HealthCheckRegistration($"Topic:{group.Key}",
                     sp => (IHealthCheck) new AzureServiceBusTopicHealthCheck(connectionString, group.Key),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
@@ -62,7 +63,7 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
                 .GroupBy(o => new { TopicName = o.TopicName.ToLower(), SubscriptionName = o.SubscriptionName.ToLower() });
             foreach (var group in subscriptions)
             {
-                _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName} (related to topic {TopicName})", "subscription", group.Key.SubscriptionName, group.Key.TopicName);
+                _logger.AddingHealthCheck("Subscription", $"{group.Key.TopicName}/Subscriptions/{group.Key.SubscriptionName}");
                 options.Registrations.Add(new HealthCheckRegistration($"Subscription:{group.Key.TopicName}/Subscriptions/{group.Key.SubscriptionName}",
                     sp => (IHealthCheck) new AzureServiceBusSubscriptionHealthCheck(connectionString,
                         group.Key.TopicName, group.Key.SubscriptionName),
