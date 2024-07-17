@@ -2,7 +2,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.UnitTests.Helpers;
+using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -69,16 +72,27 @@ public class EventListenerTests
         var clientMock = composer.Provider.GetProcessorMock("testQueue");
         var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
         var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
+        message.MessageId = Guid.NewGuid().ToString();
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            async () =>
-            {
-                await clientMock.TriggerMessageReception(message, CancellationToken.None);
-            });
+        var action = async () =>
+        {
+            await clientMock.TriggerMessageReception(message, CancellationToken.None);
+        };
 
-        mock.Verify(o => o.OnExecutionStart(It.Is<ExecutionStartedArgs>(e => e.ClientType == ClientType.Queue)), Times.Once);
-        mock.Verify(o => o.OnExecutionSuccess(It.IsAny<ExecutionSucceededArgs>()), Times.Never);
-        mock.Verify(o => o.OnExecutionFailed(It.Is<ExecutionFailedArgs>(e => e.ClientType == ClientType.Queue && e.Exception is ArgumentOutOfRangeException)), Times.Once);
+        using (new AssertionScope())
+        {
+            var exception = await action.Should().ThrowAsync<FailedToProcessMessageException>();
+            exception.WithInnerException<ArgumentOutOfRangeException>();
+            exception.And.ClientType.Should().Be("Queue");
+            exception.And.ResourceId.Should().Be("testQueue");
+            exception.And.MessageId.Should().Be(message.MessageId);
+            exception.And.HandlerName.Should().Be("Ev.ServiceBus.UnitTests.Helpers.SubscribedEventThrowingHandler");
+            exception.And.SessionId.Should().Be("none");
+            exception.And.PayloadTypeId.Should().Be("SubscribedEvent");
+            mock.Verify(o => o.OnExecutionStart(It.Is<ExecutionStartedArgs>(e => e.ClientType == ClientType.Queue)), Times.Once);
+            mock.Verify(o => o.OnExecutionSuccess(It.IsAny<ExecutionSucceededArgs>()), Times.Never);
+            mock.Verify(o => o.OnExecutionFailed(It.Is<ExecutionFailedArgs>(e => e.ClientType == ClientType.Queue && e.Exception is ArgumentOutOfRangeException)), Times.Once);
+        }
     }
 
     [Fact]
@@ -139,16 +153,27 @@ public class EventListenerTests
         var clientMock = composer.Provider.GetProcessorMock("testTopic", "testSubscription");
         var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
         var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
+        message.MessageId = Guid.NewGuid().ToString();
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            async () =>
-            {
-                await clientMock.TriggerMessageReception(message, CancellationToken.None);
-            });
+        var action = async () =>
+        {
+            await clientMock.TriggerMessageReception(message, CancellationToken.None);
+        };
 
-        mock.Verify(o => o.OnExecutionStart(It.Is<ExecutionStartedArgs>(e => e.ClientType == ClientType.Subscription)), Times.Once);
-        mock.Verify(o => o.OnExecutionSuccess(It.IsAny<ExecutionSucceededArgs>()), Times.Never);
-        mock.Verify(o => o.OnExecutionFailed(It.Is<ExecutionFailedArgs>(e => e.ClientType == ClientType.Subscription && e.Exception is ArgumentOutOfRangeException)), Times.Once);
+        using (new AssertionScope())
+        {
+            var exception = await action.Should().ThrowAsync<FailedToProcessMessageException>();
+            exception.WithInnerException<ArgumentOutOfRangeException>();
+            exception.And.ClientType.Should().Be("Subscription");
+            exception.And.ResourceId.Should().Be("testTopic/Subscriptions/testSubscription");
+            exception.And.MessageId.Should().Be(message.MessageId);
+            exception.And.HandlerName.Should().Be("Ev.ServiceBus.UnitTests.Helpers.SubscribedEventThrowingHandler");
+            exception.And.SessionId.Should().Be("none");
+            exception.And.PayloadTypeId.Should().Be("SubscribedEvent");
+            mock.Verify(o => o.OnExecutionStart(It.Is<ExecutionStartedArgs>(e => e.ClientType == ClientType.Subscription)), Times.Once);
+            mock.Verify(o => o.OnExecutionSuccess(It.IsAny<ExecutionSucceededArgs>()), Times.Never);
+            mock.Verify(o => o.OnExecutionFailed(It.Is<ExecutionFailedArgs>(e => e.ClientType == ClientType.Subscription && e.Exception is ArgumentOutOfRangeException)), Times.Once);
+        }
     }
 
 }

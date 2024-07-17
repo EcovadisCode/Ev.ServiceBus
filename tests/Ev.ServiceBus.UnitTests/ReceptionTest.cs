@@ -4,10 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.TestHelpers;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -46,11 +48,13 @@ public class ReceptionTest
         var composer = await InitSimpleTest();
         var client = composer.ClientFactory.GetProcessorMock("testTopic", "SubscriptionWithFailingHandler");
 
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            async () =>
-            {
-                await SimulateEventReception(client);
-            });
+        var action = () => SimulateEventReception(client);
+
+        using (new AssertionScope())
+        {
+           var exception = await action.Should().ThrowAsync<FailedToProcessMessageException>();
+           exception.WithInnerException<ArgumentNullException>();
+        }
     }
 
     [Fact]
@@ -84,12 +88,13 @@ public class ReceptionTest
             ApplicationProperties = { {"wrongProperty", "wrongValue"} }
         };
 
-        await Assert.ThrowsAsync<MessageIsMissingPayloadTypeIdException>(
-            async () =>
-            {
-                await client.TriggerMessageReception(message, CancellationToken.None);
-            });
+        var action = () => client.TriggerMessageReception(message, CancellationToken.None);
 
+        using (new AssertionScope())
+        {
+            var exception = await action.Should().ThrowAsync<FailedToProcessMessageException>();
+            exception.WithInnerException<MessageIsMissingPayloadTypeIdException>();
+        }
     }
 
     [Fact]
