@@ -41,7 +41,6 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
             var queues = resourceGroup.Where(o => o is QueueOptions).Cast<QueueOptions>().GroupBy(o => o.QueueName.ToLower());
             foreach (var group in queues)
             {
-                _logger.LogInformation("[Ev.ServiceBus.HealthChecks] Adding health check for {ResourceType} {ResourceName}", "queue", group.Key);
                 _logger.AddingHealthCheck("Queue", group.Key);
                 options.Registrations.Add(new HealthCheckRegistration($"Queue:{group.Key}",
                     sp => (IHealthCheck) new AzureServiceBusQueueHealthCheck(connectionString, group.Key),
