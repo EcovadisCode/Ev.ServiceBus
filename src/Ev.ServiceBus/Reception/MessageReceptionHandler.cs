@@ -74,13 +74,15 @@ public class MessageReceptionHandler
                     await listener.OnExecutionFailed(executionFailedArgs);
                 }
 
+                var executionContext = context.ReadExecutionContext();
+
                 throw new FailedToProcessMessageException(
-                    clientType: GetClientType(context),
-                    resourceId: GetContextResourceId(context),
-                    messageId: GetMessageId(context),
-                    payloadTypeId: GetPayloadTypeId(context),
-                    sessionId: GetSessionId(context),
-                    handlerName: GetHandlerTypeFullName(context),
+                    clientType: executionContext.ClientType,
+                    resourceId: executionContext.ResourceId,
+                    messageId: executionContext.MessageId,
+                    payloadTypeId: executionContext.PayloadTypeId,
+                    sessionId: executionContext.SessionId,
+                    handlerName: executionContext.HandlerName,
                     ex);
             }
             finally
@@ -99,51 +101,16 @@ public class MessageReceptionHandler
 
     private IDisposable? AddLoggingContext(MessageContext context)
     {
-        var clientType = GetClientType(context);
-        var contextResourceId = GetContextResourceId(context);
-        var messageMessageId = GetMessageId(context);
-        var contextPayloadTypeId = GetPayloadTypeId(context);
-        var sessionArgsSessionId = GetSessionId(context);
-        var handlerTypeFullName = GetHandlerTypeFullName(context);
+        var executionContext = context.ReadExecutionContext();
 
         return _logger.ProcessingInProgress(
-            clientType: clientType,
-            resourceId: contextResourceId,
-            messageId: messageMessageId,
-            payloadTypeId: contextPayloadTypeId,
-            sessionId: sessionArgsSessionId,
-            handlerName: handlerTypeFullName
+            clientType: executionContext.ClientType,
+            resourceId: executionContext.ResourceId,
+            messageId: executionContext.MessageId,
+            payloadTypeId: executionContext.PayloadTypeId,
+            sessionId: executionContext.SessionId,
+            handlerName: executionContext.HandlerName
         );
-    }
-
-    private static string GetHandlerTypeFullName(MessageContext context)
-    {
-        return context.ReceptionRegistration?.HandlerType.FullName ?? "none";
-    }
-
-    private static string GetSessionId(MessageContext context)
-    {
-        return context.SessionArgs?.SessionId ?? "none";
-    }
-
-    private static string GetPayloadTypeId(MessageContext context)
-    {
-        return context.PayloadTypeId ?? "none";
-    }
-
-    private static string GetMessageId(MessageContext context)
-    {
-        return context.Message.MessageId;
-    }
-
-    private static string GetContextResourceId(MessageContext context)
-    {
-        return context.ResourceId;
-    }
-
-    private static string GetClientType(MessageContext context)
-    {
-        return context.ClientType.ToString();
     }
 
     private async Task CallHandler<TMessagePayload>(

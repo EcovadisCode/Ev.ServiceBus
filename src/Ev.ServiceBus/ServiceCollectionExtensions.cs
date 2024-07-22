@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Listeners;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Dispatch;
 using Ev.ServiceBus.Management;
@@ -29,6 +30,7 @@ public static class ServiceCollectionExtensions
     {
         RegisterBaseServices(services);
 
+        services.AddSingleton<ITransactionManager, DefaultTransactionManager>();
         services.TryAddSingleton<IMessagePayloadSerializer, TextJsonPayloadSerializer>();
         services.Configure<ServiceBusOptions>(
             options =>

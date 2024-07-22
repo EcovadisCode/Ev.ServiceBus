@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Listeners;
 using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
@@ -19,6 +20,7 @@ public class ReceiverWrapper
     private readonly ServiceBusOptions _parentOptions;
     private readonly IServiceProvider _provider;
     private readonly ComposedReceiverOptions _composedOptions;
+    private readonly ITransactionManager _transactionManager;
 
     private Func<ProcessErrorEventArgs, Task>? _onExceptionReceivedHandler;
 
@@ -31,6 +33,7 @@ public class ReceiverWrapper
         _composedOptions = options;
         _parentOptions = parentOptions;
         _provider = provider;
+        _transactionManager = _provider.GetRequiredService<ITransactionManager>();
         _serviceBusClientManagementLogger = _provider.GetRequiredService<ILogger<LoggingExtensions.ServiceBusClientManagement>>();
         _messageProcessingLogger = _provider.GetRequiredService<ILogger<LoggingExtensions.MessageProcessing>>();
     }
@@ -101,7 +104,10 @@ public class ReceiverWrapper
         TrySetReceptionRegistrationOnContext(context, scope);
 
         var handler = scope.ServiceProvider.GetRequiredService<MessageReceptionHandler>();
-        await handler.HandleMessageAsync(context);
+        await _transactionManager
+            .RunWithInTransaction(
+                context.ReadExecutionContext(),
+                () => handler.HandleMessageAsync(context));
     }
 
     private void TrySetReceptionRegistrationOnContext(MessageContext context, IServiceScope scope)
