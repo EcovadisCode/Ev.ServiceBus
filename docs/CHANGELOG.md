@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.1.0
+- Added
+  - MessageReceptionBuilder
+    - Exposed `HandlerType` in `MessageReceptionBuilder`.
+    - Exposed `PayloadType` in `MessageReceptionBuilder`.
+  - new categorized Logging 
+    - Ev.ServiceBus.LoggingExtensions.MessageProcessing : For logs related to message processing
+    - Ev.ServiceBus.LoggingExtensions.ServiceBusClientManagement : For logs related to creation of client / disposition of clients
+    - Ev.ServiceBus.LoggingExtensions.ServiceBusEngine : For logs related to the initialization of the Host
+    - Ev.ServiceBus.HealthChecks.LoggingExtensionsHealthChecks : For logs related to service bus health checks registration
+  - New telemetryOptions
+    - ActivitySource (Ev.ServiceBus) for message processing 
+    - Ev.ServiceBus.Apm : Elastic Apm integration
+- Modified 
+  - Reduce number of log entries and duplicate exception logging 
+  - Use of high performance logging mechanism
+
+`[Breaking]`
+The exception catched during IMessageHandler was changed to FailedToProcessMessageException
+Original exception is stored in the inner exception if you are using IExceptionHandler use this to get original message
+
+```csharp
+public class CustomExceptionHandler : IExceptionHandler
+{
+    public Task HandleExceptionAsync(ProcessErrorEventArgs args)
+    {
+            var original = exceptionEvent.Exception is FailedToProcessMessageException wrapperException
+                ? wrapperException.InnerException!
+                : exceptionEvent.Exception!;
+        return Task.CompletedTask;
+    }
+}
+```
+
 ## 5.0.0
 - Removed obsolete methods and related code :
   - `services.RegisterServiceBusQueue("queueName");`

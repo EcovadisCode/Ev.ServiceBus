@@ -1,5 +1,7 @@
 ﻿using System.Threading;
 using Azure.Messaging.ServiceBus;
+using Ev.ServiceBus.Abstractions.Extensions;
+using Ev.ServiceBus.Abstractions.MessageReception;
 
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions;
@@ -35,4 +37,43 @@ public class MessageContext
 
     public string? PayloadTypeId { get; internal set; }
     public MessageReceptionRegistration? ReceptionRegistration { get; internal set; }
+
+    public MessageExecutionContext ReadExecutionContext()
+    {
+        var clientType = GetClientType();
+        var contextResourceId = GetContextResourceId();
+        var messageMessageId = GetMessageId();
+        var contextPayloadTypeId = GetPayloadTypeId();
+        var sessionArgsSessionId = GetSessionId();
+        var handlerTypeFullName = GetHandlerTypeFullName();
+
+        return new MessageExecutionContext
+        {
+            ClientType = clientType,
+            ResourceId = contextResourceId,
+            MessageId = messageMessageId,
+            PayloadTypeId = contextPayloadTypeId,
+            SessionId = sessionArgsSessionId,
+            HandlerName = handlerTypeFullName,
+            DiagnosticId = Message.GetDiagnosticId()
+        };
+    }
+
+    private string GetHandlerTypeFullName()
+        => ReceptionRegistration?.HandlerType.FullName ?? "none";
+
+    private string GetSessionId()
+        => SessionArgs?.SessionId ?? "none";
+
+    private string GetPayloadTypeId()
+        => PayloadTypeId ?? "none";
+
+    private string GetMessageId()
+        => Message.MessageId;
+
+    private string GetContextResourceId()
+        => ResourceId;
+
+    private string GetClientType()
+        => ClientType.ToString();
 }

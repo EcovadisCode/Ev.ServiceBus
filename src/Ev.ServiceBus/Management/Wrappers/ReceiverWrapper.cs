@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Listeners;
+using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,11 +14,13 @@ namespace Ev.ServiceBus;
 
 public class ReceiverWrapper
 {
-    private readonly ILogger<ReceiverWrapper> _logger;
+    private readonly ILogger<LoggingExtensions.ServiceBusClientManagement> _serviceBusClientManagementLogger;
+    private readonly ILogger<LoggingExtensions.MessageProcessing> _messageProcessingLogger;
     private readonly ServiceBusClient? _client;
     private readonly ServiceBusOptions _parentOptions;
     private readonly IServiceProvider _provider;
     private readonly ComposedReceiverOptions _composedOptions;
+    private readonly ITransactionManager _transactionManager;
 
     private Func<ProcessErrorEventArgs, Task>? _onExceptionReceivedHandler;
 
@@ -30,7 +33,9 @@ public class ReceiverWrapper
         _composedOptions = options;
         _parentOptions = parentOptions;
         _provider = provider;
-        _logger = _provider.GetRequiredService<ILogger<ReceiverWrapper>>();
+        _transactionManager = _provider.GetRequiredService<ITransactionManager>();
+        _serviceBusClientManagementLogger = _provider.GetRequiredService<ILogger<LoggingExtensions.ServiceBusClientManagement>>();
+        _messageProcessingLogger = _provider.GetRequiredService<ILogger<LoggingExtensions.MessageProcessing>>();
     }
 
     internal string ResourceId => _composedOptions.ResourceId;
@@ -38,21 +43,19 @@ public class ReceiverWrapper
 
     public async Task Initialize()
     {
-        _logger.LogInformation("[Ev.ServiceBus] Initialization of receiver client '{ResourceId}': Start", _composedOptions.ResourceId);
         if (_parentOptions.Settings.Enabled == false)
         {
-            _logger.LogInformation(
-                "[Ev.ServiceBus] Initialization of client '{ResourceId}': Client deactivated through configuration", _composedOptions.ResourceId);
+            _serviceBusClientManagementLogger.ReceiverClientDeactivatedThroughConfiguration(_composedOptions.ResourceId);
             return;
         }
 
         await RegisterMessageHandler();
-        _logger.LogInformation("[Ev.ServiceBus] Initialization of client '{ResourceId}': Success", _composedOptions.ResourceId);
+        _serviceBusClientManagementLogger.ReceiverClientInitialized(ResourceId);
     }
 
     public virtual async Task CloseAsync(CancellationToken cancellationToken)
     {
-        if (ProcessorClient != null && ProcessorClient.IsClosed == false)
+        if (ProcessorClient is { IsClosed: false })
         {
             try
             {
@@ -60,7 +63,7 @@ public class ReceiverWrapper
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"[Ev.ServiceBus] Client {_composedOptions.ResourceId} couldn't close properly");
+                _serviceBusClientManagementLogger.ReceiverClientFailedToClose(_composedOptions.ResourceId, ex);
             }
         }
     }
@@ -104,15 +107,16 @@ public class ReceiverWrapper
         TrySetReceptionRegistrationOnContext(context, scope);
 
         var handler = scope.ServiceProvider.GetRequiredService<MessageReceptionHandler>();
-        await handler.HandleMessageAsync(context);
+        await _transactionManager
+            .RunWithInTransaction(
+                context.ReadExecutionContext(),
+                () => handler.HandleMessageAsync(context));
     }
 
     private void TrySetReceptionRegistrationOnContext(MessageContext context, IServiceScope scope)
     {
         if (context.PayloadTypeId == null)
-        {
             return;
-        }
 
         var registry = scope.ServiceProvider.GetRequiredService<ServiceBusRegistry>();
         var receptionRegistration = registry.GetReceptionRegistration(context.PayloadTypeId,
@@ -128,21 +132,24 @@ public class ReceiverWrapper
     /// <returns></returns>
     protected async Task OnExceptionOccured(ProcessErrorEventArgs exceptionEvent)
     {
-        var json = JsonSerializer.Serialize(new
+        var processException = exceptionEvent.Exception as FailedToProcessMessageException;
+        using (_messageProcessingLogger.ProcessingInProgress(
+                   clientType: processException?.ClientType ?? _composedOptions.ClientType.ToString(),
+                   resourceId: processException?.ResourceId ?? _composedOptions.ResourceId,
+                   messageId: processException?.MessageId,
+                   payloadTypeId: processException?.PayloadTypeId,
+                   sessionId: processException?.SessionId,
+                   handlerName: processException?.HandlerName))
         {
-            exceptionEvent.ErrorSource,
-            exceptionEvent.FullyQualifiedNamespace,
-            exceptionEvent.EntityPath
-        }, new JsonSerializerOptions()
-        {
-            WriteIndented = true
-        });
-        _logger.LogError(exceptionEvent.Exception,
-            "[Ev.ServiceBus] Exception occured during message treatment of {ClientType} '{ResourceId}'.\n"
-            + "Message : {ExceptionMessage}\n"
-            + "Context:\n{ContextJson}", _composedOptions.ClientType, _composedOptions.ResourceId, exceptionEvent.Exception.Message, json);
+            var processExceptionInnerException = processException is not null ? processException.InnerException! : exceptionEvent.Exception!;
+            _messageProcessingLogger.FailedToProcessMessage(
+                exceptionEvent.ErrorSource.ToString(),
+                exceptionEvent.FullyQualifiedNamespace,
+                exceptionEvent.EntityPath,
+                processExceptionInnerException);
 
-        await _onExceptionReceivedHandler!(exceptionEvent);
+            await _onExceptionReceivedHandler!(exceptionEvent);
+        }
     }
 
     protected async Task CallDefinedExceptionHandler(ProcessErrorEventArgs exceptionEvent)

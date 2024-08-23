@@ -82,7 +82,7 @@ public class DispatchSender : IDispatchSender
                 continue;
             }
 
-            throw new ArgumentOutOfRangeException($"A message is too big to fit in a single batch");
+            throw new ArgumentOutOfRangeException("A message is too big to fit in a single batch");
         }
 
         foreach (var pageMessages in batches)

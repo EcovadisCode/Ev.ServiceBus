@@ -10,13 +10,13 @@ namespace Ev.ServiceBus;
 
 public class MessageSenderFactory
 {
-    private readonly ILogger<MessageSenderFactory> _logger;
+    private readonly ILogger<LoggingExtensions.ServiceBusClientManagement> _logger;
     private readonly IOptions<ServiceBusOptions> _options;
     private readonly ServiceBusRegistry _registry;
     private readonly IServiceProvider _provider;
 
     public MessageSenderFactory(
-        ILogger<MessageSenderFactory> logger,
+        ILogger<LoggingExtensions.ServiceBusClientManagement> logger,
         IOptions<ServiceBusOptions> options,
         ServiceBusRegistry registry,
         IServiceProvider provider)
@@ -30,7 +30,6 @@ public class MessageSenderFactory
     public IMessageSender CreateSender(ClientOptions[] senderOptions)
     {
         var options = (IClientOptions)senderOptions.First();
-        _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Start", options.ResourceId);
         if (_registry.IsSenderResourceIdTaken(options.ClientType, options.ResourceId))
         {
             var resourceId = GetNewSenderResourceId(options.ClientType, options.ResourceId);
@@ -42,7 +41,7 @@ public class MessageSenderFactory
 
         if (_options.Value.Settings.Enabled == false)
         {
-            _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Client deactivated through configuration", options.ResourceId);
+            _logger.SenderClientDeactivatedThroughConfiguration(options.ResourceId);
             return new DeactivatedSender(options.ResourceId, options.ClientType);
         }
 
@@ -61,12 +60,12 @@ public class MessageSenderFactory
 
             var messageSender = new MessageSender(senderClient, options.ResourceId, options.ClientType, _provider.GetRequiredService<ILogger<MessageSender>>());
 
-            _logger.LogInformation("[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Success", options.ResourceId);
+            _logger.SenderClientInitialized(options.ResourceId);
             return messageSender;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Ev.ServiceBus] Initialization of sender client '{ResourceId}': Failed", senderOptions.First().ResourceId);
+            _logger.SenderClientFailedToInitialize(senderOptions.First().ResourceId, ex);
             return new UnavailableSender(options.ResourceId, options.ClientType);
         }
     }
