@@ -89,26 +89,6 @@ public static class LoggingExtensions
     public static void SenderClientDeactivatedThroughConfiguration(this ILogger logger, string resourceId)
         => LogSenderClientDeactivatedThroughConfiguration(logger, resourceId, default);
 
-    private static readonly Action<ILogger, Exception?> LogEngineDeactivatedThroughConfiguration =
-        LoggerMessage.Define(
-            LogLevel.Information,
-            new EventId(8, nameof(EngineDeactivatedThroughConfiguration)),
-            "Reception and dispatch of messages have been deactivated through configuration"
-        );
-
-    public static void EngineDeactivatedThroughConfiguration(this ILogger logger)
-        => LogEngineDeactivatedThroughConfiguration(logger, default);
-
-    private static readonly Action<ILogger, Exception?> LogMessageReceptionDeactivatedThroughConfiguration =
-        LoggerMessage.Define(
-            LogLevel.Information,
-            new EventId(9, nameof(MessageReceptionDeactivatedThroughConfiguration)),
-            "Initialization of sender client '{ResourceId}': Client deactivated through configuration"
-        );
-
-    public static void MessageReceptionDeactivatedThroughConfiguration(this ILogger logger)
-        => LogMessageReceptionDeactivatedThroughConfiguration(logger, default);
-
     #endregion
 
     #region ServiceBusEngine
