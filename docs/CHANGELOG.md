@@ -35,6 +35,9 @@ public class CustomExceptionHandler : IExceptionHandler
 }
 ```
 
+## 5.0.2
+- Exposed `HandlerType` in `MessageReceptionBuilder`.
+
 ## 5.0.0
 - Removed obsolete methods and related code :
   - `services.RegisterServiceBusQueue("queueName");`
