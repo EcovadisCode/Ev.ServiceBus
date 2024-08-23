@@ -5,7 +5,10 @@ namespace Ev.ServiceBus.Abstractions.Configuration;
 public class MessageReceptionBuilder
 {
     private readonly MessageReceptionRegistration _registration;
+
     public Type HandlerType => _registration.HandlerType;
+
+    public Type PayloadType => _registration.PayloadType;
 
     public MessageReceptionBuilder(ClientOptions clientOptions, Type payloadType, Type handlerType)
     {

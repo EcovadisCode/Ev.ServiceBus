@@ -40,7 +40,10 @@ public class MessageSenderFactory
         }
 
         if (_options.Value.Settings.Enabled == false)
+        {
+            _logger.SenderClientDeactivatedThroughConfiguration(options.ResourceId);
             return new DeactivatedSender(options.ResourceId, options.ClientType);
+        }
 
         try
         {

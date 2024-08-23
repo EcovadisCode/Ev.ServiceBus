@@ -69,6 +69,46 @@ public static class LoggingExtensions
     public static void SenderClientFailedToInitialize(this ILogger logger, string resourceId, Exception exception)
         => LogSenderClientFailedToInitialize(logger, resourceId, exception);
 
+    private static readonly Action<ILogger, string, Exception?> LogReceiverClientDeactivatedThroughConfiguration =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(6, nameof(ReceiverClientDeactivatedThroughConfiguration)),
+            "Initialization of receiver client '{ResourceId}': Client deactivated through configuration"
+        );
+
+    public static void ReceiverClientDeactivatedThroughConfiguration(this ILogger logger, string resourceId)
+        => LogReceiverClientDeactivatedThroughConfiguration(logger, resourceId, default);
+
+    private static readonly Action<ILogger, string, Exception?> LogSenderClientDeactivatedThroughConfiguration =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(7, nameof(SenderClientDeactivatedThroughConfiguration)),
+            "Initialization of sender client '{ResourceId}': Client deactivated through configuration"
+        );
+
+    public static void SenderClientDeactivatedThroughConfiguration(this ILogger logger, string resourceId)
+        => LogSenderClientDeactivatedThroughConfiguration(logger, resourceId, default);
+
+    private static readonly Action<ILogger, Exception?> LogEngineDeactivatedThroughConfiguration =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(8, nameof(EngineDeactivatedThroughConfiguration)),
+            "Reception and dispatch of messages have been deactivated through configuration"
+        );
+
+    public static void EngineDeactivatedThroughConfiguration(this ILogger logger)
+        => LogEngineDeactivatedThroughConfiguration(logger, default);
+
+    private static readonly Action<ILogger, Exception?> LogMessageReceptionDeactivatedThroughConfiguration =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(9, nameof(MessageReceptionDeactivatedThroughConfiguration)),
+            "Initialization of sender client '{ResourceId}': Client deactivated through configuration"
+        );
+
+    public static void MessageReceptionDeactivatedThroughConfiguration(this ILogger logger)
+        => LogMessageReceptionDeactivatedThroughConfiguration(logger, default);
+
     #endregion
 
     #region ServiceBusEngine

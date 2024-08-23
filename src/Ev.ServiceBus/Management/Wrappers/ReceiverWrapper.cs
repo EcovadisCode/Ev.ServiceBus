@@ -44,7 +44,10 @@ public class ReceiverWrapper
     public async Task Initialize()
     {
         if (_parentOptions.Settings.Enabled == false)
+        {
+            _serviceBusClientManagementLogger.ReceiverClientDeactivatedThroughConfiguration(_composedOptions.ResourceId);
             return;
+        }
 
         await RegisterMessageHandler();
         _serviceBusClientManagementLogger.ReceiverClientInitialized(ResourceId);

@@ -38,6 +38,14 @@ public class ServiceBusEngine
     public async Task StartAll()
     {
         _serviceBusEngineLogger.EngineStarting(_options.Value.Settings.Enabled, _options.Value.Settings.ReceiveMessages);
+        if (_options.Value.Settings.Enabled == false)
+        {
+            _serviceBusEngineLogger.EngineDeactivatedThroughConfiguration();
+        }
+        if (_options.Value.Settings is { Enabled: true, ReceiveMessages: false })
+        {
+            _serviceBusEngineLogger.MessageReceptionDeactivatedThroughConfiguration();
+        }
 
         if (_options.Value.Settings.ConnectionSettings != null)
         {
