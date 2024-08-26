@@ -43,6 +43,5 @@ across the whole system (name of the property : `PayloadTypeId`).
 * [Advanced scenarios](./docs/AdvancedScenarios.md)
 * [Instrumentation](./docs/Instrumentation.md)
 * [Ev.ServiceBus.Mvc](./docs/Ev.ServiceBus.Mvc.md)
-* [Ev.ServiceBus.Mvc](./docs/Ev.ServiceBus.Mvc.md)
 
 ## Secondary projects
