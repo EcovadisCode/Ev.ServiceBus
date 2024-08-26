@@ -42,6 +42,7 @@ across the whole system (name of the property : `PayloadTypeId`).
 * [How to receive messages](./docs/ReceiveMessages.md)
 * [Advanced scenarios](./docs/AdvancedScenarios.md)
 * [Ev.ServiceBus.HealthChecks](./docs/Ev.ServiceBus.HealthChecks.md)
+* [Instrumentation](./docs/Instrumentation.md)
 * [Ev.ServiceBus.Mvc](./docs/Ev.ServiceBus.Mvc.md)
 
 ## Secondary projects
