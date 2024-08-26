@@ -1,4 +1,6 @@
-﻿using Elastic.Apm;
+﻿using System;
+using System.Threading.Tasks;
+using Elastic.Apm;
 using Elastic.Apm.Api;
 using Ev.ServiceBus.Abstractions.Listeners;
 using Ev.ServiceBus.Abstractions.MessageReception;

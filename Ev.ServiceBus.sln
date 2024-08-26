@@ -23,6 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{15791C07-7
 		docs\AdvancedScenarios.md = docs\AdvancedScenarios.md
 		docs\Ev.ServiceBus.HealthChecks.md = docs\Ev.ServiceBus.HealthChecks.md
 		docs\Ev.ServiceBus.Mvc.md = docs\Ev.ServiceBus.Mvc.md
+		docs\Instrumentation.md = docs\Instrumentation.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8EC286EB-A71F-4431-ACA4-E92C79975817}"
