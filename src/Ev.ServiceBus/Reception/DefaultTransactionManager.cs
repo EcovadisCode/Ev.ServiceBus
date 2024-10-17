@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions.Listeners;
@@ -12,23 +11,19 @@ namespace Ev.ServiceBus.Reception;
 /// </summary>
 public class DefaultTransactionManager : ITransactionManager
 {
-    private static readonly ActivitySource ActivitySource = new("Ev.ServiceBus");
     public async Task RunWithInTransaction(MessageExecutionContext executionContext, Func<Task> transaction)
     {
-        using Activity? activity = ActivitySource.StartActivity(
-            executionContext.ExecutionName,
-            ActivityKind.Consumer,
-            executionContext.DiagnosticId,
-            new []
-            {
-                new KeyValuePair<string, object?>(nameof(executionContext.ClientType), executionContext.ClientType),
-                new KeyValuePair<string, object?>(nameof(executionContext.ResourceId), executionContext.ResourceId),
-                new KeyValuePair<string, object?>(nameof(executionContext.PayloadTypeId), executionContext.PayloadTypeId),
-                new KeyValuePair<string, object?>(nameof(executionContext.HandlerName), executionContext.HandlerName),
-                new KeyValuePair<string, object?>(nameof(executionContext.SessionId), executionContext.SessionId),
-                new KeyValuePair<string, object?>(nameof(executionContext.MessageId), executionContext.MessageId)
-            }
-        );
+        if (Activity.Current != null)
+        {
+            Activity.Current.DisplayName = executionContext.ExecutionName;
+            Activity.Current.SetTag(nameof(executionContext.ClientType), executionContext.ClientType);
+            Activity.Current.SetTag(nameof(executionContext.ResourceId), executionContext.ResourceId);
+            Activity.Current.SetTag(nameof(executionContext.PayloadTypeId), executionContext.PayloadTypeId);
+            Activity.Current.SetTag(nameof(executionContext.HandlerName), executionContext.HandlerName);
+            Activity.Current.SetTag(nameof(executionContext.SessionId), executionContext.SessionId);
+            Activity.Current.SetTag(nameof(executionContext.MessageId), executionContext.MessageId);
+        }
+
         await transaction();
     }
 }
