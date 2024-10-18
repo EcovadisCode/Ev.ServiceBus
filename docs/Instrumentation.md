@@ -1,14 +1,12 @@
 # How to add Instrumentation for message handling
 
-By default, our communication Ev.ServiceBus includes OpenTelemetry instrumentation utilizing `ActivitySource` from `System.Diagnostics`. To enable this, you simply need to add the `ActivitySource` to your configuration.
+By default, our communication Ev.ServiceBus uses Activity enrichment for OpenTelemetry instrumentation. this includes renaming the Activity name to
+$"{ClientType}/{ResourceId}/{PayloadTypeId}"
+Examples 
+`Queue/MyQueueName/MyPayloadType`
+`Subscription/MyTopicName/Subscriptions/MySubscriptionName/MyPayloadType`
 
-```csharp
-
-var appBuilder = WebApplication.CreateBuilder(args);
-
-appBuilder.Services.AddOpenTelemetry()
-    .WithTracing(builder => builder.AddSource("Ev.ServiceBus"));
-```
+Note : For our activity extension to work you need to configure your OpenTelemetry tracing to enable Azure Activity Source 
 
 Alternatively, you can use Elastic APM for instrumentation by utilizing the Ev.ServiceBus.Apm as following.
 
