@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Elastic.Apm;
+using Elastic.Apm.Api;
 using Ev.ServiceBus.Abstractions.Listeners;
 using Ev.ServiceBus.Abstractions.MessageReception;
 
@@ -34,9 +37,38 @@ public class ApmTransactionManager : ITransactionManager
             Agent.Tracer.CurrentTransaction.SetLabel(
                 nameof(executionContext.MessageId),
                 executionContext.MessageId);
+
+
+            var spanLinks = GetSpanLinks(executionContext.DiagnosticId);
+            await Agent.Tracer.CurrentTransaction.CaptureSpan(
+                $"{Agent.Tracer.CurrentTransaction.Name} PROCESS",
+                ApiConstants.TypeMessaging,
+                async () =>
+                {
+                    await transaction();
+                },
+                links: spanLinks
+            );
+        }
+        else
+        {
+            await transaction();
+        }
+    }
+
+    private static List<SpanLink> GetSpanLinks(string? diagnosticId)
+    {
+        var parentContext = ActivityContext.TryParse(diagnosticId, null, out var parentContextParsed)
+            ? parentContextParsed
+            : default;
+        var spanLinks = new List<SpanLink>();
+
+        if (parentContext != default)
+        {
+            spanLinks.Add(new SpanLink(parentContext.SpanId.ToString(), parentContext.TraceId.ToString()));
         }
 
-        await transaction();
+        return spanLinks;
     }
 
     private static bool IsTraceEnabled()
