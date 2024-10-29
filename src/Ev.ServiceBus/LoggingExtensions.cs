@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 namespace Ev.ServiceBus;
@@ -131,17 +132,6 @@ public static class LoggingExtensions
 
     public record MessageProcessing();
 
-    private static readonly Func<ILogger, string?, string?, string?, string?, string?, string?, IDisposable?>
-        MessageReceptionScope =
-            LoggerMessage.DefineScope<string?, string?, string?, string?, string?, string?>(
-                "Processing message\n" +
-                "Client: '{EVSB_Client}'\n" +
-                "Resource ID: '{EVSB_ResourceId}'\n" +
-                "Payload Type: '{EVSB_PayloadTypeId}'\n" +
-                "Message ID: '{EVSB_MessageId}'\n" +
-                "Session ID: '{EVSB_SessionId}'\n" +
-                "Handler '{EVSB_ReceptionHandler}'\n");
-
     public static IDisposable? ProcessingInProgress(
         this ILogger logger,
         string? clientType,
@@ -150,7 +140,14 @@ public static class LoggingExtensions
         string? messageId,
         string? sessionId,
         string? handlerName)
-        => MessageReceptionScope(logger, clientType, resourceId, payloadTypeId, messageId, sessionId, handlerName);
+        => logger.BeginScope(new Dictionary<string, string?> () {
+            ["EVSB_Client"] = clientType,
+            ["EVSB_ResourceId"] = resourceId,
+            ["EVSB_PayloadTypeId"] = payloadTypeId,
+            ["EVSB_MessageId"] = messageId,
+            ["EVSB_SessionId"] = sessionId,
+            ["EVSB_ReceptionHandler"] = handlerName
+        });
 
     private static readonly Action<ILogger, long, Exception?> LogMessageExecutionCompleted = LoggerMessage.Define<long>(
         LogLevel.Information,
