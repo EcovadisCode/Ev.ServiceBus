@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
@@ -40,6 +41,7 @@ public interface IMessageMetadata
     public Task DeadLetterMessageAsync(string deadLetterReason, string? deadLetterErrorDescription = default);
     public Task DeadLetterMessageAsync(IDictionary<string, object>? propertiesToModify = default);
     public Task DeferMessageAsync(IDictionary<string, object>? propertiesToModify = default);
+    public Stream GetMessageBodyStream();
 }
 
 public class MessageMetadata : IMessageMetadata
@@ -122,6 +124,11 @@ public class MessageMetadata : IMessageMetadata
         {
             await _args!.DeferMessageAsync(_message, propertiesToModify, CancellationToken);
         }
+    }
+
+    public Stream GetMessageBodyStream()
+    {
+        return _message.Body.ToStream();
     }
 
     public string MessageId => _message.MessageId;
