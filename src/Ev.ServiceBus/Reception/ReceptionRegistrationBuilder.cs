@@ -56,6 +56,24 @@ public class ReceptionRegistrationBuilder
     }
 
     /// <summary>
+    /// Registers a generic handler to receive message from a given PayloadTypeId.
+    /// </summary>
+    /// <param name="payloadTypeId"></param>
+    /// <typeparam name="THandler">The handler that will receive the raw data</typeparam>
+    /// <returns></returns>
+    public MessageReceptionBuilder RegisterReception<THandler>(string payloadTypeId)
+        where THandler : class, IMessageReceptionHandler
+    {
+        _services.TryAddScoped<THandler>();
+        var builder = new MessageReceptionBuilder(_options, payloadTypeId, typeof(THandler));
+        _services.Configure<ServiceBusOptions>(options =>
+        {
+            options.RegisterReception(builder);
+        });
+        return builder;
+    }
+
+    /// <summary>
     /// Registers a class as a payload to receive and deserialize through the current resource.
     /// </summary>
     /// <returns></returns>
