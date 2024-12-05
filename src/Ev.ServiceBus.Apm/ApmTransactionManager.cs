@@ -72,5 +72,5 @@ public class ApmTransactionManager : ITransactionManager
     }
 
     private static bool IsTraceEnabled()
-        => Agent.IsConfigured && Agent.Config.Enabled && Agent.Tracer is not null;
+        => Agent.IsConfigured && Agent.Config.Enabled && Agent.Tracer is not null && Agent.Tracer.CurrentTransaction is not null;
 }
