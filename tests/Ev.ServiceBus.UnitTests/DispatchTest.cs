@@ -397,6 +397,45 @@ public class DispatchTest : IDisposable
     }
 
     [Fact]
+    public async Task SendDispatch()
+    {
+        // configure
+        var services = new ServiceCollection();
+        services.AddServiceBus(settings =>
+        {
+            settings.WithConnection("myConnection", new ServiceBusClientOptions());
+        });
+        services.OverrideClientFactory();
+        services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
+        {
+            builder.RegisterDispatch<SubscribedEvent>();
+        });
+        var provider = services.BuildServiceProvider();
+        await provider.SimulateStartHost(CancellationToken.None);
+
+        // Act
+        var message = new SubscribedEvent
+        {
+            SomeNumber = 1,
+            SomeString = "Event number 1"
+        };
+
+        using (var scope = provider.CreateScope())
+        {
+            var eventPublisher = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await eventPublisher.SendDispatch(message);
+        }
+
+        // Verify
+        var factory = provider.GetRequiredService<FakeClientFactory>();
+        var mock = factory.GetSenderMock("myQueue");
+        mock.Mock.Verify(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
+
+        // Dispose
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task SendDispatchesPaginateMessages()
     {
         // configure

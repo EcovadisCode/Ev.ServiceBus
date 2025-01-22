@@ -8,6 +8,24 @@ namespace Ev.ServiceBus.Abstractions;
 public interface IDispatchSender
 {
     /// <summary>
+    /// Immediately serializes object to message and sends it through ServiceBus.
+    /// Single message on Premium tier can be bigger than 1MB.
+    /// </summary>
+    /// <param name="messagePayload"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task SendDispatch(object messagePayload, CancellationToken token = default);
+
+    /// <summary>
+    /// Immediately serializes object to message and sends it through ServiceBus.
+    /// Single message on Premium tier can be bigger than 1MB.
+    /// </summary>
+    /// <param name="messagePayload"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task SendDispatch(Dispatch messagePayload, CancellationToken token = default);
+
+    /// <summary>
     /// Immediately serializes object to messages and sends them through ServiceBus.
     /// (This is used internally by <see cref="IMessageDispatcher.ExecuteDispatches"/>)
     /// </summary>
