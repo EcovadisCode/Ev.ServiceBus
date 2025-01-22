@@ -35,6 +35,27 @@ public class DispatchSender : IDispatchSender
     }
 
     /// <inheritdoc />
+    public async Task SendDispatch(object messagePayload, CancellationToken token = default)
+    {
+        var dispatch = new Abstractions.Dispatch(messagePayload);
+
+        await SendDispatch(dispatch, token);
+    }
+
+    /// <inheritdoc />
+    public async Task SendDispatch(Abstractions.Dispatch messagePayload, CancellationToken token = default)
+    {
+        var dispatches = CreateMessagesToSend([messagePayload]);
+
+        foreach (var messagePerResource in dispatches)
+        {
+            var message = messagePerResource.Messages.Single();
+
+            await messagePerResource.Sender.SendMessageAsync(message.Message, token);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task SendDispatches(IEnumerable<object> messagePayloads, CancellationToken token = default)
     {
         if (messagePayloads == null)
