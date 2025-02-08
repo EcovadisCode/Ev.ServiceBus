@@ -15,8 +15,10 @@ namespace Ev.ServiceBus.UnitTests;
 
 public class MessageMetadataTests
 {
-    [Fact]
-    public async Task MetadataIsProperlySet()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("CustomPayloadTypeIdProperty")]
+    public async Task MetadataIsProperlySet(string customPropertyName)
     {
         var composer = new Composer();
 
@@ -27,6 +29,7 @@ public class MessageMetadataTests
                 services.RegisterServiceBusReception().FromQueue("testQueue", builder =>
                 {
                     builder.RegisterReception<Payload, MetadataHandler>();
+                    builder.WithCustomPayloadTypeIdProperty(customPropertyName);
                 });
             });
 
@@ -34,7 +37,7 @@ public class MessageMetadataTests
 
         var clientMock = provider.GetProcessorMock("testQueue");
 
-        await SimulateEventReception(clientMock);
+        await SimulateEventReception(clientMock, customPayloadTypeIdPropertyName: customPropertyName);
 
         var metadatas = provider.GetRequiredService<List<IMessageMetadata>>();
         metadatas.Count.Should().Be(1);
@@ -45,7 +48,7 @@ public class MessageMetadataTests
         metadata.ApplicationProperties.Keys.Should()
             .Contain(UserProperties.MessageTypeProperty)
             .And
-            .Contain(UserProperties.PayloadTypeIdProperty);
+            .Contain(customPropertyName ?? UserProperties.DefaultPayloadTypeIdProperty);
         metadata.CorrelationId.Should().Be("8B4C4C3C-482A-4688-8458-AFF9998C0A12");
         metadata.SessionId.Should().Be("ABB8761B-C22E-407E-801C-DFAF68916F04");
     }
@@ -116,7 +119,8 @@ public class MessageMetadataTests
     private async Task SimulateEventReception(
         ProcessorMock client,
         CancellationToken? cancellationToken = null,
-        ServiceBusReceiver receiver = null)
+        ServiceBusReceiver receiver = null,
+        string customPayloadTypeIdPropertyName = null)
     {
         var parser = new TextJsonPayloadSerializer();
         var result = parser.SerializeBody(new { });
@@ -127,7 +131,7 @@ public class MessageMetadataTests
             ApplicationProperties =
             {
                 { UserProperties.MessageTypeProperty, "IntegrationEvent" },
-                { UserProperties.PayloadTypeIdProperty, "Payload" }
+                { customPayloadTypeIdPropertyName ?? UserProperties.DefaultPayloadTypeIdProperty, "Payload" }
             },
             CorrelationId = "8B4C4C3C-482A-4688-8458-AFF9998C0A12",
             SessionId = "ABB8761B-C22E-407E-801C-DFAF68916F04"
@@ -155,7 +159,7 @@ public class MessageMetadataTests
             ApplicationProperties =
             {
                 { UserProperties.MessageTypeProperty, "IntegrationEvent" },
-                { UserProperties.PayloadTypeIdProperty, "Payload" }
+                { UserProperties.DefaultPayloadTypeIdProperty, "Payload" }
             },
             CorrelationId = "8B4C4C3C-482A-4688-8458-AFF9998C0A12",
             SessionId = "ABB8761B-C22E-407E-801C-DFAF68916F04"

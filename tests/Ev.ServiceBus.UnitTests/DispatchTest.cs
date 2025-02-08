@@ -23,9 +23,12 @@ namespace Ev.ServiceBus.UnitTests;
 
 public class DispatchTest : IDisposable
 {
+    private const string CustomPayloadTypeIdProperty = "customized-property";
     private readonly Composer _composer;
     private readonly List<ServiceBusMessage> _sentMessagesToTopic;
     private readonly List<ServiceBusMessage> _sentMessagesToQueue;
+    private readonly List<ServiceBusMessage> _sentMessagesToTopicCustomProperty;
+    private readonly List<ServiceBusMessage> _sentMessagesToQueueCustomProperty;
     private readonly List<ServiceBusMessage> _sentMessagesToQueueSession;
 
     public DispatchTest()
@@ -37,6 +40,8 @@ public class DispatchTest : IDisposable
 
         _sentMessagesToTopic = new List<ServiceBusMessage>();
         _sentMessagesToQueue = new List<ServiceBusMessage>();
+        _sentMessagesToTopicCustomProperty = new List<ServiceBusMessage>();
+        _sentMessagesToQueueCustomProperty = new List<ServiceBusMessage>();
         _sentMessagesToQueueSession = new List<ServiceBusMessage>();
         _composer = new Composer();
 
@@ -44,19 +49,33 @@ public class DispatchTest : IDisposable
         {
             services.RegisterServiceBusDispatch().ToTopic("testTopic", builder =>
             {
-                builder.RegisterDispatch<PublishedEvent>().CustomizePayloadTypeId("MyEvent");
+                builder.RegisterDispatch<PublishedEvent>()
+                    .CustomizePayloadTypeId("MyEvent");
 
                 // noise
                 builder.RegisterDispatch<PublishedEvent3>().CustomizePayloadTypeId("MyEvent3");
             });
+            services.RegisterServiceBusDispatch().ToTopic("testTopicCustomProperty", builder =>
+            {
+                builder.RegisterDispatch<PublishedEvent>()
+                    .CustomizePayloadTypeId("MyEventCustomProperty")
+                    .CustomizePayloadTypeIdProperty(CustomPayloadTypeIdProperty);
+            });
             services.RegisterServiceBusDispatch().ToQueue("testQueue", builder =>
             {
-                builder.RegisterDispatch<PublishedThroughQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
+                builder.RegisterDispatch<PublishedThroughQueueEvent>()
+                    .CustomizePayloadTypeId("MyEventThroughQueue");
             });
-
+            services.RegisterServiceBusDispatch().ToQueue("testQueueCustomProperty", builder =>
+            {
+                builder.RegisterDispatch<PublishedThroughQueueEvent>()
+                    .CustomizePayloadTypeId("MyEventThroughQueueWithCustomProperty")
+                    .CustomizePayloadTypeIdProperty(CustomPayloadTypeIdProperty);
+            });
             services.RegisterServiceBusDispatch().ToQueue("testQueueSession", builder =>
             {
-                builder.RegisterDispatch<PublishedThroughSessionQueueEvent>().CustomizePayloadTypeId("MyEventThroughQueue");
+                builder.RegisterDispatch<PublishedThroughSessionQueueEvent>()
+                    .CustomizePayloadTypeId("MyEventThroughQueue");
             });
 
             // noise
@@ -84,9 +103,19 @@ public class DispatchTest : IDisposable
             {
                 _sentMessagesToTopic.Add(message);
             });
-
         topicClient.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToTopic, createMessageBatchOptions));
+
+        var topicClientCustomProperty = _composer.ClientFactory.GetSenderMock("testTopicCustomProperty");
+        topicClientCustomProperty.Mock
+            .Setup(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Callback((ServiceBusMessage message, CancellationToken token) =>
+            {
+                _sentMessagesToTopicCustomProperty.Add(message);
+            });
+        topicClientCustomProperty.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToTopicCustomProperty, createMessageBatchOptions));
 
         var queueClient = _composer.ClientFactory.GetSenderMock("testQueue");
         queueClient.Mock
@@ -98,6 +127,17 @@ public class DispatchTest : IDisposable
             });
         queueClient.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToQueue, createMessageBatchOptions));
+
+        var queueClientCustomProperty = _composer.ClientFactory.GetSenderMock("testQueueCustomProperty");
+        queueClient.Mock
+            .Setup(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Callback((ServiceBusMessage message, CancellationToken token) =>
+            {
+                _sentMessagesToQueueCustomProperty.Add(message);
+            });
+        queueClientCustomProperty.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToQueueCustomProperty, createMessageBatchOptions));
 
         var queueClientSession = _composer.ClientFactory.GetSenderMock("testQueueSession");
         queueClientSession.Mock
@@ -171,13 +211,15 @@ public class DispatchTest : IDisposable
     }
 
     [Theory]
-    [InlineData("topic", "MyEvent")]
-    [InlineData("queue", "MyEventThroughQueue")]
-    public void MessageMustContainTheRightPayloadTypeId(string clientToCheck, string payloadTypeId)
+    [InlineData("topic", "MyEvent", UserProperties.DefaultPayloadTypeIdProperty)]
+    [InlineData("queue", "MyEventThroughQueue", UserProperties.DefaultPayloadTypeIdProperty)]
+    [InlineData("topic2", "MyEventCustomProperty", CustomPayloadTypeIdProperty)]
+    [InlineData("queue2", "MyEventThroughQueueWithCustomProperty", CustomPayloadTypeIdProperty)]
+    public void MessageMustContainTheRightPayloadTypeIdInTheRightProperty(string clientToCheck, string payloadTypeId, string payloadTypeIdProperty)
     {
         var message = GetMessageFrom(clientToCheck);
-        Assert.True(message?.ApplicationProperties.ContainsKey("PayloadTypeId"));
-        Assert.Equal(payloadTypeId, message?.ApplicationProperties["PayloadTypeId"]);
+        Assert.True(message?.ApplicationProperties.ContainsKey(payloadTypeIdProperty));
+        Assert.Equal(payloadTypeId, message?.ApplicationProperties[payloadTypeIdProperty]);
     }
 
     [Theory]
@@ -531,11 +573,20 @@ public class DispatchTest : IDisposable
         {
             return _sentMessagesToTopic.FirstOrDefault();
         }
-        if (clientToCheck == "sessionQueue")
+        if (clientToCheck == "topic2")
         {
-            return _sentMessagesToQueueSession.FirstOrDefault();
+            return _sentMessagesToTopicCustomProperty.FirstOrDefault();
         }
-        return _sentMessagesToQueue.FirstOrDefault();
+        if (clientToCheck == "queue")
+        {
+            return _sentMessagesToQueue.FirstOrDefault();
+        }
+        if (clientToCheck == "queue2")
+        {
+            return _sentMessagesToQueueCustomProperty.FirstOrDefault();
+        }
+        // sessionQueue
+        return _sentMessagesToQueueSession.FirstOrDefault();
     }
 
     public void Dispose()

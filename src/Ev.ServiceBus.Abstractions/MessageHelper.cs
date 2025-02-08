@@ -4,9 +4,9 @@ namespace Ev.ServiceBus.Abstractions;
 
 public static class MessageHelper
 {
-    public static string? GetPayloadTypeId(this ServiceBusReceivedMessage message)
+    public static string? GetPayloadTypeId(this ServiceBusReceivedMessage message, string? payloadTypeIdProperty)
     {
-        return TryGetValue(message, UserProperties.PayloadTypeIdProperty);
+        return TryGetValue(message, payloadTypeIdProperty ?? UserProperties.DefaultPayloadTypeIdProperty);
     }
 
     private static string? TryGetValue(ServiceBusReceivedMessage message, string propertyName)
@@ -15,7 +15,7 @@ public static class MessageHelper
         return value as string;
     }
 
-    public static ServiceBusMessage CreateMessage(string contentType, byte[] body, string payloadTypeId)
+    public static ServiceBusMessage CreateMessage(string contentType, byte[] body, string payloadTypeId, string? payloadTypeIdProperty)
     {
         var message = new ServiceBusMessage(body)
         {
@@ -24,7 +24,7 @@ public static class MessageHelper
             ApplicationProperties =
             {
                 {UserProperties.MessageTypeProperty, "IntegrationEvent"},
-                {UserProperties.PayloadTypeIdProperty, payloadTypeId}
+                {payloadTypeIdProperty ?? UserProperties.DefaultPayloadTypeIdProperty, payloadTypeId}
             }
         };
         return message;
