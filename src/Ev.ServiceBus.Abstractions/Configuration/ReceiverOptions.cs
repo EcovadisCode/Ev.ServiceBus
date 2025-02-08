@@ -41,4 +41,11 @@ public abstract class ReceiverOptions : ClientOptions, IMessageReceiverOptions
     {
         SessionProcessorOptions = config;
     }
+
+    public string? PayloadTypeIdProperty { get; private set; }
+
+    public void WithCustomPayloadTypeIdProperty(string payloadTypeIdProperty)
+    {
+        PayloadTypeIdProperty = payloadTypeIdProperty;
+    }
 }

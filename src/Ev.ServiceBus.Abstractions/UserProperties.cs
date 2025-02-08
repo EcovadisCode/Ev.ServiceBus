@@ -5,6 +5,6 @@
 /// </summary>
 public static class UserProperties
 {
-    public const string PayloadTypeIdProperty = "PayloadTypeId";
+    public const string DefaultPayloadTypeIdProperty = "PayloadTypeId";
     public const string MessageTypeProperty = "MessageType";
 }

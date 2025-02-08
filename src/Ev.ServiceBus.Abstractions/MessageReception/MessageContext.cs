@@ -8,24 +8,24 @@ namespace Ev.ServiceBus.Abstractions;
 
 public class MessageContext
 {
-    public MessageContext(ProcessSessionMessageEventArgs args, ClientType clientType, string resourceId)
+    public MessageContext(ProcessSessionMessageEventArgs args, ClientType clientType, string resourceId, string? payloadTypeIdProperty)
     {
         SessionArgs = args;
         ClientType = clientType;
         ResourceId = resourceId;
         Message = args.Message;
         CancellationToken = args.CancellationToken;
-        PayloadTypeId = Message.GetPayloadTypeId();
+        PayloadTypeId = Message.GetPayloadTypeId(payloadTypeIdProperty);
     }
 
-    public MessageContext(ProcessMessageEventArgs args, ClientType clientType, string resourceId)
+    public MessageContext(ProcessMessageEventArgs args, ClientType clientType, string resourceId, string? payloadTypeIdProperty)
     {
         Args = args;
         ClientType = clientType;
         ResourceId = resourceId;
         Message = args.Message;
         CancellationToken = args.CancellationToken;
-        PayloadTypeId = Message.GetPayloadTypeId();
+        PayloadTypeId = Message.GetPayloadTypeId(payloadTypeIdProperty);
     }
 
     public ServiceBusReceivedMessage Message { get; }

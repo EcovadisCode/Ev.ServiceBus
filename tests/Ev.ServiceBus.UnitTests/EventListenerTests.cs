@@ -14,8 +14,10 @@ namespace Ev.ServiceBus.UnitTests;
 
 public class EventListenerTests
 {
-    [Fact]
-    public async Task CanListenToQueueEvents()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("customPropertyName")]
+    public async Task CanListenToQueueEvents(string customPropertyName)
     {
         var mock = new Mock<IServiceBusEventListener>();
         var composer = new Composer();
@@ -31,6 +33,7 @@ public class EventListenerTests
             services.RegisterServiceBusReception().FromQueue("testQueue", builder =>
             {
                 builder.RegisterReception<SubscribedEvent, SubscribedEventHandler>();
+                builder.WithCustomPayloadTypeIdProperty(customPropertyName);
             });
 
         });
@@ -38,7 +41,7 @@ public class EventListenerTests
 
         var clientMock = composer.Provider.GetProcessorMock("testQueue");
         var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
-        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
+        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent), customPropertyName);
 
         await clientMock.TriggerMessageReception(message, CancellationToken.None);
 
@@ -71,7 +74,7 @@ public class EventListenerTests
 
         var clientMock = composer.Provider.GetProcessorMock("testQueue");
         var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
-        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
+        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent), null);
         message.MessageId = Guid.NewGuid().ToString();
 
         var action = async () =>
@@ -119,7 +122,7 @@ public class EventListenerTests
 
         var clientMock = composer.Provider.GetProcessorMock("testTopic", "testSubscription");
         var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
-        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
+        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent), null);
 
         await clientMock.TriggerMessageReception(message, CancellationToken.None);
 
@@ -152,7 +155,7 @@ public class EventListenerTests
 
         var clientMock = composer.Provider.GetProcessorMock("testTopic", "testSubscription");
         var result = composer.Provider.GetRequiredService<IMessagePayloadSerializer>().SerializeBody(new SubscribedEvent());
-        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent));
+        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, nameof(SubscribedEvent), null);
         message.MessageId = Guid.NewGuid().ToString();
 
         var action = async () =>

@@ -309,7 +309,7 @@ public class ReceptionTest
             ApplicationProperties =
             {
                 { UserProperties.MessageTypeProperty, "IntegrationEvent" },
-                { UserProperties.PayloadTypeIdProperty, "MyEvent" }
+                { UserProperties.DefaultPayloadTypeIdProperty, "MyEvent" }
             }
         };
 

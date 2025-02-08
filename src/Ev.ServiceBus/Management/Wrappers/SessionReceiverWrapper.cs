@@ -65,7 +65,7 @@ public class SessionReceiverWrapper : ReceiverWrapper
             _ => SessionProcessorClient
         };
         SessionProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
-        SessionProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
+        SessionProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId, _composedOptions.PayloadTypeIdProperty));
         await SessionProcessorClient.StartProcessingAsync();
 
         _onExceptionReceivedHandler = _ => Task.CompletedTask;
