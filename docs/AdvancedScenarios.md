@@ -201,3 +201,29 @@ public class MyMessageSender
             }
         }
 ```
+
+
+## Customizing the PayloadTypeId property name
+
+This package uses a UserProperty attached to every message in order to differentiate them by their payload type. 
+This property is the unique identifier for a designated contract across the whole system.
+The name of the property that holds the contract name is *PayloadTypeId* by default, but there are cases where you want to change that property name.
+To send messages with a different property name you need to configure it in the receiver:
+
+```csharp
+services.RegisterServiceBusReception().FromQueue("myQueue", builder =>
+        {
+            builder.RegisterReception<Payload, MetadataHandler>();
+            builder.WithCustomPayloadTypeIdProperty("DifferentPayloadTypeIdPropertyName");
+        });
+```
+
+To receive messages with a different property name you need to configure it in the sender:
+
+```csharp
+services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
+        {
+            builder.RegisterDispatch<PublishedEvent>()
+                .CustomizePayloadTypeIdProperty("DifferentPayloadTypeIdPropertyName");
+        });
+```

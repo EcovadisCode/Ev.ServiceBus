@@ -85,7 +85,7 @@ public class ReceiverWrapper
             _ => ProcessorClient
         };
         ProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
-        ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
+        ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId, _composedOptions.PayloadTypeIdProperty));
         await ProcessorClient.StartProcessingAsync();
 
         _onExceptionReceivedHandler = _ => Task.CompletedTask;

@@ -213,9 +213,9 @@ public class DispatchSender : IDispatchSender
     {
         var originalCorrelationId = _messageMetadataAccessor.Metadata?.CorrelationId ?? Guid.NewGuid().ToString();
         var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
-        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
+        var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId, registration.PayloadTypeIdProperty);
 
-        dispatch.ApplicationProperties.Remove(UserProperties.PayloadTypeIdProperty);
+        dispatch.ApplicationProperties.Remove(registration.PayloadTypeIdProperty ?? UserProperties.DefaultPayloadTypeIdProperty);
         foreach (var dispatchApplicationProperty in dispatch.ApplicationProperties)
         {
             message.ApplicationProperties[dispatchApplicationProperty.Key] = dispatchApplicationProperty.Value;

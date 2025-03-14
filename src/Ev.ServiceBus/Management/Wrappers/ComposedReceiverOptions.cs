@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
@@ -16,6 +18,7 @@ public class ComposedReceiverOptions
         SessionMode = false;
         ConnectionSettings = allOptions.First().ConnectionSettings;
         FirstOption = allOptions.First();
+        PayloadTypeIdProperty = allOptions.FirstOrDefault(o => !string.IsNullOrEmpty(o.PayloadTypeIdProperty))?.PayloadTypeIdProperty;
 
         ProcessorOptions = new ServiceBusProcessorOptions();
         foreach (var config in AllOptions.Select(o => o.ServiceBusProcessorOptions))
@@ -44,7 +47,8 @@ public class ComposedReceiverOptions
     public ServiceBusProcessorOptions ProcessorOptions { get; }
     public ServiceBusSessionProcessorOptions? SessionProcessorOptions { get; }
     public ConnectionSettings? ConnectionSettings { get; }
-
+    public string? PayloadTypeIdProperty { get; }
+    
     internal void UpdateResourceId(string resourceId)
     {
         ResourceId = resourceId;

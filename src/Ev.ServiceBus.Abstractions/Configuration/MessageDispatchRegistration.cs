@@ -39,6 +39,8 @@ public class MessageDispatchRegistration
     /// </summary>
     public Type PayloadType { get; }
 
+    public string? PayloadTypeIdProperty { get; private set; }
+
     /// <summary>
     /// Sets the PayloadTypeId (by default it will take the <see cref="MemberInfo.Name"/> of the payload <see cref="Type"/> object)
     /// </summary>
@@ -53,6 +55,17 @@ public class MessageDispatchRegistration
         }
 
         PayloadTypeId = payloadId;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the PayloadTypeIdProperty from Metadata used to store the PayloadTypeId
+    /// </summary>
+    /// <param name="payloadTypeIdProperty"></param>
+    /// <returns></returns>
+    public MessageDispatchRegistration CustomizePayloadTypeIdProperty(string payloadTypeIdProperty)
+    {
+        PayloadTypeIdProperty = payloadTypeIdProperty;
         return this;
     }
 

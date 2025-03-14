@@ -94,4 +94,13 @@ public class ReceptionRegistrationBuilder
     {
         _options.EnableSessionHandling(config);
     }
+
+    /// <summary>
+    /// Overrides the default property name for PayloadTypeId key in metadata.
+    /// </summary>
+    /// <param name="customPayloadTypeIdProperty"></param>
+    public void WithCustomPayloadTypeIdProperty(string customPayloadTypeIdProperty)
+    {
+        _options.WithCustomPayloadTypeIdProperty(customPayloadTypeIdProperty);
+    }
 }
