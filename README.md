@@ -19,7 +19,7 @@ The nuget will take care of deserializing the message into proper object and giv
 
 This whole process revolves around the ability to differentiate messages by their payload types. 
 To do that, it adds a UserProperty to every message. This property is the unique identifier for a designated contract 
-across the whole system (name of the property : `PayloadTypeId`). 
+across the whole system (name of the property : `PayloadTypeId`, if you need to use another property name, please see *Customizing the PayloadTypeId property name* in [Advanced Scenarios](./docs/AdvancedScenarios.md)). 
 
 > Be careful when you have a system with several applications. If several applications send 2 different contracts 
 > with the same Id to a single queue/topic, the receiving handlers will not be able to differentiate between them.
