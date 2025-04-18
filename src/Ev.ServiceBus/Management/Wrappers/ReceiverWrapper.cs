@@ -75,17 +75,52 @@ public class ReceiverWrapper
             return;
         }
 
-        ProcessorClient = _composedOptions.FirstOption switch
+        if ((_parentOptions.Settings.UseQueueIsolation || _parentOptions.Settings.UseTopicIsolation)
+            && string.IsNullOrEmpty(_parentOptions.Settings.IsolationKey))
         {
-            QueueOptions queueOptions => _client!.CreateProcessor(queueOptions.QueueName, _composedOptions.ProcessorOptions),
-            SubscriptionOptions subscriptionOptions => _client!.CreateProcessor(
-                subscriptionOptions.TopicName,
-                subscriptionOptions.SubscriptionName,
-                _composedOptions.ProcessorOptions),
-            _ => ProcessorClient
-        };
+            throw new Exception("Isolation key must be set when isolation is enabled");
+        }
+        else
+        {
+            ServiceBusIsolationExtensions.InstanceSuffix = _parentOptions.Settings.IsolationKey!;
+        }
+
+        if (_composedOptions.FirstOption is QueueOptions queueOptions)
+        {
+            _composedOptions.ProcessorOptions.AutoCompleteMessages = !_parentOptions.Settings.UseQueueIsolation;
+            ProcessorClient = _client!.CreateProcessor(queueOptions.QueueName, _composedOptions.ProcessorOptions);
+            if (_parentOptions.Settings.UseQueueIsolation)
+            {
+                ProcessorClient.ProcessMessageAsync += args => OnMessageReceivedIsolated(
+                    new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
+            }
+            else
+            {
+                ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(
+                    new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
+            }
+        }
+        else if (_composedOptions.FirstOption is SubscriptionOptions subscriptionOptions)
+        {
+            _composedOptions.ProcessorOptions.AutoCompleteMessages = true;
+            if (_parentOptions.Settings.UseTopicIsolation)
+            {
+                var instanceSubscriptionName = ServiceBusIsolationExtensions.GetInstanceSubscriptionName(
+                    subscriptionOptions.SubscriptionName);
+                await ServiceBusIsolationExtensions.CreateSubscription(
+                    _parentOptions.Settings.ConnectionSettings!.ConnectionString,
+                    subscriptionOptions.TopicName,
+                    instanceSubscriptionName);
+                ProcessorClient = _client!.CreateProcessor(subscriptionOptions.TopicName, instanceSubscriptionName, _composedOptions.ProcessorOptions);
+            }
+            else
+            {
+                ProcessorClient = _client!.CreateProcessor(subscriptionOptions.TopicName, subscriptionOptions.SubscriptionName, _composedOptions.ProcessorOptions);
+            }
+            ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(
+                new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
+        }
         ProcessorClient!.ProcessErrorAsync += OnExceptionOccured;
-        ProcessorClient.ProcessMessageAsync += args => OnMessageReceived(new MessageContext(args, _composedOptions.ClientType, _composedOptions.ResourceId));
         await ProcessorClient.StartProcessingAsync();
 
         _onExceptionReceivedHandler = _ => Task.CompletedTask;
@@ -111,6 +146,46 @@ public class ReceiverWrapper
             .RunWithInTransaction(
                 context.ReadExecutionContext(),
                 () => handler.HandleMessageAsync(context));
+    }
+
+    /// <summary>
+    /// Called when a messge from queue is received in isolation mode
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    protected async Task OnMessageReceivedIsolated(MessageContext context)
+    {
+        var args = context.Args;
+        if (args == null)
+        {
+            Console.WriteLine($"context.Args is null");
+            return;
+        }
+        var message = args.Message;
+
+        var expectedIsolationKey = _parentOptions.Settings.IsolationKey;
+        var receivedIsolationKey = message.GetIsolationKey();
+        if (receivedIsolationKey != expectedIsolationKey)
+        {
+            Console.WriteLine($"[{expectedIsolationKey}] Ignoring message for another isolation key: {receivedIsolationKey}");
+            await args.AbandonMessageAsync(message);
+            // We want to give time for other instances to try pick it up
+            await Task.Delay(5000);
+            return;
+        }
+
+        using var scope = _provider.CreateScope();
+        TrySetReceptionRegistrationOnContext(context, scope);
+
+        var handler = scope.ServiceProvider.GetRequiredService<MessageReceptionHandler>();
+        await _transactionManager
+            .RunWithInTransaction(
+                context.ReadExecutionContext(),
+                async () =>
+                {
+                    await handler.HandleMessageAsync(context);
+                    await args.CompleteMessageAsync(message);
+                });
     }
 
     private void TrySetReceptionRegistrationOnContext(MessageContext context, IServiceScope scope)
@@ -139,7 +214,8 @@ public class ReceiverWrapper
                    messageId: processException?.MessageId,
                    payloadTypeId: processException?.PayloadTypeId,
                    sessionId: processException?.SessionId,
-                   handlerName: processException?.HandlerName))
+                   handlerName: processException?.HandlerName,
+                   isolationKey: processException?.IsolationKey ?? _parentOptions.Settings.IsolationKey))
         {
             var processExceptionInnerException = processException is not null ? processException.InnerException! : exceptionEvent.Exception!;
             _messageProcessingLogger.FailedToProcessMessage(

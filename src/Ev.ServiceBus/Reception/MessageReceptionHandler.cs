@@ -83,6 +83,7 @@ public class MessageReceptionHandler
                     payloadTypeId: executionContext.PayloadTypeId,
                     sessionId: executionContext.SessionId,
                     handlerName: executionContext.HandlerName,
+                    isolationKey: executionContext.IsolationKey,
                     ex);
             }
             finally
@@ -109,7 +110,8 @@ public class MessageReceptionHandler
             messageId: executionContext.MessageId,
             payloadTypeId: executionContext.PayloadTypeId,
             sessionId: executionContext.SessionId,
-            handlerName: executionContext.HandlerName
+            handlerName: executionContext.HandlerName,
+            isolationKey: executionContext.IsolationKey
         );
     }
 

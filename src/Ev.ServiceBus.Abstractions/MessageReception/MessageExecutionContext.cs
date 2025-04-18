@@ -10,6 +10,7 @@ public class MessageExecutionContext
     public string? HandlerName { get; set; }
 
     public string? DiagnosticId { get; set; }
+    public string? IsolationKey { get; set; }
 
     public string ExecutionName => $"{ClientType}/{ResourceId}/{PayloadTypeId}";
 }

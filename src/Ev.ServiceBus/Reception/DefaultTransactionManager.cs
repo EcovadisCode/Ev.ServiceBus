@@ -22,6 +22,7 @@ public class DefaultTransactionManager : ITransactionManager
             Activity.Current.SetTag(nameof(executionContext.HandlerName), executionContext.HandlerName);
             Activity.Current.SetTag(nameof(executionContext.SessionId), executionContext.SessionId);
             Activity.Current.SetTag(nameof(executionContext.MessageId), executionContext.MessageId);
+            Activity.Current.SetTag(nameof(executionContext.IsolationKey), executionContext.IsolationKey);
         }
 
         await transaction();

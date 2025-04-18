@@ -139,14 +139,16 @@ public static class LoggingExtensions
         string? payloadTypeId,
         string? messageId,
         string? sessionId,
-        string? handlerName)
+        string? handlerName,
+        string? isolationKey)
         => logger.BeginScope(new Dictionary<string, string?> () {
             ["EVSB_Client"] = clientType,
             ["EVSB_ResourceId"] = resourceId,
             ["EVSB_PayloadTypeId"] = payloadTypeId,
             ["EVSB_MessageId"] = messageId,
             ["EVSB_SessionId"] = sessionId,
-            ["EVSB_ReceptionHandler"] = handlerName
+            ["EVSB_ReceptionHandler"] = handlerName,
+            ["EVSB_IsolationKey"] = isolationKey,
         });
 
     private static readonly Action<ILogger, long, Exception?> LogMessageExecutionCompleted = LoggerMessage.Define<long>(

@@ -192,6 +192,14 @@ public class DispatchSender : IDispatchSender
             )
             .ToArray();
 
+        foreach (var item in dispatches)
+        {
+            if (item.Registration.Options is QueueOptions queueOptions)
+            {
+                item.Message.SetIsolationKey(ServiceBusIsolationExtensions.InstanceSuffix);
+            }
+        }
+
         var messagesPerResource = (
             from dispatch in dispatches
             group dispatch by new { dispatch.Registration.Options.ClientType, dispatch.Registration.Options.ResourceId } into gr
@@ -212,6 +220,7 @@ public class DispatchSender : IDispatchSender
         Abstractions.Dispatch dispatch)
     {
         var originalCorrelationId = _messageMetadataAccessor.Metadata?.CorrelationId ?? Guid.NewGuid().ToString();
+        var originalIsolationKey = _messageMetadataAccessor.Metadata?.ApplicationProperties.GetIsolationKey();
         var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
         var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
 
@@ -223,7 +232,8 @@ public class DispatchSender : IDispatchSender
 
         message.SessionId = dispatch.SessionId;
         message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
-        if(dispatch.DiagnosticId != null)
+        message.SetIsolationKey(dispatch.ApplicationProperties.GetIsolationKey() ?? originalIsolationKey);
+        if (dispatch.DiagnosticId != null)
             message.SetDiagnosticIdIfIsNot(dispatch.DiagnosticId);
         if (!string.IsNullOrWhiteSpace(dispatch.MessageId))
         {
