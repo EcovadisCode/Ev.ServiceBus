@@ -21,27 +21,50 @@ public class MessageReceptionHandler
     private readonly MessageMetadataAccessor _messageMetadataAccessor;
     private readonly IEnumerable<IServiceBusEventListener> _eventListeners;
     private readonly IServiceProvider _provider;
+    private readonly ServiceBusOptions _serviceBusOptions;
 
     public MessageReceptionHandler(
         IServiceProvider provider,
         IMessagePayloadSerializer messagePayloadSerializer,
         ILogger<LoggingExtensions.MessageProcessing> logger,
         IMessageMetadataAccessor messageMetadataAccessor,
-        IEnumerable<IServiceBusEventListener> eventListeners)
+        IEnumerable<IServiceBusEventListener> eventListeners,
+        ServiceBusOptions serviceBusOptions)
     {
         _provider = provider;
         _messagePayloadSerializer = messagePayloadSerializer;
         _logger = logger;
         _messageMetadataAccessor = (MessageMetadataAccessor)messageMetadataAccessor;
         _eventListeners = eventListeners;
+        _serviceBusOptions = serviceBusOptions;
         _callHandlerInfo = GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
     }
 
     public async Task HandleMessageAsync(MessageContext context)
     {
+        if (_serviceBusOptions.Settings.UseIsolation && string.IsNullOrEmpty(_serviceBusOptions.Settings.IsolationKey))
+        {
+            throw new Exception("Isolation key must be set when isolation is enabled");
+        }
+
         using (AddLoggingContext(context))
         {
             _messageMetadataAccessor.SetData(context);
+
+            if (_serviceBusOptions.Settings.UseIsolation)
+            {
+                var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey;
+                var receivedIsolationKey = context.IsolationKey;
+                if (receivedIsolationKey != expectedIsolationKey)
+                {
+                    _logger.LogInformation("[{expectedIsolationKey}] Ignoring message for another isolation key: {receivedIsolationKey}",
+                        expectedIsolationKey, receivedIsolationKey);
+                    await _messageMetadataAccessor.Metadata!.AbandonMessageAsync();
+                    // We want to give time for other instances to try pick it up
+                    await Task.Delay(5000);
+                    return;
+                }
+            }
 
             var executionStartedArgs = new ExecutionStartedArgs(context);
             foreach (var listener in _eventListeners)

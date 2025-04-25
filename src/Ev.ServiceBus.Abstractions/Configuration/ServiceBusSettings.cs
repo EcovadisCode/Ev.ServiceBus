@@ -26,11 +26,7 @@ public sealed class ServiceBusSettings
     /// <summary>
     /// When true, The application will subscribe to getting messages from topic in isolation mode, using IsolationKey as differentiator
     /// </summary>
-    public bool UseTopicIsolation { get; set; } = false;
-    /// <summary>
-    /// Then true, The application will receive messages from Queue only intended for it, using IsolationKey as differentiator.
-    /// </summary>
-    public bool UseQueueIsolation { get; set; } = false;
+    public bool UseIsolation { get; set; } = false;
     /// <summary>
     /// Key that is used to deremine if this running instance should receive and complete or abandon a message
     /// </summary>

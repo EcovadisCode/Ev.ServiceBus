@@ -19,19 +19,22 @@ public class DispatchSender : IDispatchSender
     private readonly ServiceBusRegistry _registry;
     private readonly IMessageMetadataAccessor _messageMetadataAccessor;
     private readonly IEnumerable<IDispatchExtender> _dispatchCustomizers;
+    private readonly ServiceBusOptions _serviceBusOptions;
 
     public DispatchSender(
         ServiceBusRegistry registry,
         IMessagePayloadSerializer messagePayloadSerializer,
         ServiceBusRegistry dispatchRegistry,
         IMessageMetadataAccessor messageMetadataAccessor,
-        IEnumerable<IDispatchExtender> dispatchCustomizers)
+        IEnumerable<IDispatchExtender> dispatchCustomizers,
+        ServiceBusOptions serviceBusOptions)
     {
         _registry = registry;
         _messagePayloadSerializer = messagePayloadSerializer;
         _dispatchRegistry = dispatchRegistry;
         _messageMetadataAccessor = messageMetadataAccessor;
         _dispatchCustomizers = dispatchCustomizers;
+        _serviceBusOptions = serviceBusOptions;
     }
 
     /// <inheritdoc />
@@ -194,10 +197,7 @@ public class DispatchSender : IDispatchSender
 
         foreach (var item in dispatches)
         {
-            if (item.Registration.Options is QueueOptions queueOptions)
-            {
-                item.Message.SetIsolationKey(ServiceBusIsolationExtensions.InstanceSuffix);
-            }
+            item.Message.SetIsolationKey(_serviceBusOptions.Settings.IsolationKey);
         }
 
         var messagesPerResource = (
