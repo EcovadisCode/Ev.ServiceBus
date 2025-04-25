@@ -8,6 +8,7 @@ using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.Extensions;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Management;
+using Microsoft.Extensions.Options;
 
 namespace Ev.ServiceBus.Dispatch;
 
@@ -27,14 +28,14 @@ public class DispatchSender : IDispatchSender
         ServiceBusRegistry dispatchRegistry,
         IMessageMetadataAccessor messageMetadataAccessor,
         IEnumerable<IDispatchExtender> dispatchCustomizers,
-        ServiceBusOptions serviceBusOptions)
+        IOptions<ServiceBusOptions> serviceBusOptions)
     {
         _registry = registry;
         _messagePayloadSerializer = messagePayloadSerializer;
         _dispatchRegistry = dispatchRegistry;
         _messageMetadataAccessor = messageMetadataAccessor;
         _dispatchCustomizers = dispatchCustomizers;
-        _serviceBusOptions = serviceBusOptions;
+        _serviceBusOptions = serviceBusOptions.Value;
     }
 
     /// <inheritdoc />

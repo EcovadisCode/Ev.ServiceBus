@@ -10,6 +10,7 @@ using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Ev.ServiceBus.Reception;
 
@@ -29,14 +30,14 @@ public class MessageReceptionHandler
         ILogger<LoggingExtensions.MessageProcessing> logger,
         IMessageMetadataAccessor messageMetadataAccessor,
         IEnumerable<IServiceBusEventListener> eventListeners,
-        ServiceBusOptions serviceBusOptions)
+        IOptions<ServiceBusOptions> serviceBusOptions)
     {
         _provider = provider;
         _messagePayloadSerializer = messagePayloadSerializer;
         _logger = logger;
         _messageMetadataAccessor = (MessageMetadataAccessor)messageMetadataAccessor;
         _eventListeners = eventListeners;
-        _serviceBusOptions = serviceBusOptions;
+        _serviceBusOptions = serviceBusOptions.Value;
         _callHandlerInfo = GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
     }
 
