@@ -196,11 +196,6 @@ public class DispatchSender : IDispatchSender
             )
             .ToArray();
 
-        foreach (var item in dispatches)
-        {
-            item.Message.SetIsolationKey(_serviceBusOptions.Settings.IsolationKey);
-        }
-
         var messagesPerResource = (
             from dispatch in dispatches
             group dispatch by new { dispatch.Registration.Options.ClientType, dispatch.Registration.Options.ResourceId } into gr
@@ -233,7 +228,7 @@ public class DispatchSender : IDispatchSender
 
         message.SessionId = dispatch.SessionId;
         message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
-        message.SetIsolationKey(dispatch.ApplicationProperties.GetIsolationKey() ?? originalIsolationKey);
+        message.SetIsolationKey(originalIsolationKey ?? _serviceBusOptions.Settings.IsolationKey);
         if (dispatch.DiagnosticId != null)
             message.SetDiagnosticIdIfIsNot(dispatch.DiagnosticId);
         if (!string.IsNullOrWhiteSpace(dispatch.MessageId))
