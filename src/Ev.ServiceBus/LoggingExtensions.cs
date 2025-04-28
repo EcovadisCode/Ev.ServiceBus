@@ -171,5 +171,15 @@ public static class LoggingExtensions
         string entityPath, Exception exception)
         => LogFailedToProcessMessage(logger, errorSource, @namespace, entityPath, exception);
 
+    private static readonly Action<ILogger, string?, string?, Exception?> LogIgnoreMessage =
+        LoggerMessage.Define<string?, string?>(
+            LogLevel.Information,
+            new EventId(1, "MessageProcessing"),
+            "[{expectedIsolationKey}] Ignoring message for another isolation key: {receivedIsolationKey}"
+        );
+
+    public static void IgnoreMessage(this ILogger logger, string? expectedIsolationKey, string? receivedIsolationKey)
+        => LogIgnoreMessage(logger, expectedIsolationKey, receivedIsolationKey, default);
+
     #endregion
 }

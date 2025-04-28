@@ -37,18 +37,23 @@ public class ServiceBusEngine
 
     public async Task StartAll()
     {
-        _serviceBusEngineLogger.EngineStarting(_options.Value.Settings.Enabled, _options.Value.Settings.ReceiveMessages);
+        var settings = _options.Value.Settings;
+        _serviceBusEngineLogger.EngineStarting(settings.Enabled, settings.ReceiveMessages);
 
-        if (_options.Value.Settings.ConnectionSettings != null)
+        if (settings.ConnectionSettings != null)
         {
             try
             {
-                _registry.CreateOrGetServiceBusClient(_options.Value.Settings.ConnectionSettings);
+                _registry.CreateOrGetServiceBusClient(settings.ConnectionSettings);
             }
             catch (Exception ex)
             {
                 _serviceBusEngineLogger.FailedToConnectToServiceBus(ex);
             }
+        }
+        if (settings.UseIsolation && string.IsNullOrEmpty(settings.IsolationKey))
+        {
+            throw new Exception("Isolation key must be set when isolation is enabled");
         }
 
         BuildSenders();
