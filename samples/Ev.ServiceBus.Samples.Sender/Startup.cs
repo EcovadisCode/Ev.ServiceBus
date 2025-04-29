@@ -45,6 +45,9 @@ public class Startup
                 {
                     // Provide a connection string here !
                     settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=", new ServiceBusClientOptions());
+                    // In case if you want to use isolation mode, uncomment these 2 lines:
+                    // settings.UseIsolation = true;
+                    // settings.IsolationKey = "your-isolation-key";
                 })
             .PopulateAsyncApiSchemaWithEvServiceBus()
             .RegisterDispatchExtender<MyDispatchExtender>()
