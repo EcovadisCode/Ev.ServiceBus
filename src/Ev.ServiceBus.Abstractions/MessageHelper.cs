@@ -38,6 +38,7 @@ public static class MessageHelper
 
     public static string? GetIsolationKey(this IReadOnlyDictionary<string, object> applicationProperties)
     {
+        if (applicationProperties == null) return null;
         applicationProperties.TryGetValue(UserProperties.IsolationKey, out var value);
         return value == null ? null : (string)value;
     }
