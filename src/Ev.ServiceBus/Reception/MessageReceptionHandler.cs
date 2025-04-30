@@ -10,6 +10,7 @@ using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Ev.ServiceBus.Reception;
 
@@ -21,19 +22,22 @@ public class MessageReceptionHandler
     private readonly MessageMetadataAccessor _messageMetadataAccessor;
     private readonly IEnumerable<IServiceBusEventListener> _eventListeners;
     private readonly IServiceProvider _provider;
+    private readonly ServiceBusOptions _serviceBusOptions;
 
     public MessageReceptionHandler(
         IServiceProvider provider,
         IMessagePayloadSerializer messagePayloadSerializer,
         ILogger<LoggingExtensions.MessageProcessing> logger,
         IMessageMetadataAccessor messageMetadataAccessor,
-        IEnumerable<IServiceBusEventListener> eventListeners)
+        IEnumerable<IServiceBusEventListener> eventListeners,
+        IOptions<ServiceBusOptions> serviceBusOptions)
     {
         _provider = provider;
         _messagePayloadSerializer = messagePayloadSerializer;
         _logger = logger;
         _messageMetadataAccessor = (MessageMetadataAccessor)messageMetadataAccessor;
         _eventListeners = eventListeners;
+        _serviceBusOptions = serviceBusOptions.Value;
         _callHandlerInfo = GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
     }
 
@@ -42,6 +46,18 @@ public class MessageReceptionHandler
         using (AddLoggingContext(context))
         {
             _messageMetadataAccessor.SetData(context);
+
+            if (_serviceBusOptions.Settings.UseIsolation)
+            {
+                var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey;
+                var receivedIsolationKey = context.IsolationKey;
+                if (receivedIsolationKey != expectedIsolationKey)
+                {
+                    _logger.IgnoreMessage(expectedIsolationKey, receivedIsolationKey);
+                    await _messageMetadataAccessor.Metadata!.AbandonMessageAsync();
+                    return;
+                }
+            }
 
             var executionStartedArgs = new ExecutionStartedArgs(context);
             foreach (var listener in _eventListeners)
@@ -83,6 +99,7 @@ public class MessageReceptionHandler
                     payloadTypeId: executionContext.PayloadTypeId,
                     sessionId: executionContext.SessionId,
                     handlerName: executionContext.HandlerName,
+                    isolationKey: executionContext.IsolationKey,
                     ex);
             }
             finally
@@ -109,7 +126,8 @@ public class MessageReceptionHandler
             messageId: executionContext.MessageId,
             payloadTypeId: executionContext.PayloadTypeId,
             sessionId: executionContext.SessionId,
-            handlerName: executionContext.HandlerName
+            handlerName: executionContext.HandlerName,
+            isolationKey: executionContext.IsolationKey
         );
     }
 

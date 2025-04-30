@@ -9,6 +9,7 @@ public class FailedToProcessMessageException(
     string? payloadTypeId,
     string? sessionId,
     string? handlerName,
+    string? isolationKey,
     Exception innerException)
     : Exception("Failed to process Message", innerException)
 {
@@ -18,4 +19,5 @@ public class FailedToProcessMessageException(
     public string? PayloadTypeId { get; } = payloadTypeId;
     public string? SessionId { get; } = sessionId;
     public string? HandlerName { get; } = handlerName;
+    public string? IsolationKey { get; } = isolationKey;
 }

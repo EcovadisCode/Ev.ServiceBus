@@ -139,14 +139,16 @@ public static class LoggingExtensions
         string? payloadTypeId,
         string? messageId,
         string? sessionId,
-        string? handlerName)
+        string? handlerName,
+        string? isolationKey)
         => logger.BeginScope(new Dictionary<string, string?> () {
             ["EVSB_Client"] = clientType,
             ["EVSB_ResourceId"] = resourceId,
             ["EVSB_PayloadTypeId"] = payloadTypeId,
             ["EVSB_MessageId"] = messageId,
             ["EVSB_SessionId"] = sessionId,
-            ["EVSB_ReceptionHandler"] = handlerName
+            ["EVSB_ReceptionHandler"] = handlerName,
+            ["EVSB_IsolationKey"] = isolationKey,
         });
 
     private static readonly Action<ILogger, long, Exception?> LogMessageExecutionCompleted = LoggerMessage.Define<long>(
@@ -168,6 +170,16 @@ public static class LoggingExtensions
     public static void FailedToProcessMessage(this ILogger logger, string errorSource, string @namespace,
         string entityPath, Exception exception)
         => LogFailedToProcessMessage(logger, errorSource, @namespace, entityPath, exception);
+
+    private static readonly Action<ILogger, string?, string?, Exception?> LogIgnoreMessage =
+        LoggerMessage.Define<string?, string?>(
+            LogLevel.Information,
+            new EventId(1, "MessageProcessing"),
+            "[{expectedIsolationKey}] Ignoring message for another isolation key: {receivedIsolationKey}"
+        );
+
+    public static void IgnoreMessage(this ILogger logger, string? expectedIsolationKey, string? receivedIsolationKey)
+        => LogIgnoreMessage(logger, expectedIsolationKey, receivedIsolationKey, default);
 
     #endregion
 }

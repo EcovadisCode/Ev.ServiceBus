@@ -24,6 +24,15 @@ public sealed class ServiceBusSettings
     public ConnectionSettings? ConnectionSettings { get; private set; }
 
     /// <summary>
+    /// When true, The application will subscribe to getting messages from topic in isolation mode, using IsolationKey as differentiator
+    /// </summary>
+    public bool UseIsolation { get; set; } = false;
+    /// <summary>
+    /// Key that is used to deremine if this running instance should receive and complete or abandon a message
+    /// </summary>
+    public string? IsolationKey { get; set; } = null;
+
+    /// <summary>
     /// Sets the default Connection to use for every resource. (this can be overriden on each and every resource you want)
     /// </summary>
     /// <param name="connectionString"></param>

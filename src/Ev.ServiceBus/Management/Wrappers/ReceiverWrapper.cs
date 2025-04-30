@@ -139,7 +139,8 @@ public class ReceiverWrapper
                    messageId: processException?.MessageId,
                    payloadTypeId: processException?.PayloadTypeId,
                    sessionId: processException?.SessionId,
-                   handlerName: processException?.HandlerName))
+                   handlerName: processException?.HandlerName,
+                   isolationKey: processException?.IsolationKey))
         {
             var processExceptionInnerException = processException is not null ? processException.InnerException! : exceptionEvent.Exception!;
             _messageProcessingLogger.FailedToProcessMessage(
@@ -155,7 +156,7 @@ public class ReceiverWrapper
     protected async Task CallDefinedExceptionHandler(ProcessErrorEventArgs exceptionEvent)
     {
         var userDefinedExceptionHandler =
-            (IExceptionHandler) _provider.GetService(_composedOptions.ExceptionHandlerType!)!;
+            (IExceptionHandler)_provider.GetService(_composedOptions.ExceptionHandlerType!)!;
         await userDefinedExceptionHandler!.HandleExceptionAsync(exceptionEvent);
     }
 }

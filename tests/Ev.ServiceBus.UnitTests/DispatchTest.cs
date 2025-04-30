@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -27,20 +28,25 @@ public class DispatchTest : IDisposable
     private readonly List<ServiceBusMessage> _sentMessagesToTopic;
     private readonly List<ServiceBusMessage> _sentMessagesToQueue;
     private readonly List<ServiceBusMessage> _sentMessagesToQueueSession;
+    private readonly Mock<IMessageMetadata> _messageMetadata;
 
     public DispatchTest()
     {
-        var createMessageBatchOptions = new CreateMessageBatchOptions()
-        {
-            MaxSizeInBytes = 1000
-        };
-
-        _sentMessagesToTopic = new List<ServiceBusMessage>();
-        _sentMessagesToQueue = new List<ServiceBusMessage>();
-        _sentMessagesToQueueSession = new List<ServiceBusMessage>();
+        _sentMessagesToTopic = [];
+        _sentMessagesToQueue = [];
+        _sentMessagesToQueueSession = [];
         _composer = new Composer();
+        _messageMetadata = new Mock<IMessageMetadata>();
 
-        _composer.WithAdditionalServices(services =>
+        SetupComposer(_composer);
+        _composer.Compose().GetAwaiter().GetResult();
+        MockClients(_composer);
+        SimulatePublication().GetAwaiter().GetResult();
+    }
+
+    private void SetupComposer(Composer composer)
+    {
+        composer.WithAdditionalServices(services =>
         {
             services.RegisterServiceBusDispatch().ToTopic("testTopic", builder =>
             {
@@ -66,17 +72,21 @@ public class DispatchTest : IDisposable
             });
 
             var metadataAccessor = new Mock<IMessageMetadataAccessor>();
-            var messageMetadata = new Mock<IMessageMetadata>();
 
-            messageMetadata.SetupGet(x => x.CorrelationId).Returns(Guid.NewGuid().ToString);
-            metadataAccessor.SetupGet(x => x.Metadata).Returns(messageMetadata.Object);
+            _messageMetadata.SetupGet(x => x.CorrelationId).Returns(Guid.NewGuid().ToString);
+            metadataAccessor.SetupGet(x => x.Metadata).Returns(_messageMetadata.Object);
 
             services.Replace(new ServiceDescriptor(typeof(IMessageMetadataAccessor), metadataAccessor.Object));
         });
+    }
 
-        _composer.Compose().GetAwaiter().GetResult();
-
-        var topicClient = _composer.ClientFactory.GetSenderMock("testTopic");
+    private void MockClients(Composer composer)
+    {
+        var createMessageBatchOptions = new CreateMessageBatchOptions()
+        {
+            MaxSizeInBytes = 1000
+        };
+        var topicClient = composer.ClientFactory.GetSenderMock("testTopic");
         topicClient.Mock
             .Setup(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
@@ -88,7 +98,7 @@ public class DispatchTest : IDisposable
         topicClient.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToTopic, createMessageBatchOptions));
 
-        var queueClient = _composer.ClientFactory.GetSenderMock("testQueue");
+        var queueClient = composer.ClientFactory.GetSenderMock("testQueue");
         queueClient.Mock
             .Setup(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
@@ -99,7 +109,7 @@ public class DispatchTest : IDisposable
         queueClient.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToQueue, createMessageBatchOptions));
 
-        var queueClientSession = _composer.ClientFactory.GetSenderMock("testQueueSession");
+        var queueClientSession = composer.ClientFactory.GetSenderMock("testQueueSession");
         queueClientSession.Mock
             .Setup(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
@@ -109,8 +119,6 @@ public class DispatchTest : IDisposable
             });
         queueClientSession.Mock.Setup(o => o.CreateMessageBatchAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceBusModelFactory.ServiceBusMessageBatch(0, _sentMessagesToQueueSession, createMessageBatchOptions));
-
-        SimulatePublication().GetAwaiter().GetResult();
     }
 
     private async Task SimulatePublication()
@@ -523,6 +531,60 @@ public class DispatchTest : IDisposable
 
         // Dispose
         await provider.SimulateStopHost(new CancellationToken());
+    }
+
+    [Fact]
+    public async Task ShouldPassOnOriginalIsolationKey()
+    {
+        var isolationKey = "my-isolationKey";
+
+        _sentMessagesToQueue.Clear();
+        GivenIsolationKeyInMetadata(isolationKey);
+
+        using var scope = _composer.Provider.CreateScope();
+        var eventPublisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
+        var eventDispatcher = scope.ServiceProvider.GetRequiredService<IMessageDispatcher>();
+
+        eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" });
+        await eventDispatcher.ExecuteDispatches(CancellationToken.None);
+
+        _sentMessagesToQueue.Should().HaveCount(1);
+        _sentMessagesToQueue[0].ApplicationProperties.GetIsolationKey().Should().Be(isolationKey);
+    }
+
+    [Fact]
+    public async Task ShouldAssignIsolationKeyWhenInIsolationMode()
+    {
+        var isolationKey = "service-isolationKey";
+        var composer = new Composer();
+        composer.WithDefaultSettings(settings =>
+            {
+                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                settings.UseIsolation = true;
+                settings.IsolationKey = isolationKey;
+            });
+        SetupComposer(composer);
+        await composer.Compose();
+        MockClients(composer);
+        await SimulatePublication();
+
+        _sentMessagesToQueue.Clear();
+
+        using var scope = composer.Provider.CreateScope();
+        var eventPublisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
+        var eventDispatcher = scope.ServiceProvider.GetRequiredService<IMessageDispatcher>();
+
+        eventPublisher.Publish(new PublishedThroughQueueEvent { SomeNumber = 1, SomeString = "string" });
+        await eventDispatcher.ExecuteDispatches(CancellationToken.None);
+
+        _sentMessagesToQueue.Should().HaveCount(1);
+        _sentMessagesToQueue[0].ApplicationProperties.GetIsolationKey().Should().Be(isolationKey);
+    }
+
+    private void GivenIsolationKeyInMetadata(string isolationKey)
+    {
+        var appProperties = new Dictionary<string, object> { { UserProperties.IsolationKey , isolationKey } };
+        _messageMetadata.SetupGet(x => x.ApplicationProperties).Returns(appProperties);
     }
 
     private ServiceBusMessage GetMessageFrom(string clientToCheck)

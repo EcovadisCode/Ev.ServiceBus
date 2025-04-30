@@ -8,6 +8,7 @@ using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.Extensions;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Management;
+using Microsoft.Extensions.Options;
 
 namespace Ev.ServiceBus.Dispatch;
 
@@ -19,19 +20,22 @@ public class DispatchSender : IDispatchSender
     private readonly ServiceBusRegistry _registry;
     private readonly IMessageMetadataAccessor _messageMetadataAccessor;
     private readonly IEnumerable<IDispatchExtender> _dispatchCustomizers;
+    private readonly ServiceBusOptions _serviceBusOptions;
 
     public DispatchSender(
         ServiceBusRegistry registry,
         IMessagePayloadSerializer messagePayloadSerializer,
         ServiceBusRegistry dispatchRegistry,
         IMessageMetadataAccessor messageMetadataAccessor,
-        IEnumerable<IDispatchExtender> dispatchCustomizers)
+        IEnumerable<IDispatchExtender> dispatchCustomizers,
+        IOptions<ServiceBusOptions> serviceBusOptions)
     {
         _registry = registry;
         _messagePayloadSerializer = messagePayloadSerializer;
         _dispatchRegistry = dispatchRegistry;
         _messageMetadataAccessor = messageMetadataAccessor;
         _dispatchCustomizers = dispatchCustomizers;
+        _serviceBusOptions = serviceBusOptions.Value;
     }
 
     /// <inheritdoc />
@@ -212,6 +216,7 @@ public class DispatchSender : IDispatchSender
         Abstractions.Dispatch dispatch)
     {
         var originalCorrelationId = _messageMetadataAccessor.Metadata?.CorrelationId ?? Guid.NewGuid().ToString();
+        var originalIsolationKey = _messageMetadataAccessor.Metadata?.ApplicationProperties.GetIsolationKey();
         var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
         var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
 
@@ -223,7 +228,8 @@ public class DispatchSender : IDispatchSender
 
         message.SessionId = dispatch.SessionId;
         message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
-        if(dispatch.DiagnosticId != null)
+        message.SetIsolationKey(originalIsolationKey ?? _serviceBusOptions.Settings.IsolationKey);
+        if (dispatch.DiagnosticId != null)
             message.SetDiagnosticIdIfIsNot(dispatch.DiagnosticId);
         if (!string.IsNullOrWhiteSpace(dispatch.MessageId))
         {

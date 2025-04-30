@@ -16,6 +16,7 @@ public class MessageContext
         Message = args.Message;
         CancellationToken = args.CancellationToken;
         PayloadTypeId = Message.GetPayloadTypeId();
+        IsolationKey = Message.GetIsolationKey();
     }
 
     public MessageContext(ProcessMessageEventArgs args, ClientType clientType, string resourceId)
@@ -26,6 +27,7 @@ public class MessageContext
         Message = args.Message;
         CancellationToken = args.CancellationToken;
         PayloadTypeId = Message.GetPayloadTypeId();
+        IsolationKey = Message.GetIsolationKey();
     }
 
     public ServiceBusReceivedMessage Message { get; }
@@ -37,6 +39,7 @@ public class MessageContext
 
     public string? PayloadTypeId { get; internal set; }
     public MessageReceptionRegistration? ReceptionRegistration { get; internal set; }
+    public string? IsolationKey { get; internal set; }
 
     public MessageExecutionContext ReadExecutionContext()
     {
@@ -55,7 +58,8 @@ public class MessageContext
             PayloadTypeId = contextPayloadTypeId,
             SessionId = sessionArgsSessionId,
             HandlerName = handlerTypeFullName,
-            DiagnosticId = Message.GetDiagnosticId()
+            DiagnosticId = Message.GetDiagnosticId(),
+            IsolationKey = IsolationKey,
         };
     }
 
