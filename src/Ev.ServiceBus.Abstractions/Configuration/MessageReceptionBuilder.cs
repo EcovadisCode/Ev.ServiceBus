@@ -8,11 +8,16 @@ public class MessageReceptionBuilder
 
     public Type HandlerType => _registration.HandlerType;
 
-    public Type PayloadType => _registration.PayloadType;
+    public Type? PayloadType => _registration.PayloadType;
 
     public MessageReceptionBuilder(ClientOptions clientOptions, Type payloadType, Type handlerType)
     {
         _registration = new MessageReceptionRegistration(clientOptions, payloadType, handlerType);
+    }
+
+    public MessageReceptionBuilder(ClientOptions clientOptions, string payloadTypeId, Type handlerType)
+    {
+        _registration = new MessageReceptionRegistration(clientOptions, payloadTypeId, handlerType);
     }
 
     /// <summary>

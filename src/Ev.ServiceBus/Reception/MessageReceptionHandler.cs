@@ -78,9 +78,20 @@ public class MessageReceptionHandler
                 if (context.CancellationToken.IsCancellationRequested)
                     return;
 
-                var @event = _messagePayloadSerializer.DeSerializeBody(context.Message.Body.ToArray(), context.ReceptionRegistration!.PayloadType);
-                var methodInfo = _callHandlerInfo.MakeGenericMethod(context.ReceptionRegistration.PayloadType);
-                await ((Task) methodInfo.Invoke(this, new[] { context.ReceptionRegistration, @event, context.CancellationToken })!);
+                switch (context.ReceptionRegistration.HandlerMode)
+                {
+                    case HandlerMode.Typed:
+                        var @event = _messagePayloadSerializer.DeSerializeBody(context.Message.Body.ToArray(), context.ReceptionRegistration!.PayloadType);
+                        var methodInfo = _callHandlerInfo.MakeGenericMethod(context.ReceptionRegistration.PayloadType);
+                        await ((Task) methodInfo.Invoke(this, new[] { context.ReceptionRegistration, @event, context.CancellationToken })!);
+                        break;
+                    case HandlerMode.Generic:
+                        var handler = (IMessageReceptionHandler) _provider.GetRequiredService(context.ReceptionRegistration.HandlerType);
+
+                        await handler.Handle(context.Message.Body, _messageMetadataAccessor.Metadata!, context.CancellationToken);
+                        break;
+                    default: throw new ArgumentOutOfRangeException();
+                }
             }
             catch (Exception ex)
             {
