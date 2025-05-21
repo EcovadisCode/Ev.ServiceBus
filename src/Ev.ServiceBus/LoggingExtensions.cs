@@ -181,15 +181,15 @@ public static class LoggingExtensions
     public static void IgnoreMessage(this ILogger logger, string? expectedIsolationKey, string? receivedIsolationKey)
         => LogIgnoreMessage(logger, expectedIsolationKey, receivedIsolationKey, default);
 
-    private static readonly Action<ILogger, string?, string?, Exception?> LogReceivedIsolatedMessage =
-        LoggerMessage.Define<string?, string?>(
+    private static readonly Action<ILogger, string?, string, string, Exception> LogReceivedIsolatedMessage =
+        LoggerMessage.Define<string?, string?, string?>(
             LogLevel.Debug,
             new EventId(8, "MessageProcessing"),
-            "Received message with isolation key [{receivedIsolationKey}] from entity {queueOrTopicName}"
+            "Received message with isolation key: {receivedIsolationKey}, Namespace: {EVSB_Namespace} , EntityPath: {EVSB_EntityPath}"
         );
 
-    public static void LogIsolatedMessageReception(this ILogger logger, string? receivedIsolationKey, string? queueOrTopicName)
-        => LogReceivedIsolatedMessage(logger, receivedIsolationKey, queueOrTopicName, default);
+    public static void LogIsolatedMessageReception(this ILogger logger, string? receivedIsolationKey, string? @namespace, string? entityPath)
+        => LogReceivedIsolatedMessage(logger, receivedIsolationKey, @namespace, entityPath, default);
 
     #endregion
 }

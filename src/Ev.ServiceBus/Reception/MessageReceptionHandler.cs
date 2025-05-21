@@ -52,7 +52,10 @@ public class MessageReceptionHandler
                 var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey;
                 var receivedIsolationKey = context.IsolationKey;
 
-                _logger.LogIsolatedMessageReception(context.IsolationKey, context.Args?.EntityPath);
+                _logger.LogIsolatedMessageReception(
+                    context.IsolationKey,
+                    context.Args?.FullyQualifiedNamespace,
+                    context.Args?.EntityPath);
 
                 if (receivedIsolationKey != expectedIsolationKey)
                 {
