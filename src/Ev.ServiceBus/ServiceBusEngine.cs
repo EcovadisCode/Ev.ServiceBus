@@ -51,7 +51,7 @@ public class ServiceBusEngine
                 _serviceBusEngineLogger.FailedToConnectToServiceBus(ex);
             }
         }
-        if (settings.UseIsolation && string.IsNullOrEmpty(settings.IsolationKey))
+        if (settings.UseIsolation && settings.IsolationKey == null)
         {
             throw new Exception("Isolation key must be set when isolation is enabled");
         }

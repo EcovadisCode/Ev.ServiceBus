@@ -50,7 +50,7 @@ public class MessageReceptionHandler
             if (_serviceBusOptions.Settings.UseIsolation)
             {
                 var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey;
-                var receivedIsolationKey = context.IsolationKey;
+                var receivedIsolationKey = context.IsolationKey ?? string.Empty;
                 if (receivedIsolationKey != expectedIsolationKey)
                 {
                     _logger.IgnoreMessage(expectedIsolationKey, receivedIsolationKey);
