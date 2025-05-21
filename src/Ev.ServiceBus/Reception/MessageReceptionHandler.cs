@@ -51,6 +51,9 @@ public class MessageReceptionHandler
             {
                 var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey;
                 var receivedIsolationKey = context.IsolationKey;
+
+                _logger.LogIsolatedMessageReception(context.IsolationKey, context.Args?.EntityPath);
+
                 if (receivedIsolationKey != expectedIsolationKey)
                 {
                     _logger.IgnoreMessage(expectedIsolationKey, receivedIsolationKey);
