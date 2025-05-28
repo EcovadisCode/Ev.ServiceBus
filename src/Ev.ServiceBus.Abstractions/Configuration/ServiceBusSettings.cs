@@ -28,7 +28,7 @@ public sealed class ServiceBusSettings
     /// </summary>
     public bool UseIsolation { get; set; } = false;
     /// <summary>
-    /// Key that is used to deremine if this running instance should receive and complete or abandon a message
+    /// Key that is used to determine if this running instance should receive and complete or abandon a message
     /// </summary>
     public string? IsolationKey { get; set; } = null;
 
