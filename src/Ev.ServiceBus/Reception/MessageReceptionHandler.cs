@@ -11,6 +11,7 @@ using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Ev.ServiceBus.Reception.Extensions;
 
 namespace Ev.ServiceBus.Reception;
 
@@ -54,7 +55,12 @@ public class MessageReceptionHandler
                 if (receivedIsolationKey != expectedIsolationKey)
                 {
                     _logger.IgnoreMessage(expectedIsolationKey, receivedIsolationKey);
-                    await _messageMetadataAccessor.Metadata!.AbandonMessageAsync();
+
+                    await context.CompleteAndResendMessageAsync(
+                        _messagePayloadSerializer,
+                        _messageMetadataAccessor,
+                        _provider);
+
                     return;
                 }
             }
