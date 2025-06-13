@@ -21,7 +21,8 @@ public static class MessageContextExtensions
 
     private static async Task SendToSourceAsync(this MessageContext messageContext,
         ServiceBusMessage message,
-        ServiceBusClient client, CancellationToken cancellationToken)
+        ServiceBusClient client,
+        CancellationToken cancellationToken)
     {
         if (messageContext == null) throw new ArgumentNullException(nameof(messageContext));
         if (message == null) throw new ArgumentNullException(nameof(message));
