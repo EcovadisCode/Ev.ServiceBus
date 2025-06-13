@@ -23,7 +23,7 @@ public class ServiceBusEngine
         IOptions<ServiceBusOptions> options,
         ServiceBusRegistry registry,
         MessageSenderFactory messageSenderFactory,
-        ReceiverWrapperFactory receiverWrapperFactory, 
+        ReceiverWrapperFactory receiverWrapperFactory,
         ILogger<LoggingExtensions.ServiceBusClientManagement> serviceBusClientManagementLogger,
         ILogger<LoggingExtensions.ServiceBusEngine> serviceBusEngineLogger)
     {

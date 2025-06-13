@@ -1,57 +1,51 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.Extensions;
-using Ev.ServiceBus.Management;
-using Microsoft.Extensions.DependencyInjection;
+using Ev.ServiceBus.Abstractions.MessageReception;
 
 namespace Ev.ServiceBus.Reception.Extensions;
 
 public static class MessageContextExtensions
 {
-    public static async Task CompleteAndResendMessageAsync(
-        this MessageContext context,
-        IMessagePayloadSerializer messagePayloadSerializer,
-        MessageMetadataAccessor messageMetadataAccessor,
-        IServiceProvider provider)
+    public static async Task CompleteAndResendMessageAsync(this MessageContext messageContext,
+        IMessageMetadataAccessor messageMetadataAccessor,
+        ServiceBusClient client)
     {
-        var messageBody = context.Message.Body.ToArray();
-        var sessionId = context.SessionArgs?.SessionId;
-        var correlationId = context.Message.CorrelationId;
-        var messageId = context.Message.MessageId;
-
-        Dictionary<string, object> applicationProps = new();
-        foreach (var prop in context.Message.ApplicationProperties)
-        {
-            if (!prop.Key.Contains("DeliveryCount", StringComparison.OrdinalIgnoreCase))
-            {
-                applicationProps[prop.Key] = prop.Value;
-            }
-        }
-
-        var originalPayload = messagePayloadSerializer.DeSerializeBody(
-            messageBody,
-            context.ReceptionRegistration?.PayloadType ?? typeof(object)
-        );
-
         await messageMetadataAccessor.Metadata!.CompleteMessageAsync();
 
-        var newDispatch = new Abstractions.Dispatch(originalPayload)
-        {
-            SessionId = sessionId,
-            CorrelationId = correlationId,
-            MessageId = messageId,
-            DiagnosticId = context.Message.GetDiagnosticId() ?? Activity.Current?.Id
-        };
+        await SendToSourceAsync(messageContext, new ServiceBusMessage(messageContext.Message),
+            client, messageContext.CancellationToken);
+    }
 
-        foreach (var prop in applicationProps)
+    private static async Task SendToSourceAsync(this MessageContext messageContext,
+        ServiceBusMessage message,
+        ServiceBusClient client, CancellationToken cancellationToken)
+    {
+        if (messageContext == null) throw new ArgumentNullException(nameof(messageContext));
+        if (message == null) throw new ArgumentNullException(nameof(message));
+        if (client == null) throw new ArgumentNullException(nameof(client));
+
+        switch (messageContext.ClientType)
         {
-            newDispatch.ApplicationProperties[prop.Key] = prop.Value;
+            case ClientType.Queue:
+            {
+                // For queues, ResourceId is directly the queue name
+                var sender = client.CreateSender(messageContext.ResourceId);
+                await sender.SendMessageAsync(message, cancellationToken);
+                break;
+            }
+            case ClientType.Subscription:
+            {
+                // For subscriptions, ResourceId is in format "topicName/Subscriptions/subscriptionName"
+                var topicName = messageContext.ResourceId.Split('/')[0];
+                var sender = client.CreateSender(topicName);
+                await sender.SendMessageAsync(message, cancellationToken);
+                break;
+            }
+            default:
+                throw new ArgumentException($"Unsupported client type: {messageContext.ClientType}", nameof(messageContext));
         }
-
-        var sender = provider.GetRequiredService<IDispatchSender>();
-        await sender.SendDispatch(newDispatch);
     }
 }
