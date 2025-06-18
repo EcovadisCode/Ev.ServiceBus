@@ -10,12 +10,18 @@
     <ProjectReference Include="..\..\src\Ev.ServiceBus.AsyncApi\Ev.ServiceBus.AsyncApi.csproj" />
     <ProjectReference Include="..\..\src\Ev.ServiceBus.HealthChecks\Ev.ServiceBus.HealthChecks.csproj" />
     <ProjectReference Include="..\..\src\Ev.ServiceBus.Mvc\Ev.ServiceBus.Mvc.csproj" />
+    <ProjectReference Include="..\..\src\Ev.ServiceBus.Prometheus\Ev.ServiceBus.Prometheus.csproj" />
     <ProjectReference Include="..\..\src\Ev.ServiceBus\Ev.ServiceBus.csproj" />
+    <ProjectReference Include="..\Ev.ServiceBus.Aspire.ServiceDefault\Ev.ServiceBus.Aspire.ServiceDefault.csproj" />
     <ProjectReference Include="..\Ev.ServiceBus.Sample.Contracts\Ev.ServiceBus.Sample.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="8.1.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="8.1.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.1.4" />
   </ItemGroup>
 
 
