@@ -8,15 +8,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Ev.ServiceBus.AsyncApi.UnitTests;
 
-public class SenderAppFactory : WebApplicationFactory<Startup>
+public class SenderAppFactory : WebApplicationFactory<Program>
 {
-    protected override IWebHostBuilder CreateWebHostBuilder()
-    {
-        return WebHost.CreateDefaultBuilder()
-            .UseUrls("http://localhost")
-            .UseStartup<Startup>();
-    }
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         SetupConsoleLogging(builder);

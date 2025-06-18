@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## 5.4.0 
+- Added 
+  - New Metrics
+    - ev.servicebus.messages.sent : Total number of messages sent to the service bus.
+    - ev.servicebus.messages.received : Total number of messages received from the service bus.
+    - ev.servicebus.messages.delivery.count : Number of deliveries attempted for a single message. Incremented when a message lock expires or the message is explicitly abandoned by the receiver.
+    - ev.servicebus.message.queue.latency : Time a message spends in the queue from enqueue (by sender) until delivery to the receiver for processing (milliseconds).
+
 ## 5.3.0
 - Added
   - Introduced Isolation mode for receiving messages. Instances with different key will ignore the message not intended for them

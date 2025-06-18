@@ -1,6 +1,5 @@
 ﻿using Ev.ServiceBus.Samples.Receiver;
 using Ev.ServiceBus.UnitTests.Helpers;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -8,14 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Ev.ServiceBus.AsyncApi.UnitTests;
 
-public class ReceiverAppFactory : WebApplicationFactory<Startup>
+public class ReceiverAppFactory : WebApplicationFactory<Program>
 {
-    protected override IWebHostBuilder CreateWebHostBuilder()
-    {
-        return WebHost.CreateDefaultBuilder()
-            .UseUrls("http://localhost")
-            .UseStartup<Startup>();
-    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

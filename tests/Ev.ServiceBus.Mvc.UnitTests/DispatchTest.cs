@@ -47,15 +47,8 @@ public class DispatchTest
         topic.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessage[]>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    private class AppFactory : WebApplicationFactory<Startup>
+    private class AppFactory : WebApplicationFactory<Program>
     {
-        protected override IWebHostBuilder CreateWebHostBuilder()
-        {
-            return WebHost.CreateDefaultBuilder()
-                .UseUrls("http://localhost")
-                .UseStartup<Startup>();
-        }
-
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             SetupConsoleLogging(builder);

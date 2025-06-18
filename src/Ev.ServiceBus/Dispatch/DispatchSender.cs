@@ -7,6 +7,7 @@ using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.Extensions;
 using Ev.ServiceBus.Abstractions.MessageReception;
+using Ev.ServiceBus.Diagnostics;
 using Ev.ServiceBus.Management;
 using Microsoft.Extensions.Options;
 
@@ -56,6 +57,12 @@ public class DispatchSender : IDispatchSender
             var message = messagePerResource.Messages.Single();
 
             await messagePerResource.Sender.SendMessageAsync(message.Message, token);
+            ServiceBusMeter.IncrementSentCounter(
+                1,
+                messagePerResource.Sender.ClientType.ToString(),
+                messagePerResource.Sender.Name,
+                message.Message.ApplicationProperties[UserProperties.PayloadTypeIdProperty]?.ToString()
+            );
         }
     }
 
@@ -96,6 +103,13 @@ public class DispatchSender : IDispatchSender
         batches.Add(batch);
         foreach (var messageToSend in dispatches.Messages)
         {
+            ServiceBusMeter.IncrementSentCounter(
+                1,
+                dispatches.Sender.ClientType.ToString(),
+                dispatches.Sender.Name,
+                messageToSend.Message.ApplicationProperties[UserProperties.PayloadTypeIdProperty]?.ToString()
+                );
+
             if (batch.TryAddMessage(messageToSend.Message))
             {
                 continue;
@@ -159,6 +173,16 @@ public class DispatchSender : IDispatchSender
 
         foreach (var pageMessages in paginatedMessages)
         {
+            foreach (var message in pageMessages)
+            {
+                ServiceBusMeter.IncrementSentCounter(
+                    1,
+                    dispatches.Sender.ClientType.ToString(),
+                    dispatches.Sender.Name,
+                    message.ApplicationProperties[UserProperties.PayloadTypeIdProperty]?.ToString()
+                );
+            }
+
             await senderAction.Invoke(dispatches.Sender, pageMessages.Select(m => m).ToArray());
         }
     }

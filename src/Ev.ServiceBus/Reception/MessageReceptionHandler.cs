@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
+using Ev.ServiceBus.Diagnostics;
 using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,6 +81,25 @@ public class MessageReceptionHandler
 
                 var @event = _messagePayloadSerializer.DeSerializeBody(context.Message.Body.ToArray(), context.ReceptionRegistration!.PayloadType);
                 var methodInfo = _callHandlerInfo.MakeGenericMethod(context.ReceptionRegistration.PayloadType);
+                var executionContext = context.ReadExecutionContext();
+
+                ServiceBusMeter.RecordDeliveryCount(
+                   context.Message.DeliveryCount,
+                        executionContext.ClientType,
+                        executionContext.ResourceId,
+                        executionContext.PayloadTypeId);
+
+                ServiceBusMeter.RecordMessageQueueLatency(
+                        context.Message.GetQueueLatency().TotalMilliseconds,
+                        executionContext.ClientType,
+                        executionContext.ResourceId,
+                        executionContext.PayloadTypeId);
+
+                ServiceBusMeter.IncrementSentCounter(1,
+                    executionContext.ClientType,
+                    executionContext.ResourceId,
+                    executionContext.PayloadTypeId);
+
                 await ((Task) methodInfo.Invoke(this, new[] { context.ReceptionRegistration, @event, context.CancellationToken })!);
             }
             catch (Exception ex)

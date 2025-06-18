@@ -39,7 +39,9 @@ public class SessionProcessorMock : ServiceBusSessionProcessor
         ServiceBusModelFactory.ServiceBusReceivedMessage();
         var ctor = typeof(ServiceBusReceivedMessage).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
             null, new []{typeof(AmqpAnnotatedMessage)}, null);
-        var obj = (ServiceBusReceivedMessage) ctor!.Invoke(new object[]{message.GetRawAmqpMessage()} );
+        var amqpAnnotatedMessage = message.GetRawAmqpMessage();
+        amqpAnnotatedMessage.Header.DeliveryCount = 1;
+        var obj = (ServiceBusReceivedMessage) ctor!.Invoke(new object[] { amqpAnnotatedMessage } );
         await OnProcessSessionMessageAsync(new ProcessSessionMessageEventArgs(obj, receiver, token));
     }
 
