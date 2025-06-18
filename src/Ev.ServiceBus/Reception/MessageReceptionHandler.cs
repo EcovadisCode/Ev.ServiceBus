@@ -57,7 +57,7 @@ public class MessageReceptionHandler
                                            ?? throw new ArgumentNullException(_serviceBusOptions.Settings.IsolationKey);
 
                 var receivedIsolationKey = context.IsolationKey
-                                           ?? throw new ArgumentNullException(context.IsolationKey);
+                                           ?? string.Empty;
 
                 if (receivedIsolationKey != expectedIsolationKey)
                 {
