@@ -33,7 +33,7 @@ public static class MessageContextExtensions
             case ClientType.Queue:
             {
                 // For queues, ResourceId is directly the queue name
-                var sender = client.CreateSender(messageContext.ResourceId);
+                await using var sender = client.CreateSender(messageContext.ResourceId);
                 await sender.SendMessageAsync(message, cancellationToken);
                 break;
             }
@@ -41,7 +41,7 @@ public static class MessageContextExtensions
             {
                 // For subscriptions, ResourceId is in format "topicName/Subscriptions/subscriptionName"
                 var topicName = messageContext.ResourceId.Split('/')[0];
-                var sender = client.CreateSender(topicName);
+                await using var sender = client.CreateSender(topicName);
                 await sender.SendMessageAsync(message, cancellationToken);
                 break;
             }

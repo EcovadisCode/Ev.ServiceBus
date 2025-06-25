@@ -53,15 +53,14 @@ public class MessageReceptionHandler
 
             if (_serviceBusOptions.Settings.UseIsolation)
             {
-                var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey
-                                           ?? throw new ArgumentNullException(_serviceBusOptions.Settings.IsolationKey);
+                var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey;
 
                 var receivedIsolationKey = context.IsolationKey
                                            ?? string.Empty;
 
                 if (receivedIsolationKey != expectedIsolationKey)
                 {
-                    await HandleIsolationKeyMismatchAsync(context, expectedIsolationKey, receivedIsolationKey);
+                    await HandleIsolationKeyMismatchAsync(context, expectedIsolationKey!, receivedIsolationKey);
                     return;
                 }
             }
@@ -127,10 +126,9 @@ public class MessageReceptionHandler
     {
         _logger.IgnoreMessage(expectedKey, receivedKey);
 
-        var connectionSettings = _serviceBusOptions.Settings.ConnectionSettings
-                                 ?? throw new ArgumentNullException(nameof(_serviceBusOptions.Settings.ConnectionSettings));
+        var connectionSettings = _serviceBusOptions.Settings.ConnectionSettings;
 
-        var client = _registry.CreateOrGetServiceBusClient(connectionSettings)
+        var client = _registry.CreateOrGetServiceBusClient(connectionSettings!)
                      ?? throw new InvalidOperationException("Failed to create ServiceBusClient");
 
         await context.CompleteAndResendMessageAsync(
