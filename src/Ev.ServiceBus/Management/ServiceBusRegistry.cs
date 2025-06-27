@@ -50,6 +50,11 @@ public class ServiceBusRegistry : IServiceBusRegistry
         return client;
     }
 
+    public IMessageSender? TryGetMessageSender(ClientType clientType, string resourceId)
+    {
+        return _messageSenders.GetValueOrDefault(ComputeResourceKey(clientType, resourceId));
+    }
+
     public IMessageSender GetMessageSender(ClientType clientType, string resourceId)
     {
         if (_messageSenders.TryGetValue(ComputeResourceKey(clientType, resourceId), out var sender))
