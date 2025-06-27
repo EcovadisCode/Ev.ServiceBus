@@ -128,12 +128,10 @@ public class MessageReceptionHandler
 
         var connectionSettings = _serviceBusOptions.Settings.ConnectionSettings;
 
-        var client = _registry.CreateOrGetServiceBusClient(connectionSettings!)
-                     ?? throw new InvalidOperationException("Failed to create ServiceBusClient");
-
         await context.CompleteAndResendMessageAsync(
             _messageMetadataAccessor,
-            client);
+            _registry,
+            connectionSettings!);
     }
 
     private IDisposable? AddLoggingContext(MessageContext context)
