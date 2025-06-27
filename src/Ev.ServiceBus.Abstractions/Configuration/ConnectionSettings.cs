@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Azure.Messaging.ServiceBus;
 
 namespace Ev.ServiceBus.Abstractions;
 
 public class ConnectionSettings
 {
-    [assembly: InternalsVisibleTo("Ev.ServiceBus.UnitTests")]
     internal ConnectionSettings(string connectionString, ServiceBusClientOptions options)
     {
         ConnectionString = connectionString;
