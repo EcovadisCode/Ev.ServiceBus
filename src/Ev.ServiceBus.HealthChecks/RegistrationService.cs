@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Ev.ServiceBus.Abstractions;
 using HealthChecks.AzureServiceBus;
+using HealthChecks.AzureServiceBus.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -43,7 +44,10 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
             {
                 _logger.AddingHealthCheck("Queue", group.Key);
                 options.Registrations.Add(new HealthCheckRegistration($"Queue:{group.Key}",
-                    sp => (IHealthCheck) new AzureServiceBusQueueHealthCheck(connectionString, group.Key),
+                    sp => (IHealthCheck) new AzureServiceBusQueueHealthCheck(new AzureServiceBusQueueHealthCheckOptions(group.Key)
+                    {
+                        ConnectionString = connectionString
+                    }),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
             }
 
@@ -52,7 +56,10 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
             {
                 _logger.AddingHealthCheck("Topic", group.Key);
                 options.Registrations.Add(new HealthCheckRegistration($"Topic:{group.Key}",
-                    sp => (IHealthCheck) new AzureServiceBusTopicHealthCheck(connectionString, group.Key),
+                    sp => (IHealthCheck) new AzureServiceBusTopicHealthCheck(new AzureServiceBusTopicHealthCheckOptions(group.Key)
+                    {
+                        ConnectionString = connectionString
+                    }),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
             }
 
@@ -64,8 +71,10 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
             {
                 _logger.AddingHealthCheck("Subscription", $"{group.Key.TopicName}/Subscriptions/{group.Key.SubscriptionName}");
                 options.Registrations.Add(new HealthCheckRegistration($"Subscription:{group.Key.TopicName}/Subscriptions/{group.Key.SubscriptionName}",
-                    sp => (IHealthCheck) new AzureServiceBusSubscriptionHealthCheck(connectionString,
-                        group.Key.TopicName, group.Key.SubscriptionName),
+                    sp => (IHealthCheck) new AzureServiceBusSubscriptionHealthCheck(new AzureServiceBusSubscriptionHealthCheckHealthCheckOptions(group.Key.TopicName, group.Key.SubscriptionName)
+                        {
+                            ConnectionString = connectionString
+                        }),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
             }
         }
