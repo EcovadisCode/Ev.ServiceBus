@@ -33,11 +33,13 @@ public class ProcessorMock : ServiceBusProcessor
 
     public async Task TriggerMessageReception(ServiceBusMessage message, CancellationToken token, ServiceBusReceiver receiver)
     {
+        var amqpAnnotatedMessage = message.GetRawAmqpMessage();
+        amqpAnnotatedMessage.Header.DeliveryCount = 1;
         ServiceBusReceivedMessage obj = (ServiceBusReceivedMessage) typeof(ServiceBusReceivedMessage)
             .GetConstructor(
                 BindingFlags.NonPublic | BindingFlags.Instance,
                 null, new []{typeof(AmqpAnnotatedMessage)}, null)!
-            .Invoke(new object[]{message.GetRawAmqpMessage()});
+            .Invoke(new object[] { amqpAnnotatedMessage });
         await OnProcessMessageAsync(new ProcessMessageEventArgs(obj, receiver, token));
         // protected internal virtual async Task OnProcessMessageAsync(ProcessMessageEventArgs args)
         // var method =typeof(ServiceBusProcessor).GetMethod("OnProcessMessageAsync", BindingFlags.NonPublic | BindingFlags.Instance, null, new[]{typeof(ProcessMessageEventArgs)}, null);

@@ -1,4 +1,5 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using System;
+using Azure.Messaging.ServiceBus;
 using System.Collections.Generic;
 
 namespace Ev.ServiceBus.Abstractions;
@@ -8,6 +9,12 @@ public static class MessageHelper
     public static string? GetPayloadTypeId(this ServiceBusReceivedMessage message)
     {
         return TryGetValue(message, UserProperties.PayloadTypeIdProperty);
+    }
+
+    public static TimeSpan GetQueueLatency(this ServiceBusReceivedMessage message)
+    {
+        var enqueuedTime = message.ScheduledEnqueueTime == default ? message.EnqueuedTime : message.ScheduledEnqueueTime;
+        return DateTimeOffset.UtcNow - enqueuedTime;
     }
 
     private static string? TryGetValue(ServiceBusReceivedMessage message, string propertyName)
