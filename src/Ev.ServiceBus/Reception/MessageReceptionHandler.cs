@@ -101,7 +101,7 @@ public class MessageReceptionHandler
                         executionContext.ResourceId,
                         executionContext.PayloadTypeId);
 
-                ServiceBusMeter.IncrementSentCounter(1,
+                ServiceBusMeter.IncrementReceivedCounter(1,
                     executionContext.ClientType,
                     executionContext.ResourceId,
                     executionContext.PayloadTypeId);
