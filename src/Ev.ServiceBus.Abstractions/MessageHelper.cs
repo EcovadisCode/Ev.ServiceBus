@@ -1,6 +1,7 @@
 ﻿using System;
 using Azure.Messaging.ServiceBus;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Ev.ServiceBus.Abstractions;
 
@@ -38,6 +39,22 @@ public static class MessageHelper
         return message;
     }
 
+    public static string[] GetIsolationApps(this ServiceBusReceivedMessage message)
+    {
+        var appsString = TryGetValue(message, UserProperties.IsolationApps);
+        if (string.IsNullOrEmpty(appsString))
+            return [];
+        return appsString.Split(',');
+    }
+
+    public static string[] GetIsolationApps(this IReadOnlyDictionary<string, object> applicationProperties)
+    {
+        if (applicationProperties == null)
+            return [];
+        applicationProperties.TryGetValue(UserProperties.IsolationApps, out var value);
+        return value == null ? [] : ((string)value).Split(',');
+    }
+
     public static string? GetIsolationKey(this ServiceBusReceivedMessage message)
     {
         return TryGetValue(message, UserProperties.IsolationKey);
@@ -61,6 +78,14 @@ public static class MessageHelper
         if (string.IsNullOrEmpty(isolationKey))
             return message;
         message.ApplicationProperties[UserProperties.IsolationKey] = isolationKey;
+        return message;
+    }
+
+    public static ServiceBusMessage SetIsolationApps(this ServiceBusMessage message, string[] isolationApps)
+    {
+        if (isolationApps.Length == 0)
+            return message;
+        message.ApplicationProperties[UserProperties.IsolationApps] = string.Join(',', isolationApps);
         return message;
     }
 

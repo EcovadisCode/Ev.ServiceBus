@@ -239,8 +239,6 @@ public class DispatchSender : IDispatchSender
         MessageDispatchRegistration registration,
         Abstractions.Dispatch dispatch)
     {
-        var originalCorrelationId = _messageMetadataAccessor.Metadata?.CorrelationId ?? Guid.NewGuid().ToString();
-        var originalIsolationKey = _messageMetadataAccessor.Metadata?.ApplicationProperties.GetIsolationKey();
         var result = _messagePayloadSerializer.SerializeBody(dispatch.Payload);
         var message = MessageHelper.CreateMessage(result.ContentType, result.Body, registration.PayloadTypeId);
 
@@ -251,10 +249,20 @@ public class DispatchSender : IDispatchSender
         }
 
         message.SessionId = dispatch.SessionId;
+
+        var originalCorrelationId = _messageMetadataAccessor.Metadata?.CorrelationId ?? Guid.NewGuid().ToString();
         message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
-        message.SetIsolationKey(originalIsolationKey ?? _serviceBusOptions.Settings.IsolationKey);
+
+        var originalIsolationKey = _messageMetadataAccessor.Metadata?.ApplicationProperties.GetIsolationKey();
+        message.SetIsolationKey(originalIsolationKey ?? _serviceBusOptions.Settings.IsolationSettings.IsolationKey);
+
+        var originalIsolationApps = _messageMetadataAccessor.Metadata?.ApplicationProperties.GetIsolationApps() ?? [];
+        message.SetIsolationApps(originalIsolationApps);
+
         if (dispatch.DiagnosticId != null)
+        {
             message.SetDiagnosticIdIfIsNot(dispatch.DiagnosticId);
+        }
         if (!string.IsNullOrWhiteSpace(dispatch.MessageId))
         {
             message.MessageId = dispatch.MessageId;

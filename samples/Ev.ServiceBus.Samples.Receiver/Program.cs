@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus;
+using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.AsyncApi;
 using Ev.ServiceBus.Prometheus;
 using Ev.ServiceBus.Sample.Contracts;
@@ -73,6 +74,12 @@ public class Program
                     settings.WithConnection(
                         "Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=",
                         new ServiceBusClientOptions());
+
+                    // 
+                    settings.WithIsolation(
+                        IsolationBehavior.HandleIsolatedMessage,
+                        "MyIsolationKey",
+                        "Company.ReceiverApp");
                 })
             // Enables you to execute code whenever execution of a message starts, succeeded or failed
             .RegisterEventListener<ServiceBusEventListener>()

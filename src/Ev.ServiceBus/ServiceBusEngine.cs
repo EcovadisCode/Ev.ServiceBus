@@ -51,9 +51,13 @@ public class ServiceBusEngine
                 _serviceBusEngineLogger.FailedToConnectToServiceBus(ex);
             }
         }
-        if (settings.UseIsolation && settings.IsolationKey == null)
+        if (settings.IsolationSettings.IsolationBehavior != IsolationBehavior.HandleAllMessages && settings.IsolationSettings.ApplicationName == null)
         {
-            throw new Exception("Isolation key must be set when isolation is enabled");
+            throw new ConfigurationException($"IsolationSettings.ApplicationName must be set when {nameof(IsolationBehavior)} is {nameof(IsolationBehavior.HandleIsolatedMessage)} or {nameof(IsolationBehavior.HandleNonIsolatedMessages)}");
+        }
+        if (settings.IsolationSettings is { IsolationBehavior: IsolationBehavior.HandleIsolatedMessage, IsolationKey: null })
+        {
+            throw new ConfigurationException($"IsolationSettings.IsolationKey must be set when {nameof(IsolationBehavior)} is {nameof(IsolationBehavior.HandleIsolatedMessage)}");
         }
 
         BuildSenders();

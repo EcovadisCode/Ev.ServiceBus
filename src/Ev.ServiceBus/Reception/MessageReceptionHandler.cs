@@ -8,11 +8,10 @@ using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Diagnostics;
 using Ev.ServiceBus.Exceptions;
+using Ev.ServiceBus.Isolation;
 using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Ev.ServiceBus.Reception.Extensions;
 
 namespace Ev.ServiceBus.Reception;
 
@@ -24,8 +23,7 @@ public class MessageReceptionHandler
     private readonly MessageMetadataAccessor _messageMetadataAccessor;
     private readonly IEnumerable<IServiceBusEventListener> _eventListeners;
     private readonly IServiceProvider _provider;
-    private readonly ServiceBusOptions _serviceBusOptions;
-    private readonly ServiceBusRegistry _registry;
+    private readonly IsolationService _isolationService;
 
     public MessageReceptionHandler(
         IServiceProvider provider,
@@ -33,17 +31,15 @@ public class MessageReceptionHandler
         ILogger<LoggingExtensions.MessageProcessing> logger,
         IMessageMetadataAccessor messageMetadataAccessor,
         IEnumerable<IServiceBusEventListener> eventListeners,
-        IOptions<ServiceBusOptions> serviceBusOptions,
-        ServiceBusRegistry registry)
+        IsolationService isolationService)
     {
         _provider = provider;
         _messagePayloadSerializer = messagePayloadSerializer;
         _logger = logger;
         _messageMetadataAccessor = (MessageMetadataAccessor)messageMetadataAccessor;
         _eventListeners = eventListeners;
-        _serviceBusOptions = serviceBusOptions.Value;
         _callHandlerInfo = GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
-        _registry = registry;
+        _isolationService = isolationService;
     }
 
     public async Task HandleMessageAsync(MessageContext context)
@@ -52,18 +48,10 @@ public class MessageReceptionHandler
         {
             _messageMetadataAccessor.SetData(context);
 
-            if (_serviceBusOptions.Settings.UseIsolation)
+            var shouldHandleMessage = await _isolationService.HandleIsolation(context);
+            if (!shouldHandleMessage)
             {
-                var expectedIsolationKey = _serviceBusOptions.Settings.IsolationKey;
-
-                var receivedIsolationKey = context.IsolationKey
-                                           ?? string.Empty;
-
-                if (receivedIsolationKey != expectedIsolationKey)
-                {
-                    await HandleIsolationKeyMismatchAsync(context, expectedIsolationKey!, receivedIsolationKey);
-                    return;
-                }
+                return;
             }
 
             var executionStartedArgs = new ExecutionStartedArgs(context);
@@ -140,18 +128,6 @@ public class MessageReceptionHandler
             }
             _logger.MessageExecutionCompleted(sw.ElapsedMilliseconds);
         }
-    }
-
-    private async Task HandleIsolationKeyMismatchAsync(MessageContext context, string expectedKey, string receivedKey)
-    {
-        _logger.IgnoreMessage(expectedKey, receivedKey);
-
-        var connectionSettings = _serviceBusOptions.Settings.ConnectionSettings;
-
-        await context.CompleteAndResendMessageAsync(
-            _messageMetadataAccessor,
-            _registry,
-            connectionSettings!);
     }
 
     private IDisposable? AddLoggingContext(MessageContext context)

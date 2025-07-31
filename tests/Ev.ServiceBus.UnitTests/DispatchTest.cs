@@ -560,8 +560,7 @@ public class DispatchTest : IDisposable
         composer.WithDefaultSettings(settings =>
             {
                 settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-                settings.UseIsolation = true;
-                settings.IsolationKey = isolationKey;
+                settings.WithIsolation(IsolationBehavior.HandleIsolatedMessage, isolationKey);
             });
         SetupComposer(composer);
         await composer.Compose();
