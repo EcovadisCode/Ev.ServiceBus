@@ -241,7 +241,7 @@ public class ReceptionTest
         composer.WithDefaultSettings(settings =>
         {
             settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessage, isolationKey);
+            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessage, isolationKey, "My.Application");
         });
 
         composer.WithAdditionalServices(

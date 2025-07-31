@@ -66,11 +66,8 @@ public class IsolationService
 
     private async Task<bool> HandleIsolatedMessage(MessageContext context)
     {
-        if (context.IsolationApps.Contains(_isolationSettings.ApplicationName) == false)
-        {
-            return true;
-        }
-        if (context.IsolationKey == _isolationSettings.IsolationKey)
+        if (context.IsolationKey == _isolationSettings.IsolationKey
+            && context.IsolationApps.Contains(_isolationSettings.ApplicationName))
         {
             return true;
         }
