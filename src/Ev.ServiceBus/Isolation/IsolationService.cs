@@ -100,7 +100,7 @@ public class IsolationService
         var connectionSettings = _options.Value.Settings.ConnectionSettings!;
         var client = _registry.CreateOrGetServiceBusClient(connectionSettings)!;
 
-        await using var tempSender = client.CreateSender(messageContext.ResourceId);
+        await using var tempSender = client.CreateSender(senderInfo.ResourceId);
         await tempSender.SendMessageAsync(message, messageContext.CancellationToken);
     }
 
