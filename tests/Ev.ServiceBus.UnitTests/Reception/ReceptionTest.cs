@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
-namespace Ev.ServiceBus.UnitTests;
+namespace Ev.ServiceBus.UnitTests.Reception;
 
 public class ReceptionTest
 {

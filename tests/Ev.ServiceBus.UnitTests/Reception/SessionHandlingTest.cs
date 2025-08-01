@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 
-namespace Ev.ServiceBus.UnitTests;
+namespace Ev.ServiceBus.UnitTests.Reception;
 
 public class SessionHandlingTest
 {

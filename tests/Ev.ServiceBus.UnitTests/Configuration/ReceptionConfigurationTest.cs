@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 using Xunit;
 using Composer = Ev.ServiceBus.UnitTests.Helpers.Composer;
 
-namespace Ev.ServiceBus.UnitTests;
+namespace Ev.ServiceBus.UnitTests.Configuration;
 
 public class ReceptionConfigurationTest
 {
