@@ -5,7 +5,6 @@ using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Management;
-using Ev.ServiceBus.Reception.Extensions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
