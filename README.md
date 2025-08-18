@@ -40,6 +40,7 @@ across the whole system (name of the property : `PayloadTypeId`).
 * [Initial Set up](./docs/SetUp.md)
 * [How to send messages](./docs/SendMessages.md)
 * [How to receive messages](./docs/ReceiveMessages.md)
+* [Isolation Feature](./docs/Isolation.md)
 * [Advanced scenarios](./docs/AdvancedScenarios.md)
 * [Ev.ServiceBus.HealthChecks](./docs/Ev.ServiceBus.HealthChecks.md)
 * [Instrumentation](./docs/Instrumentation.md)
