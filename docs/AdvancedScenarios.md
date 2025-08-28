@@ -201,21 +201,3 @@ public class MyMessageSender
             }
         }
 ```
-
-## Running service instance in isolation
-
-By "running in isolation" we mean ability to run an instance of microservice (MS) on local environment, when MS is using real queues and topics to communicate with other MSs
-Simple case : App1 sending message to App2, which responds back with another message.
-Desired isolation is in the following: If message comes from App1.Local, then the response to it should be processed also only by App1.Local. Same holds true from App1.Cloud - it should process responses that are only coming from cloud instances.
-
-This is achived by simply proper condifuration (see sample project)
-```csharp
-services.AddServiceBus(
-    settings =>
-    {
-        // Provide a connection string here !
-        settings.WithConnection("Endpoint=sb://yourconnection.servicebus.windows.net/;SharedAccessKeyName=yourkeyh;SharedAccessKey=ae6pTuOBAFDH2y7xJJf9BFubZGxXMToN6B9NiVgLnbQ=", new ServiceBusClientOptions());
-        settings.UseIsolation = true;
-        settings.IsolationKey = "your-isolation-key";
-    })
-```

@@ -6,7 +6,7 @@ using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Xunit;
 
-namespace Ev.ServiceBus.UnitTests;
+namespace Ev.ServiceBus.UnitTests.Core;
 
 public class SubscriptionClientHandlingTest
 {

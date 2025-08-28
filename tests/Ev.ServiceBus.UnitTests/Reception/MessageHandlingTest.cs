@@ -10,7 +10,7 @@ using Ev.ServiceBus.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Ev.ServiceBus.UnitTests;
+namespace Ev.ServiceBus.UnitTests.Reception;
 
 public class MessageHandlingTest
 {

@@ -5,6 +5,7 @@ using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Abstractions.Listeners;
 using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Dispatch;
+using Ev.ServiceBus.Isolation;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.Reception;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +53,7 @@ public static class ServiceCollectionExtensions
         RegisterMessageReceptionServices(services);
 
         services.TryAddScoped<IMessageMetadataAccessor, MessageMetadataAccessor>();
+        services.TryAddScoped<IsolationService>();
     }
 
     private static void RegisterMessageReceptionServices(IServiceCollection services)

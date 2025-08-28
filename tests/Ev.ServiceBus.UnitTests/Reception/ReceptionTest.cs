@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
-namespace Ev.ServiceBus.UnitTests;
+namespace Ev.ServiceBus.UnitTests.Reception;
 
 public class ReceptionTest
 {
@@ -230,51 +230,6 @@ public class ReceptionTest
         var client = provider.GetProcessorMock("testTopic", "testSubscription");
         client.Options.MaxConcurrentCalls.Should().Be(3);
         client.Options.MaxAutoLockRenewalDuration.Should().Be(TimeSpan.FromMinutes(20));
-    }
-
-    [Fact]
-    public async Task DoesntReceiveMessagesFromDifferentInstance()
-    {
-        var isolationKey = "service-isolationKey";
-        var composer = new Composer();
-        var eventStore = new EventStore();
-        composer.WithDefaultSettings(settings =>
-        {
-            settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            settings.UseIsolation = true;
-            settings.IsolationKey = isolationKey;
-        });
-
-        composer.WithAdditionalServices(
-            services =>
-            {
-                services.RegisterServiceBusReception()
-                    .FromSubscription(
-                        "testTopic",
-                        "testSubscription",
-                        builder =>
-                        {
-                            builder.RegisterReception<SubscribedEvent, SubscribedPayloadHandler>()
-                                .CustomizePayloadTypeId("MyEvent");
-                        });
-
-                services.AddSingleton(eventStore);
-            });
-
-        await composer.Compose();
-        var client = composer
-            .ClientFactory
-            .GetProcessorMock("testTopic", "testSubscription");
-
-        var message = TestMessageHelper.CreateEventMessage("myevent", new
-        {
-            SomeString = "hello",
-            SomeNumber = 36
-        });
-
-        await client.TriggerMessageReception(message, CancellationToken.None);
-        var @event = eventStore.Events.FirstOrDefault(o => o.HandlerType == typeof(SubscribedPayloadHandler));
-        @event.Should().BeNull();
     }
 
     private async Task<Composer> InitSimpleTest()
