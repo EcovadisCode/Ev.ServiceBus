@@ -36,7 +36,7 @@ public class IsolationService
         return _isolationSettings.IsolationBehavior switch
         {
             IsolationBehavior.HandleAllMessages => await HandleAllMessages(context),
-            IsolationBehavior.HandleIsolatedMessage => await HandleIsolatedMessage(context),
+            IsolationBehavior.HandleIsolatedMessages => await HandleIsolatedMessage(context),
             IsolationBehavior.HandleNonIsolatedMessages => await HandleNonIsolatedMessages(context),
             _ => throw new ArgumentOutOfRangeException()
         };

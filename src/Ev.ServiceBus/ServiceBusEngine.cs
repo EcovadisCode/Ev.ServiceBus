@@ -53,11 +53,11 @@ public class ServiceBusEngine
         }
         if (settings.IsolationSettings.IsolationBehavior != IsolationBehavior.HandleAllMessages && settings.IsolationSettings.ApplicationName == null)
         {
-            throw new ConfigurationException($"IsolationSettings.ApplicationName must be set when {nameof(IsolationBehavior)} is {nameof(IsolationBehavior.HandleIsolatedMessage)} or {nameof(IsolationBehavior.HandleNonIsolatedMessages)}");
+            throw new ConfigurationException($"IsolationSettings.ApplicationName must be set when {nameof(IsolationBehavior)} is {nameof(IsolationBehavior.HandleIsolatedMessages)} or {nameof(IsolationBehavior.HandleNonIsolatedMessages)}");
         }
-        if (settings.IsolationSettings is { IsolationBehavior: IsolationBehavior.HandleIsolatedMessage, IsolationKey: null })
+        if (settings.IsolationSettings is { IsolationBehavior: IsolationBehavior.HandleIsolatedMessages, IsolationKey: null })
         {
-            throw new ConfigurationException($"IsolationSettings.IsolationKey must be set when {nameof(IsolationBehavior)} is {nameof(IsolationBehavior.HandleIsolatedMessage)}");
+            throw new ConfigurationException($"IsolationSettings.IsolationKey must be set when {nameof(IsolationBehavior)} is {nameof(IsolationBehavior.HandleIsolatedMessages)}");
         }
 
         BuildSenders();

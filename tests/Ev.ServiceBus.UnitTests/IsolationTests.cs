@@ -30,7 +30,7 @@ public class IsolationTests
         composer.WithDefaultSettings(settings =>
         {
             settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessage, "MyIsolationKey", "Test.Application");
+            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessages, "MyIsolationKey", "Test.Application");
         });
 
         composer.WithAdditionalServices(
@@ -88,7 +88,7 @@ public class IsolationTests
         composer.WithDefaultSettings(settings =>
         {
             settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessage, "MyIsolationKey", "Test.Application");
+            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessages, "MyIsolationKey", "Test.Application");
         });
 
         composer.WithAdditionalServices(
@@ -146,7 +146,7 @@ public class IsolationTests
         composer.WithDefaultSettings(settings =>
         {
             settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessage, "MyIsolationKey", "Test.Application");
+            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessages, "MyIsolationKey", "Test.Application");
         });
 
         composer.WithAdditionalServices(
@@ -193,7 +193,7 @@ public class IsolationTests
         composer.WithDefaultSettings(settings =>
         {
             settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
-            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessage, "MyIsolationKey", "Test.Application");
+            settings.WithIsolation(IsolationBehavior.HandleIsolatedMessages, "MyIsolationKey", "Test.Application");
         });
 
         composer.WithAdditionalServices(

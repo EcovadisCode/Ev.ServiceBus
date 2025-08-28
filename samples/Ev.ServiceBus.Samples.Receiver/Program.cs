@@ -77,7 +77,7 @@ public class Program
 
                     // 
                     settings.WithIsolation(
-                        IsolationBehavior.HandleIsolatedMessage,
+                        IsolationBehavior.HandleIsolatedMessages,
                         "MyIsolationKey",
                         "Company.ReceiverApp");
                 })

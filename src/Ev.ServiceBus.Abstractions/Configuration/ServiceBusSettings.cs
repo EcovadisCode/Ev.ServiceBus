@@ -50,7 +50,7 @@ public class IsolationSettings
         ApplicationName = applicationName;
     }
 
-    public IsolationBehavior IsolationBehavior { get; private set;}
+    public IsolationBehavior IsolationBehavior { get; private set; }
     public string? IsolationKey { get; private set; }
     public string? ApplicationName { get; private set; }
 }
