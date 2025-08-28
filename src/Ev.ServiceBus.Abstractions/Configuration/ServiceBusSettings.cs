@@ -58,6 +58,6 @@ public class IsolationSettings
 public enum IsolationBehavior
 {
     HandleAllMessages = 1,
-    HandleIsolatedMessage,
+    HandleIsolatedMessages,
     HandleNonIsolatedMessages
 }
