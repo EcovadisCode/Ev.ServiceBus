@@ -50,19 +50,19 @@ public class ServiceBusRegistry : IServiceBusRegistry
         return client;
     }
 
-    public IMessageSender? TryGetMessageSender(ClientType clientType, string resourceId)
+    public IMessageSender? TryGetMessageSender(string resourceId)
     {
-        return _messageSenders.GetValueOrDefault(ComputeResourceKey(clientType, resourceId));
+        return _messageSenders.GetValueOrDefault(resourceId);
     }
 
-    public IMessageSender GetMessageSender(ClientType clientType, string resourceId)
+    public IMessageSender GetMessageSender(string resourceId)
     {
-        if (_messageSenders.TryGetValue(ComputeResourceKey(clientType, resourceId), out var sender))
+        if (_messageSenders.TryGetValue(resourceId, out var sender))
         {
             return sender;
         }
 
-        throw new SenderNotFoundException(clientType, resourceId);
+        throw new SenderNotFoundException(resourceId);
     }
 
     internal ServiceBusSender[] GetAllSenderClients()
@@ -87,7 +87,7 @@ public class ServiceBusRegistry : IServiceBusRegistry
 
     internal void Register(IMessageSender sender)
     {
-        _messageSenders.Add(ComputeResourceKey(sender.ClientType, sender.Name), sender);
+        _messageSenders.Add(sender.Name, sender);
     }
 
     internal void Register(MessageReceptionRegistration reception)
@@ -100,9 +100,9 @@ public class ServiceBusRegistry : IServiceBusRegistry
         _dispatches.Add(dispatchType, dispatches);
     }
 
-    public void Register(ClientType clientType, string resourceId, ServiceBusSender senderClient)
+    public void Register(string resourceId, ServiceBusSender senderClient)
     {
-        _senderClients.Add(ComputeResourceKey(clientType, resourceId), senderClient);
+        _senderClients.Add(resourceId, senderClient);
     }
 
     public void Register(ClientType clientType, string resourceId, ReceiverWrapper receiverWrapper)
@@ -137,9 +137,9 @@ public class ServiceBusRegistry : IServiceBusRegistry
         return _receptions.Values.ToArray();
     }
 
-    internal bool IsSenderResourceIdTaken(ClientType clientType, string resourceId)
+    internal bool IsSenderResourceIdTaken(string resourceId)
     {
-        return _senderClients.ContainsKey(ComputeResourceKey(clientType, resourceId));
+        return _senderClients.ContainsKey(resourceId);
     }
 
     internal bool IsReceiverResourceIdTaken(ClientType clientType, string resourceId)
