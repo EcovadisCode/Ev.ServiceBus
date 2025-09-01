@@ -1,5 +1,6 @@
 ﻿using Ev.ServiceBus.Abstractions;
 using Ev.ServiceBus.Dispatch;
+using Ev.ServiceBus.Dispatch.Outbox;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -47,6 +48,16 @@ public class ServiceBusBuilder
         where TMessagePayloadSerializer : class, IMessagePayloadSerializer
     {
         Services.Replace(new ServiceDescriptor(typeof(IMessagePayloadSerializer), typeof(TMessagePayloadSerializer), ServiceLifetime.Singleton));
+        return this;
+    }
+
+    public ServiceBusBuilder WithOutboxIntegration<TOutboxRepository>()
+        where TOutboxRepository : class, IOutboxRepository
+    {
+        Services.Decorate<IMessagePublisher, OutboxMessagePublisher>();
+        Services.Decorate<IMessageDispatcher, OutboxMessageDispatcher>();
+        Services.Decorate<IDispatchSender, OutboxDispatchSender>();
+        Services.AddScoped<IOutboxRepository, TOutboxRepository>();
         return this;
     }
 }

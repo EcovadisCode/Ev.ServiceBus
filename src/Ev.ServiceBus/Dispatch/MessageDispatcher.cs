@@ -31,7 +31,7 @@ public class MessageDispatcher : IMessagePublisher, IMessageDispatcher
     }
 
     /// <inheritdoc />
-    public void Publish<TMessageDto>(TMessageDto messageDto)
+    public Task Publish<TMessageDto>(TMessageDto messageDto)
     {
         if (messageDto == null)
         {
@@ -42,10 +42,12 @@ public class MessageDispatcher : IMessagePublisher, IMessageDispatcher
         {
             DiagnosticId = Activity.Current?.Id
         });
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public void Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId)
+    public Task Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId)
     {
         if (messageDto == null)
         {
@@ -62,10 +64,12 @@ public class MessageDispatcher : IMessagePublisher, IMessageDispatcher
             SessionId = sessionId,
             DiagnosticId = Activity.Current?.Id
         });
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public void Publish<TMessagePayload>(
+    public Task Publish<TMessagePayload>(
         TMessagePayload messageDto,
         Action<IDispatchContext> messageContextConfiguration)
     {
@@ -90,5 +94,7 @@ public class MessageDispatcher : IMessagePublisher, IMessageDispatcher
             MessageId = context.MessageId,
             DiagnosticId = context.DiagnosticId ?? Activity.Current?.Id
         });
+
+        return Task.CompletedTask;
     }
 }

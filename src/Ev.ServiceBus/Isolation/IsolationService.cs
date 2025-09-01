@@ -89,7 +89,7 @@ public class IsolationService
         var senderInfo = GetSenderResourceId(messageContext);
 
         // Try to get existing sender
-        var sender = _registry.TryGetMessageSender(senderInfo.ClientType, senderInfo.ResourceId);
+        var sender = _registry.TryGetMessageSender(senderInfo.ResourceId);
         if (sender != null)
         {
             await sender.SendMessageAsync(message, messageContext.CancellationToken);

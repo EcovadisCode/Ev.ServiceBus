@@ -437,7 +437,7 @@ public class DispatchTest : IDisposable
         // Verify
         var factory = provider.GetRequiredService<FakeClientFactory>();
         var mock = factory.GetSenderMock("myQueue");
-        mock.Mock.Verify(o => o.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
+        mock.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
 
         // Dispose
         await provider.SimulateStopHost(CancellationToken.None);

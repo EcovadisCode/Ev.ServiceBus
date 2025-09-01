@@ -67,6 +67,8 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IMessagePublisher>(provider => provider.GetRequiredService<MessageDispatcher>());
         services.TryAddScoped<IMessageDispatcher>(provider => provider.GetRequiredService<MessageDispatcher>());
         services.TryAddScoped<IDispatchSender, DispatchSender>();
+        services.TryAddScoped<ServiceBusMessageFactory>();
+        services.TryAddScoped<ServiceBusMessageSender>();
     }
 
     private static void RegisterResourceManagementServices(IServiceCollection services)

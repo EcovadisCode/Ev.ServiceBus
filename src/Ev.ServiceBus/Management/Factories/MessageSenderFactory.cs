@@ -30,9 +30,9 @@ public class MessageSenderFactory
     public IMessageSender CreateSender(ClientOptions[] senderOptions)
     {
         var options = (IClientOptions)senderOptions.First();
-        if (_registry.IsSenderResourceIdTaken(options.ClientType, options.ResourceId))
+        if (_registry.IsSenderResourceIdTaken(options.ResourceId))
         {
-            var resourceId = GetNewSenderResourceId(options.ClientType, options.ResourceId);
+            var resourceId = GetNewSenderResourceId(options.ResourceId);
             foreach (var sender in senderOptions)
             {
                 sender.UpdateResourceId(resourceId);
@@ -56,7 +56,7 @@ public class MessageSenderFactory
             var client = _registry.CreateOrGetServiceBusClient(connectionSettings);
 
             var senderClient = client!.CreateSender(options.ResourceId);
-            _registry.Register(options.ClientType, options.ResourceId, senderClient);
+            _registry.Register(options.ResourceId, senderClient);
 
             var messageSender = new MessageSender(senderClient, options.ResourceId, options.ClientType, _provider.GetRequiredService<ILogger<MessageSender>>());
 
@@ -70,11 +70,11 @@ public class MessageSenderFactory
         }
     }
 
-    private string GetNewSenderResourceId(ClientType clientType, string resourceId)
+    private string GetNewSenderResourceId(string resourceId)
     {
         var newResourceId = resourceId;
         var suffix = 2;
-        while (_registry.IsSenderResourceIdTaken(clientType, newResourceId))
+        while (_registry.IsSenderResourceIdTaken(newResourceId))
         {
             newResourceId = $"{resourceId}_{suffix}";
             ++suffix;

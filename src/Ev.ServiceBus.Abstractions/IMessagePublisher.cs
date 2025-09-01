@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Ev.ServiceBus.Abstractions;
 
@@ -9,7 +10,7 @@ public interface IMessagePublisher
     /// </summary>
     /// <param name="messageDto">The object to send through Service Bus</param>
     /// <typeparam name="TMessagePayload">A type of object that is registered within Ev.ServiceBus</typeparam>
-    void Publish<TMessagePayload>(TMessagePayload messageDto);
+    Task Publish<TMessagePayload>(TMessagePayload messageDto);
 
     /// <summary>
     /// Temporarily stores the object to send through Service Bus until <see cref="IMessageDispatcher.ExecuteDispatches"/> is called.
@@ -17,7 +18,7 @@ public interface IMessagePublisher
     /// <param name="messageDto">The object to send through Service Bus</param>
     /// <param name="sessionId">The sessionId to attach to the outgoing message</param>
     /// <typeparam name="TMessagePayload">A type of object that is registered within Ev.ServiceBus</typeparam>
-    void Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId);
+    Task Publish<TMessagePayload>(TMessagePayload messageDto, string sessionId);
 
     /// <summary>
     /// Temporarily stores the object to send through Service Bus until <see cref="IMessageDispatcher.ExecuteDispatches"/> is called.
@@ -25,5 +26,5 @@ public interface IMessagePublisher
     /// <param name="messageDto">The object to send through Service Bus</param>
     /// <param name="messageContextConfiguration">Configurator of message context</param>
     /// <typeparam name="TMessagePayload">A type of object that is registered within Ev.ServiceBus</typeparam>
-    void Publish<TMessagePayload>(TMessagePayload messageDto, Action<IDispatchContext> messageContextConfiguration);
+    Task Publish<TMessagePayload>(TMessagePayload messageDto, Action<IDispatchContext> messageContextConfiguration);
 }
