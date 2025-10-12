@@ -357,6 +357,7 @@ public class ReceptionConfigurationTest
     [Fact]
     public async Task CustomizeConnection_ChangesAreAppliedToClient()
     {
+        const string connectionString = "Endpoint=sb://acmecompany.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=kFCrVU8u5v0LASbKGA3MHDpnCOguiNwL++r1cAvblhc=";
         var composer = new Composer();
 
         composer.WithAdditionalServices(services =>
@@ -365,7 +366,7 @@ public class ReceptionConfigurationTest
                 .FromSubscription("testTopic", "testSubscription",
                     builder =>
                     {
-                        builder.CustomizeConnection("Endpoint=newConnectionString;", new ServiceBusClientOptions()
+                        builder.CustomizeConnection(connectionString, new ServiceBusClientOptions
                         {
                             EnableCrossEntityTransactions = true,
                             TransportType = ServiceBusTransportType.AmqpWebSockets
@@ -376,7 +377,7 @@ public class ReceptionConfigurationTest
         });
 
         await composer.Compose();
-        var client = composer.ClientFactory.GetAssociatedMock("newConnectionString");
+        var client = composer.ClientFactory.GetAssociatedMock("sb://acmecompany.servicebus.windows.net/");
         client.ConnectionSettings.Options.EnableCrossEntityTransactions.Should().Be(true);
         client.ConnectionSettings.Options.TransportType.Should().Be(ServiceBusTransportType.AmqpWebSockets);
     }

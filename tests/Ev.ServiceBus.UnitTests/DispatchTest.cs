@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -408,10 +407,11 @@ public class DispatchTest : IDisposable
     public async Task SendDispatch()
     {
         // configure
+        const string connectionString = "Endpoint=sb://acmecompany.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=kFCrVU8u5v0LASbKGA3MHDpnCOguiNwL++r1cAvblhc=";
         var services = new ServiceCollection();
         services.AddServiceBus(settings =>
         {
-            settings.WithConnection("myConnection", new ServiceBusClientOptions());
+            settings.WithConnection(connectionString, new ServiceBusClientOptions());
         });
         services.OverrideClientFactory();
         services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
@@ -447,10 +447,11 @@ public class DispatchTest : IDisposable
     public async Task SendDispatchesPaginateMessages()
     {
         // configure
+        const string connectionString = "Endpoint=sb://acmecompany.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=kFCrVU8u5v0LASbKGA3MHDpnCOguiNwL++r1cAvblhc=";
         var services = new ServiceCollection();
         services.AddServiceBus(settings =>
         {
-            settings.WithConnection("myConnection", new ServiceBusClientOptions());
+            settings.WithConnection(connectionString, new ServiceBusClientOptions());
         });
         services.OverrideClientFactory();
         services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
@@ -458,14 +459,14 @@ public class DispatchTest : IDisposable
             builder.RegisterDispatch<SubscribedEvent>();
         });
         var provider = services.BuildServiceProvider();
-        await provider.SimulateStartHost(new CancellationToken());
+        await provider.SimulateStartHost(CancellationToken.None);
 
         // Act
         var messages = new SubscribedEvent[10000];
         int i = 0;
         while (i < 10000)
         {
-            messages[i] = new SubscribedEvent()
+            messages[i] = new SubscribedEvent
             {
                 SomeNumber = i + 1,
                 SomeString = $"Event number {i+1}"
@@ -484,17 +485,18 @@ public class DispatchTest : IDisposable
         mock.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
 
         // Dispose
-        await provider.SimulateStopHost(new CancellationToken());
+        await provider.SimulateStopHost(CancellationToken.None);
     }
 
     [Fact]
     public async Task ScheduleDispatchesPaginateMessages()
     {
         // configure
+        const string connectionString = "Endpoint=sb://acmecompany.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=kFCrVU8u5v0LASbKGA3MHDpnCOguiNwL++r1cAvblhc=";
         var services = new ServiceCollection();
         services.AddServiceBus(settings =>
         {
-            settings.WithConnection("myConnection", new ServiceBusClientOptions());
+            settings.WithConnection(connectionString, new ServiceBusClientOptions());
         });
         services.OverrideClientFactory();
         services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
@@ -502,14 +504,14 @@ public class DispatchTest : IDisposable
             builder.RegisterDispatch<SubscribedEvent>();
         });
         var provider = services.BuildServiceProvider();
-        await provider.SimulateStartHost(new CancellationToken());
+        await provider.SimulateStartHost(CancellationToken.None);
 
         // Act
         var messages = new SubscribedEvent[253];
         int i = 0;
         while (i < 253)
         {
-            messages[i] = new SubscribedEvent()
+            messages[i] = new SubscribedEvent
             {
                 SomeNumber = i + 1,
                 SomeString = $"Event number {i+1}"
@@ -530,7 +532,7 @@ public class DispatchTest : IDisposable
         mock.Mock.Verify(o => o.ScheduleMessagesAsync(It.IsAny<IEnumerable<ServiceBusMessage>>(), schedule, It.IsAny<CancellationToken>()), Times.Exactly(3));
 
         // Dispose
-        await provider.SimulateStopHost(new CancellationToken());
+        await provider.SimulateStopHost(CancellationToken.None);
     }
 
     [Fact]

@@ -29,18 +29,19 @@ public class ServiceBusSettingsTests
     [Fact]
     public async Task ServiceBusSettingsStateAfterCallOfWithConnection_string()
     {
+        const string connectionString = "Endpoint=sb://acmecompany.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=kFCrVU8u5v0LASbKGA3MHDpnCOguiNwL++r1cAvblhc=";
         var composer = new Composer();
 
         composer.WithDefaultSettings(
             settings =>
             {
-                settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+                settings.WithConnection(connectionString, new ServiceBusClientOptions());
             });
         var provider = await composer.Compose();
 
         var options = provider.GetService<IOptions<ServiceBusOptions>>();
 
         options.Value.Settings.ConnectionSettings.Should().NotBeNull();
-        options.Value.Settings.ConnectionSettings!.Endpoint.Should().Be("testConnectionString");
+        options.Value.Settings.ConnectionSettings!.Endpoint.Should().Be("sb://acmecompany.servicebus.windows.net/");
     }
 }
