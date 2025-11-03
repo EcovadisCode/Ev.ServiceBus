@@ -1,5 +1,6 @@
-﻿using System;
+﻿using Azure.Core;
 using Azure.Messaging.ServiceBus;
+using System;
 
 namespace Ev.ServiceBus.Abstractions;
 
@@ -12,9 +13,23 @@ public class ConnectionSettings
         Endpoint = GetEndpointFromConnectionString(connectionString);
     }
 
+    internal ConnectionSettings(string fullyQualifiedNamespace, TokenCredential credentials, ServiceBusClientOptions options)
+    {
+        Options = options;
+        FullyQualifiedNamespace = fullyQualifiedNamespace;
+        Credentials = credentials;
+        Endpoint = GetEndpointFromFullyQualifiedNamespace(fullyQualifiedNamespace);
+    }
+
     public string Endpoint { get; }
-    public string ConnectionString { get; }
-    public ServiceBusClientOptions Options { get; }
+
+    public string? ConnectionString { get; }
+
+    public ServiceBusClientOptions? Options { get; }
+
+    public string? FullyQualifiedNamespace { get; }
+
+    public TokenCredential? Credentials { get; }
 
     private string GetEndpointFromConnectionString(string connectionString)
     {
@@ -43,17 +58,34 @@ public class ConnectionSettings
         return string.Empty;
     }
 
-    public override int GetHashCode()
+    private string GetEndpointFromFullyQualifiedNamespace(string fullyQualifiedNamespace)
     {
-        return Endpoint.GetHashCode();
+        return $"sb://{fullyQualifiedNamespace}/";
     }
+
+    private bool Equals(ConnectionSettings other) =>
+        string.Equals(Endpoint, other.Endpoint, StringComparison.Ordinal)
+        && string.Equals(ConnectionString, other.ConnectionString, StringComparison.Ordinal)
+        && Options != null
+        && Options.Equals(other.Options)
+        && string.Equals(FullyQualifiedNamespace, other.FullyQualifiedNamespace, StringComparison.Ordinal)
+        && Equals(Credentials, other.Credentials);
 
     public override bool Equals(object? obj)
     {
-        if (obj is not ConnectionSettings settings)
-        {
-            return false;
-        }
-        return Endpoint.Equals(settings.Endpoint);
+        if (obj is null) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((ConnectionSettings)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(
+            Endpoint,
+            ConnectionString,
+            Options,
+            FullyQualifiedNamespace,
+            Credentials);
     }
 }

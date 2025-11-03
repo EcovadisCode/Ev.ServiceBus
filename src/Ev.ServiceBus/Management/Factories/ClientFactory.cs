@@ -1,3 +1,4 @@
+using System;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
 
@@ -7,11 +8,20 @@ public class ClientFactory : IClientFactory
 {
     public ServiceBusClient Create(ConnectionSettings connectionSettings)
     {
-        if (connectionSettings.Options != null)
+        if (!string.IsNullOrWhiteSpace(connectionSettings.ConnectionString))
         {
-            return new ServiceBusClient(connectionSettings.ConnectionString, connectionSettings.Options);
+            return connectionSettings.Options is not null
+                ? new ServiceBusClient(connectionSettings.ConnectionString, connectionSettings.Options)
+                : new ServiceBusClient(connectionSettings.ConnectionString);
         }
 
-        return new ServiceBusClient(connectionSettings.ConnectionString);
+        if(connectionSettings.Credentials is not null && !string.IsNullOrWhiteSpace(connectionSettings.FullyQualifiedNamespace))
+        {
+            return connectionSettings.Options is not null
+                ? new ServiceBusClient(connectionSettings.FullyQualifiedNamespace, connectionSettings.Credentials, connectionSettings.Options)
+                : new ServiceBusClient(connectionSettings.FullyQualifiedNamespace, connectionSettings.Credentials);
+        }
+
+        throw new InvalidOperationException("Insufficient connection settings: provide either a connection string or both FullyQualifiedNamespace and Credentials.");
     }
 }

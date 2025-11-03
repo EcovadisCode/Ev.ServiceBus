@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Reception;
 using Ev.ServiceBus.UnitTests.Helpers;
@@ -164,6 +165,38 @@ public class ComplexTest
             reg => { reg.Name.Should().Be("Subscription:topic/Subscriptions/subscription1"); },
             reg => { reg.Name.Should().Be("Subscription:topic/Subscriptions/subscription2"); },
             reg => { reg.Name.Should().Be("Subscription:topic/Subscriptions/subscription3"); });
+    }
+
+    [Fact]
+    public void HealthCheckWorksWithEntraAuthorization()
+    {
+        var services = new ServiceCollection();
+
+        services.AddServiceBus(settings =>
+        {
+            settings.WithConnection("fullyQualifiedNamespace", new DefaultAzureCredential(), new ServiceBusClientOptions());
+        });
+
+        services.AddHealthChecks().AddEvServiceBusChecks();
+
+        services.RegisterServiceBusReception().FromSubscription("topic", "subscription", builder =>
+        {
+            builder.RegisterReception<RelationCreated, RelationCreatedHandler>();
+        });
+        services.RegisterServiceBusReception().FromQueue("queue", builder =>
+        {
+            builder.RegisterReception<RelationCreated, RelationCreatedHandler>();
+        });
+
+        var provider = services.BuildServiceProvider();
+
+        var healthOptions = provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>();
+
+        healthOptions.Value.Registrations.Count.Should().Be(2);
+        healthOptions.Value.Registrations.Should().SatisfyRespectively(
+            reg => { reg.Name.Should().Be("Queue:queue"); },
+            reg => { reg.Name.Should().Be("Subscription:topic/Subscriptions/subscription"); }
+        );
     }
 
     public class RelationCreated { }

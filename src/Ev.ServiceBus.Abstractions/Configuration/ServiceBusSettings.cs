@@ -1,4 +1,5 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using Azure.Core;
+using Azure.Messaging.ServiceBus;
 
 namespace Ev.ServiceBus.Abstractions;
 
@@ -33,6 +34,11 @@ public sealed class ServiceBusSettings
     public void WithConnection(string connectionString, ServiceBusClientOptions options)
     {
         ConnectionSettings = new ConnectionSettings(connectionString, options);
+    }
+
+    public void WithConnection(string fullyQualifiedNamespace, TokenCredential tokenCredential, ServiceBusClientOptions options)
+    {
+        ConnectionSettings = new ConnectionSettings(fullyQualifiedNamespace, tokenCredential, options);
     }
 
     public void WithIsolation(IsolationBehavior behavior, string? isolationKey = null, string? applicationName = null)
