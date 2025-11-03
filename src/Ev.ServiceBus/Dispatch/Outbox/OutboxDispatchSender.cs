@@ -10,16 +10,16 @@ namespace Ev.ServiceBus.Dispatch.Outbox;
 public class OutboxDispatchSender : IDispatchSender
 {
     private readonly IDispatchSender _underlyingDispatchSender;
-    private readonly IOutboxRepository _outboxRepository;
+    private readonly IOutboxService _outboxService;
     private readonly ServiceBusMessageFactory _messageFactory;
 
     public OutboxDispatchSender(
         IDispatchSender underlyingDispatchSender,
-        IOutboxRepository outboxRepository,
+        IOutboxService outboxService,
         ServiceBusMessageFactory serviceBusMessageFactory)
     {
         _underlyingDispatchSender = underlyingDispatchSender;
-        _outboxRepository = outboxRepository;
+        _outboxService = outboxService;
         _messageFactory = serviceBusMessageFactory;
     }
 
@@ -36,7 +36,7 @@ public class OutboxDispatchSender : IDispatchSender
         {
             foreach (var message in messagesPerResource.Messages)
             {
-                await _outboxRepository.Add(messagesPerResource.ResourceId, message, token);
+                await _outboxService.StoreMessage(messagesPerResource.ResourceId, message, token);
             }
         }
     }
@@ -60,7 +60,7 @@ public class OutboxDispatchSender : IDispatchSender
         {
             foreach (var message in messagesPerResource.Messages)
             {
-                await _outboxRepository.Add(messagesPerResource.ResourceId, message, token);
+                await _outboxService.StoreMessage(messagesPerResource.ResourceId, message, token);
             }
         }
     }
@@ -88,7 +88,7 @@ public class OutboxDispatchSender : IDispatchSender
         {
             foreach (var message in messagesPerResource.Messages)
             {
-                await _outboxRepository.AddScheduled(messagesPerResource.ResourceId, scheduledEnqueueTime, message, token);
+                await _outboxService.StoreScheduledMessage(messagesPerResource.ResourceId, scheduledEnqueueTime, message, token);
             }
         }
     }

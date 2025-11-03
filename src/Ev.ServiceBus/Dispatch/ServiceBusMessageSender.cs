@@ -10,7 +10,7 @@ using Ev.ServiceBus.Management;
 
 namespace Ev.ServiceBus.Dispatch;
 
-public class ServiceBusMessageSender
+public class ServiceBusMessageSender : IServiceBusMessageSender
 {
     private const int MaxMessagePerSend = 100;
     private readonly ServiceBusRegistry _registry;
@@ -25,11 +25,13 @@ public class ServiceBusMessageSender
         var sender = _registry.GetMessageSender(resourceId);
         var batches = await GetBatches(sender, messages, token);
 
-        foreach (var batch in batches)
-        {
-            await sender.SendMessagesAsync(batch, token);
-            batch.Dispose();
-        }
+        await Parallel.ForEachAsync(batches,
+            new ParallelOptions { CancellationToken = token },
+            async (batch, ct) =>
+            {
+                await sender.SendMessagesAsync(batch, ct);
+                batch.Dispose();
+            });
     }
 
     private async Task<ServiceBusMessageBatch[]> GetBatches(
@@ -67,13 +69,14 @@ public class ServiceBusMessageSender
     }
 
     public async Task ScheduleMessages(
-        MessagesPerResource messagesPerResource,
+        string resourceId,
+        ServiceBusMessage[] messages,
         DateTimeOffset scheduledEnqueueTime,
         CancellationToken token)
     {
-        var sender = _registry.GetMessageSender(messagesPerResource.ResourceId);
+        var sender = _registry.GetMessageSender(resourceId);
 
-        var pages = messagesPerResource.Messages
+        var pages = messages
             .Select((x, i) => new
             {
                 Item = x,
@@ -83,18 +86,20 @@ public class ServiceBusMessageSender
             .Select(o => o.ToArray())
             .ToArray();
 
-        foreach (var page in pages)
-        {
-            foreach (var message in page)
+        await Parallel.ForEachAsync(pages,
+            new ParallelOptions { CancellationToken = token },
+            async (page, ct) =>
             {
-                ServiceBusMeter.IncrementSentCounter(
-                    1,
-                    sender.ClientType.ToString(),
-                    sender.Name,
-                    message.ApplicationProperties[UserProperties.PayloadTypeIdProperty]?.ToString()
-                );
-            }
-            await sender.ScheduleMessagesAsync(page, scheduledEnqueueTime, token);
-        }
+                foreach (var message in page)
+                {
+                    ServiceBusMeter.IncrementSentCounter(
+                        1,
+                        sender.ClientType.ToString(),
+                        sender.Name,
+                        message.ApplicationProperties[UserProperties.PayloadTypeIdProperty]?.ToString()
+                    );
+                }
+                await sender.ScheduleMessagesAsync(page, scheduledEnqueueTime, ct);
+            });
     }
 }

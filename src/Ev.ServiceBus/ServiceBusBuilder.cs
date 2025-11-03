@@ -52,12 +52,12 @@ public class ServiceBusBuilder
     }
 
     public ServiceBusBuilder WithOutboxIntegration<TOutboxRepository>()
-        where TOutboxRepository : class, IOutboxRepository
+        where TOutboxRepository : class, IOutboxService
     {
         Services.Decorate<IMessagePublisher, OutboxMessagePublisher>();
         Services.Decorate<IMessageDispatcher, OutboxMessageDispatcher>();
         Services.Decorate<IDispatchSender, OutboxDispatchSender>();
-        Services.AddScoped<IOutboxRepository, TOutboxRepository>();
+        Services.AddScoped<IOutboxService, TOutboxRepository>();
         return this;
     }
 }

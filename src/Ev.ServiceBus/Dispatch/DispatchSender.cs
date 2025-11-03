@@ -91,7 +91,7 @@ public class DispatchSender : IDispatchSender
         var dispatches = _messageFactory.CreateMessagesToSend(messagePayloads);
         foreach (var messagesPerResource in dispatches)
         {
-            await _serviceBusMessageSender.ScheduleMessages(messagesPerResource, scheduledEnqueueTime, token);
+            await _serviceBusMessageSender.ScheduleMessages(messagesPerResource.ResourceId, messagesPerResource.Messages, scheduledEnqueueTime, token);
         }
     }
 }
