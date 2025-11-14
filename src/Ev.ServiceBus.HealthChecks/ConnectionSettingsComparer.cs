@@ -27,11 +27,16 @@ internal class ConnectionSettingsComparer : IEqualityComparer<ConnectionSettings
             return false;
         }
 
-        return x.ConnectionString == y.ConnectionString;
+        return x.ConnectionString == y.ConnectionString
+            && x.FullyQualifiedNamespace == y.FullyQualifiedNamespace
+            && x.Credentials == y.Credentials;
     }
 
     public int GetHashCode(ConnectionSettings? obj)
     {
-        return obj?.ConnectionString?.GetHashCode() ?? 0;
+        return HashCode.Combine(
+            obj?.ConnectionString,
+            obj?.FullyQualifiedNamespace,
+            obj?.Credentials);
     }
 }

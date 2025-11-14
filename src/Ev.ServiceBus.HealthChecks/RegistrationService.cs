@@ -27,14 +27,21 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
             return;
         }
 
-        var commonConnectionString = _serviceBusOptions.Value.Settings.ConnectionSettings?.ConnectionString;
+        var commonSettings = _serviceBusOptions.Value.Settings.ConnectionSettings;
+        var commonConnectionString = commonSettings?.ConnectionString;
+        var commonFullyQualifiedNamespace = commonSettings?.FullyQualifiedNamespace;
+        var commonCredentials = commonSettings?.Credentials;
+
         var resources = _serviceBusOptions.Value.Receivers.Union(_serviceBusOptions.Value.Senders).Distinct()
             .ToArray();
 
         foreach (var resourceGroup in resources.GroupBy(o => o.ConnectionSettings, new ConnectionSettingsComparer()))
         {
             var connectionString = resourceGroup.Key?.ConnectionString ?? commonConnectionString;
-            if (connectionString == null)
+            var fullyQualifiedNamespace = resourceGroup.Key?.FullyQualifiedNamespace ?? commonFullyQualifiedNamespace;
+            var credentials = resourceGroup.Key?.Credentials ?? commonCredentials;
+
+            if (connectionString == null && fullyQualifiedNamespace == null && credentials == null)
             {
                 continue;
             }
@@ -46,7 +53,9 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
                 options.Registrations.Add(new HealthCheckRegistration($"Queue:{group.Key}",
                     sp => (IHealthCheck) new AzureServiceBusQueueHealthCheck(new AzureServiceBusQueueHealthCheckOptions(group.Key)
                     {
-                        ConnectionString = connectionString
+                        ConnectionString = connectionString,
+                        FullyQualifiedNamespace = fullyQualifiedNamespace,
+                        Credential = credentials
                     }),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
             }
@@ -58,7 +67,9 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
                 options.Registrations.Add(new HealthCheckRegistration($"Topic:{group.Key}",
                     sp => (IHealthCheck) new AzureServiceBusTopicHealthCheck(new AzureServiceBusTopicHealthCheckOptions(group.Key)
                     {
-                        ConnectionString = connectionString
+                        ConnectionString = connectionString,
+                        FullyQualifiedNamespace = fullyQualifiedNamespace,
+                        Credential = credentials,
                     }),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
             }
@@ -73,7 +84,9 @@ public class RegistrationService : IConfigureOptions<HealthCheckServiceOptions>
                 options.Registrations.Add(new HealthCheckRegistration($"Subscription:{group.Key.TopicName}/Subscriptions/{group.Key.SubscriptionName}",
                     sp => (IHealthCheck) new AzureServiceBusSubscriptionHealthCheck(new AzureServiceBusSubscriptionHealthCheckHealthCheckOptions(group.Key.TopicName, group.Key.SubscriptionName)
                         {
-                            ConnectionString = connectionString
+                            ConnectionString = connectionString,
+                            FullyQualifiedNamespace = fullyQualifiedNamespace,
+                            Credential = credentials
                         }),
                     null, HealthChecksBuilderExtensions.HealthCheckTags, null));
             }

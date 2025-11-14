@@ -29,6 +29,20 @@ public class DispatchRegistrationBuilder
     }
 
     /// <summary>
+    /// Sets a specific connection using Azure Entra authorization for the underlying resource.
+    /// </summary>
+    /// <param name="fullyQualifiedNamespace"></param>
+    /// <param name="credentials"></param>
+    /// <param name="options"></param>
+    public void CustomizeConnection(
+        string fullyQualifiedNamespace,
+        Azure.Core.TokenCredential credentials,
+        ServiceBusClientOptions options)
+    {
+        _options.WithConnection(fullyQualifiedNamespace, credentials, options);
+    }
+
+    /// <summary>
     /// Registers a class as a payload to serialize and send through the current resource.
     /// </summary>
     /// <typeparam name="TDispatchModel">The class to serialize the message into</typeparam>

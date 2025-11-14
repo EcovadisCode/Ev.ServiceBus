@@ -1,4 +1,5 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using Azure.Core;
+using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions.Configuration;
 
 // ReSharper disable once CheckNamespace
@@ -22,6 +23,27 @@ public static class ClientOptionsExtensions
         where TOptions : ClientOptions
     {
         options.ConnectionSettings = new ConnectionSettings(connectionString, connectionOptions);
+        return options;
+    }
+
+    /// <summary>
+    /// Sets the connection to use for this resource using Azure Entra ID.
+    /// If no connection is set then the default connection will be used.
+    /// </summary>
+    /// <param name="options"></param>
+    /// <param name="fullyQualifiedNamespace"></param>
+    /// <param name="credentials"></param>
+    /// <param name="connectionOptions"></param>
+    /// <typeparam name="TOptions"></typeparam>
+    /// <returns></returns>
+    public static TOptions WithConnection<TOptions>(
+        this TOptions options,
+        string fullyQualifiedNamespace,
+        TokenCredential credentials,
+        ServiceBusClientOptions connectionOptions)
+        where TOptions : ClientOptions
+    {
+        options.ConnectionSettings = new ConnectionSettings(fullyQualifiedNamespace, credentials, connectionOptions);
         return options;
     }
 }
