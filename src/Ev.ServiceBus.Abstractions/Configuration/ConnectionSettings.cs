@@ -6,19 +6,15 @@ namespace Ev.ServiceBus.Abstractions.Configuration;
 
 public class ConnectionSettings
 {
-    internal ConnectionSettings(string connectionString, ServiceBusClientOptions options)
+    internal ConnectionSettings(string connectionString, ServiceBusClientOptions options, TokenCredential? credentials = null)
     {
         ConnectionString = connectionString;
         Options = options;
         Endpoint = ServiceBusConnectionStringProperties.Parse(connectionString).Endpoint.AbsoluteUri;
-    }
-
-    internal ConnectionSettings(string fullyQualifiedNamespace, TokenCredential credentials, ServiceBusClientOptions options)
-    {
-        Options = options;
-        FullyQualifiedNamespace = fullyQualifiedNamespace;
+        FullyQualifiedNamespace = credentials == null
+            ? null
+            : ServiceBusConnectionStringProperties.Parse(connectionString).FullyQualifiedNamespace;
         Credentials = credentials;
-        Endpoint = ServiceBusConnectionStringProperties.Parse(fullyQualifiedNamespace).Endpoint.AbsoluteUri;
     }
 
     public string Endpoint { get; }
