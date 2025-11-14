@@ -8,12 +8,12 @@ public class ConnectionSettings
 {
     internal ConnectionSettings(string connectionString, ServiceBusClientOptions options, TokenCredential? credentials = null)
     {
+        var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(connectionString);
+
         ConnectionString = connectionString;
         Options = options;
-        Endpoint = ServiceBusConnectionStringProperties.Parse(connectionString).Endpoint.AbsoluteUri;
-        FullyQualifiedNamespace = credentials == null
-            ? null
-            : ServiceBusConnectionStringProperties.Parse(connectionString).FullyQualifiedNamespace;
+        Endpoint = connectionStringProperties.Endpoint.AbsoluteUri;
+        FullyQualifiedNamespace = credentials == null ? null : connectionStringProperties.FullyQualifiedNamespace;
         Credentials = credentials;
     }
 
