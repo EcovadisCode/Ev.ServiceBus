@@ -8,6 +8,11 @@ public class ConnectionSettings
 {
     internal ConnectionSettings(string connectionString, ServiceBusClientOptions options, TokenCredential? credentials = null)
     {
+        if (!connectionString.StartsWith("Endpoint=", StringComparison.OrdinalIgnoreCase))
+        {
+            connectionString = $"Endpoint={connectionString}";
+        }
+
         var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(connectionString);
 
         ConnectionString = connectionString;
