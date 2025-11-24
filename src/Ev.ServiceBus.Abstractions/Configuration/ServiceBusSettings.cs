@@ -39,7 +39,7 @@ public sealed class ServiceBusSettings
 
     public void WithConnection(string fullyQualifiedNamespace, TokenCredential tokenCredential, ServiceBusClientOptions options)
     {
-        ConnectionSettings = new ConnectionSettings(fullyQualifiedNamespace, options, tokenCredential);
+        ConnectionSettings = new ConnectionSettings(fullyQualifiedNamespace, tokenCredential, options);
     }
 
     public void WithIsolation(IsolationBehavior behavior, string? isolationKey = null, string? applicationName = null)

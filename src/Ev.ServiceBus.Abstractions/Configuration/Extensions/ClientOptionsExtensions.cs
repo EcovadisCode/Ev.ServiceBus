@@ -43,7 +43,7 @@ public static class ClientOptionsExtensions
         ServiceBusClientOptions connectionOptions)
         where TOptions : ClientOptions
     {
-        options.ConnectionSettings = new ConnectionSettings(fullyQualifiedNamespace, connectionOptions, credentials);
+        options.ConnectionSettings = new ConnectionSettings(fullyQualifiedNamespace, credentials, connectionOptions);
         return options;
     }
 }

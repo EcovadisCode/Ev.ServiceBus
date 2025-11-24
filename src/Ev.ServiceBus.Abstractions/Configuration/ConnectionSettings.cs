@@ -6,20 +6,26 @@ namespace Ev.ServiceBus.Abstractions.Configuration;
 
 public class ConnectionSettings
 {
-    internal ConnectionSettings(string connectionString, ServiceBusClientOptions options, TokenCredential? credentials = null)
+    internal ConnectionSettings(string connectionString, ServiceBusClientOptions options)
     {
-        if (!connectionString.StartsWith("Endpoint=", StringComparison.OrdinalIgnoreCase))
-        {
-            connectionString = $"Endpoint={connectionString}";
-        }
-
-        var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(connectionString);
-
         ConnectionString = connectionString;
         Options = options;
-        Endpoint = connectionStringProperties.Endpoint.AbsoluteUri;
-        FullyQualifiedNamespace = credentials == null ? null : connectionStringProperties.FullyQualifiedNamespace;
+        Endpoint = ServiceBusConnectionStringProperties.Parse(connectionString).Endpoint.AbsoluteUri;
+    }
+
+    internal ConnectionSettings(string fullyQualifiedNamespace, TokenCredential credentials, ServiceBusClientOptions options)
+    {
+        if (!fullyQualifiedNamespace.StartsWith("Endpoint=", StringComparison.OrdinalIgnoreCase))
+        {
+            fullyQualifiedNamespace = $"Endpoint={fullyQualifiedNamespace}";
+        }
+
+        var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(fullyQualifiedNamespace);
+
+        Options = options;
+        FullyQualifiedNamespace = connectionStringProperties.FullyQualifiedNamespace;
         Credentials = credentials;
+        Endpoint = connectionStringProperties.Endpoint.AbsoluteUri;
     }
 
     public string Endpoint { get; }
