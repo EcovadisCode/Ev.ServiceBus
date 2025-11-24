@@ -1,6 +1,6 @@
 # Ev.ServiceBus
 
-This is a wrapper around [Microsoft Azure Service Bus](https://www.nuget.org/packages/Microsoft.Azure.ServiceBus/)
+This is a wrapper around [Azure Messaging Service Bus](https://www.nuget.org/packages/Azure.Messaging.ServiceBus/)
 
 Its goal is to make it the easiest possible to send and receive ServiceBus messages in an [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.2) project.
 
