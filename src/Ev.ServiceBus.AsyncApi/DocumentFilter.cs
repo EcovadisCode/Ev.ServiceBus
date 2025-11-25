@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.Configuration;
 using Microsoft.Extensions.Options;
 using NJsonSchema;
 using Saunter.AsyncApiSchema.v2;

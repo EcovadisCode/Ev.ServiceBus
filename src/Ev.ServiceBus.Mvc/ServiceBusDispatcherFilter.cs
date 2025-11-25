@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Ev.ServiceBus.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
 

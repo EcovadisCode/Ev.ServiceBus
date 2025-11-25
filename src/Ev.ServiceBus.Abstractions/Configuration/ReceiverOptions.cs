@@ -1,7 +1,6 @@
 ﻿using System;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Ev.ServiceBus.Abstractions;

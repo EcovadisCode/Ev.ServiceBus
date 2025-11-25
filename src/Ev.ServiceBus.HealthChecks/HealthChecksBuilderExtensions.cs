@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Ev.ServiceBus.HealthChecks;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 

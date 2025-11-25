@@ -2,7 +2,7 @@ using System;
 using Azure.Messaging.ServiceBus;
 using Azure.Core;
 
-namespace Ev.ServiceBus.Abstractions.Configuration;
+namespace Ev.ServiceBus.Abstractions;
 
 public class ConnectionSettings
 {

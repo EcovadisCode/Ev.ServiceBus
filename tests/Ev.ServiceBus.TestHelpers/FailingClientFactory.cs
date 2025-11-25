@@ -1,6 +1,6 @@
 ﻿using System;
 using Azure.Messaging.ServiceBus;
-using Ev.ServiceBus.Abstractions.Configuration;
+using Ev.ServiceBus.Abstractions;
 
 namespace Ev.ServiceBus.UnitTests.Helpers;
 

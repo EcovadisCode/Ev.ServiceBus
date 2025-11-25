@@ -1,7 +1,5 @@
 ﻿// ReSharper disable once CheckNamespace
 
-using Ev.ServiceBus.Abstractions.Configuration;
-
 namespace Ev.ServiceBus.Abstractions;
 
 public interface IClientOptions
