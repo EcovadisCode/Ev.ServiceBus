@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Ev.ServiceBus.Abstractions;
+﻿namespace Ev.ServiceBus.Abstractions;
 
 public class ExecutionStartedArgs : ExecutionBaseArgs
 {

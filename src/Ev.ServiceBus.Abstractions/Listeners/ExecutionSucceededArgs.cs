@@ -1,5 +1,3 @@
-using System;
-
 namespace Ev.ServiceBus.Abstractions;
 
 public class ExecutionSucceededArgs : ExecutionBaseArgs

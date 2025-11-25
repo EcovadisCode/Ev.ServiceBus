@@ -1,7 +1,6 @@
 ﻿using System;
 using Azure.Messaging.ServiceBus;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Ev.ServiceBus.Abstractions;
 

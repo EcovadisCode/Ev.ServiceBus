@@ -1,6 +1,5 @@
 ﻿using Ev.ServiceBus.Samples.Sender;
 using Ev.ServiceBus.UnitTests.Helpers;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;

@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.Configuration;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;

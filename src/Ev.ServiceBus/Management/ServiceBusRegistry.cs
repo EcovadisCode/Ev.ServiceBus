@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
-using Ev.ServiceBus.Abstractions.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace Ev.ServiceBus.Management;

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Azure.Messaging.ServiceBus;
-using Ev.ServiceBus.Abstractions.Configuration;
+using Ev.ServiceBus.Abstractions;
 
 namespace Ev.ServiceBus.TestHelpers;
 

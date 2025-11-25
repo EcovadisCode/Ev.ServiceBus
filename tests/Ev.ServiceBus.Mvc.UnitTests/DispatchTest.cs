@@ -4,7 +4,6 @@ using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Samples.Sender;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
