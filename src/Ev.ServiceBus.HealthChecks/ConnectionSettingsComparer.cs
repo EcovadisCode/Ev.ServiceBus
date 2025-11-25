@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Configuration;
 
 namespace Ev.ServiceBus.HealthChecks;
 

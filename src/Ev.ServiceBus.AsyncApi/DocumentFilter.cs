@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Configuration;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualBasic;
 using NJsonSchema;
 using Saunter.AsyncApiSchema.v2;
 using Saunter.AsyncApiSchema.v2.Bindings;
@@ -117,7 +115,7 @@ public class DocumentFilter : IDocumentFilter
 
     private IMessage GenerateMessage(string payloadTypeId, Type payloadType, DocumentFilterContext context, AsyncApiSchemaResolver asyncApiSchemaResolver)
     {
-        var message = new Saunter.AsyncApiSchema.v2.Message()
+        var message = new Message()
         {
             Name = payloadTypeId.Replace("/", "¤"),
             Payload = GetOrCreatePayloadSchema(payloadType, context),

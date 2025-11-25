@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Abstractions;
+using Ev.ServiceBus.Abstractions.Configuration;
 using Ev.ServiceBus.Management;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
@@ -362,17 +363,18 @@ public class DispatchConfigurationTest
     public async Task CustomizeConnection_ChangesAreAppliedToClient()
     {
         var composer = new Composer();
-        var serviceBusClientOptions = new ServiceBusClientOptions()
+        var serviceBusClientOptions = new ServiceBusClientOptions
         {
             EnableCrossEntityTransactions = true,
             TransportType = ServiceBusTransportType.AmqpWebSockets
         };
 
         var factory = new Mock<IClientFactory>();
+        const string connectionString = "Endpoint=sb://acmecompany.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=kFCrVU8u5v0LASbKGA3MHDpnCOguiNwL++r1cAvblhc=";
         factory.Setup(o => o.Create(It.Is<ConnectionSettings>(settings =>
-                settings.ConnectionString == "Endpoint=newConnectionString;"
+                settings.ConnectionString == connectionString
                 && settings.Options == serviceBusClientOptions
-                && settings.Endpoint == "newConnectionString")))
+                && settings.Endpoint == "sb://acmecompany.servicebus.windows.net/")))
             .Returns(new Mock<ServiceBusClient>().Object);
 
         composer.WithAdditionalServices(services =>
@@ -380,7 +382,7 @@ public class DispatchConfigurationTest
             services.RegisterServiceBusDispatch()
                 .ToTopic("testTopic", builder =>
                 {
-                    builder.CustomizeConnection("Endpoint=newConnectionString;", serviceBusClientOptions);
+                    builder.CustomizeConnection(connectionString, serviceBusClientOptions);
                     builder.RegisterDispatch<PublishedEvent>();
                 });
             services.OverrideClientFactory(factory.Object);

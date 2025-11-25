@@ -138,7 +138,7 @@ public class ComplexTest
 
         services.AddServiceBus(settings =>
         {
-            settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+            settings.WithConnection("Endpoint=acmecompany.servicebus.windows.net;", new ServiceBusClientOptions());
         });
 
         services.AddHealthChecks().AddEvServiceBusChecks();
@@ -174,7 +174,7 @@ public class ComplexTest
 
         services.AddServiceBus(settings =>
         {
-            settings.WithConnection("fullyQualifiedNamespace", new DefaultAzureCredential(), new ServiceBusClientOptions());
+            settings.WithConnection("acmecompany.servicebus.windows.net", new DefaultAzureCredential(), new ServiceBusClientOptions());
         });
 
         services.AddHealthChecks().AddEvServiceBusChecks();
