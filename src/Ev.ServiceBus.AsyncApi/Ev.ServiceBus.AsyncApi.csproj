@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Saunter" Version="0.8.0" />
+      <PackageReference Include="Saunter" Version="0.13.0" />
     </ItemGroup>
 
 </Project>
