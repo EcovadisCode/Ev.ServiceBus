@@ -107,7 +107,7 @@ public class DocumentFilterTest
                       "$ref": "#/components/messages/WeatherForecast"
                     },
                     {
-                      "$ref": "#/components/messages/User¤UserCreated"
+                      "$ref": "#/components/messages/User*UserCreated"
                     }
                   ]
                 }
@@ -251,12 +251,12 @@ public class DocumentFilterTest
                   }
                 }
               },
-              "User¤UserCreated": {
+              "User*UserCreated": {
                 "payload": {
                   "$ref": "#/components/schemas/userCreated"
                 },
                 "contentType": "application/json",
-                "name": "User¤UserCreated",
+                "name": "User*UserCreated",
                 "title": "User/UserCreated",
                 "tags": [
                   {
