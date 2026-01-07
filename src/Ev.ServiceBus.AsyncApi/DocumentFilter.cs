@@ -116,7 +116,7 @@ public class DocumentFilter : IDocumentFilter
     {
         var message = new Message()
         {
-            Name = payloadTypeId.Replace("/", "¤"),
+            Name = payloadTypeId.Replace("/", "*"),
             Payload = GetOrCreatePayloadSchema(payloadType, context),
             ContentType = "application/json",
             Title = payloadTypeId,

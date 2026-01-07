@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.5.4
+- fixed
+  - Fixed an issue where teh async api schema generation was not working properly with Saunter 5.5.3
+
 ## 5.5.3
 - Changed 
   - Saunter nuget updated to v0.13.0 (Veracode flaw related to Newtonsoft 0.9.*)
