@@ -56,11 +56,15 @@ public class ConnectionSettings
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(
-            Endpoint,
-            ConnectionString,
-            Options,
-            FullyQualifiedNamespace,
-            Credentials);
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + (Endpoint?.GetHashCode() ?? 0);
+            hash = hash * 23 + (ConnectionString?.GetHashCode() ?? 0);
+            hash = hash * 23 + (Options?.GetHashCode() ?? 0);
+            hash = hash * 23 + (FullyQualifiedNamespace?.GetHashCode() ?? 0);
+            hash = hash * 23 + (Credentials?.GetHashCode() ?? 0);
+            return hash;
+        }
     }
 }
