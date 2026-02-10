@@ -84,7 +84,7 @@ public static class MessageHelper
     {
         if (isolationApps.Length == 0)
             return message;
-        message.ApplicationProperties[UserProperties.IsolationApps] = string.Join(',', isolationApps);
+        message.ApplicationProperties[UserProperties.IsolationApps] = string.Join(",", isolationApps);
         return message;
     }
 
