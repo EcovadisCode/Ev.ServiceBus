@@ -582,6 +582,159 @@ public class DispatchTest : IDisposable
         _sentMessagesToQueue[0].ApplicationProperties.GetIsolationKey().Should().Be(isolationKey);
     }
 
+    [Fact]
+    public async Task SendDispatch_Object_WhenDisabled_DoesNotInvokeSender()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await sender.SendDispatch((object)new SubscribedEvent { SomeNumber = 1, SomeString = "test" });
+        }
+
+        provider.GetRequiredService<FakeClientFactory>().GetSenderMock("myQueue").Should().BeNull();
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task SendDispatch_Dispatch_WhenDisabled_DoesNotInvokeSender()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await sender.SendDispatch(new Ev.ServiceBus.Abstractions.Dispatch(new SubscribedEvent { SomeNumber = 1, SomeString = "test" }));
+        }
+
+        provider.GetRequiredService<FakeClientFactory>().GetSenderMock("myQueue").Should().BeNull();
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task SendDispatches_Objects_WhenDisabled_DoesNotInvokeSender()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await sender.SendDispatches(new object[] { new SubscribedEvent { SomeNumber = 1, SomeString = "test" } });
+        }
+
+        provider.GetRequiredService<FakeClientFactory>().GetSenderMock("myQueue").Should().BeNull();
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task SendDispatches_Dispatches_WhenDisabled_DoesNotInvokeSender()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await sender.SendDispatches(new[] { new Ev.ServiceBus.Abstractions.Dispatch(new SubscribedEvent { SomeNumber = 1, SomeString = "test" }) });
+        }
+
+        provider.GetRequiredService<FakeClientFactory>().GetSenderMock("myQueue").Should().BeNull();
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ScheduleDispatches_Objects_WhenDisabled_DoesNotInvokeSender()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await sender.ScheduleDispatches(
+                new object[] { new SubscribedEvent { SomeNumber = 1, SomeString = "test" } },
+                DateTimeOffset.UtcNow.AddDays(1));
+        }
+
+        provider.GetRequiredService<FakeClientFactory>().GetSenderMock("myQueue").Should().BeNull();
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ScheduleDispatches_Dispatches_WhenDisabled_DoesNotInvokeSender()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await sender.ScheduleDispatches(
+                new[] { new Ev.ServiceBus.Abstractions.Dispatch(new SubscribedEvent { SomeNumber = 1, SomeString = "test" }) },
+                DateTimeOffset.UtcNow.AddDays(1));
+        }
+
+        provider.GetRequiredService<FakeClientFactory>().GetSenderMock("myQueue").Should().BeNull();
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    // Null-argument checks must fire before IsDisabled() for all overloads that own them
+    [Fact]
+    public async Task SendDispatches_Objects_WhenDisabled_NullPayload_ThrowsArgumentNullException()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => sender.SendDispatches((IEnumerable<object>)null!));
+        }
+
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task SendDispatches_Dispatches_WhenDisabled_NullPayload_ThrowsArgumentNullException()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => sender.SendDispatches((IEnumerable<Ev.ServiceBus.Abstractions.Dispatch>)null!));
+        }
+
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ScheduleDispatches_Objects_WhenDisabled_NullPayload_ThrowsArgumentNullException()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                sender.ScheduleDispatches((IEnumerable<object>)null!, DateTimeOffset.UtcNow.AddDays(1)));
+        }
+
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ScheduleDispatches_Dispatches_WhenDisabled_NullPayload_ThrowsArgumentNullException()
+    {
+        var provider = await CreateDisabledProviderAsync();
+
+        using (var scope = provider.CreateScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<IDispatchSender>();
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                sender.ScheduleDispatches((IEnumerable<Ev.ServiceBus.Abstractions.Dispatch>)null!, DateTimeOffset.UtcNow.AddDays(1)));
+        }
+
+        await provider.SimulateStopHost(CancellationToken.None);
+    }
+
     private void GivenIsolationKeyInMetadata(string isolationKey)
     {
         var appProperties = new Dictionary<string, object> { { UserProperties.IsolationKey , isolationKey } };
@@ -599,6 +752,24 @@ public class DispatchTest : IDisposable
             return _sentMessagesToQueueSession.FirstOrDefault();
         }
         return _sentMessagesToQueue.FirstOrDefault();
+    }
+
+    private static async Task<ServiceProvider> CreateDisabledProviderAsync()
+    {
+        var services = new ServiceCollection();
+        services.AddServiceBus(settings =>
+        {
+            settings.Enabled = false;
+            settings.WithConnection("Endpoint=testConnectionString;", new ServiceBusClientOptions());
+        });
+        services.OverrideClientFactory();
+        services.RegisterServiceBusDispatch().ToQueue("myQueue", builder =>
+        {
+            builder.RegisterDispatch<SubscribedEvent>();
+        });
+        var provider = services.BuildServiceProvider();
+        await provider.SimulateStartHost(CancellationToken.None);
+        return provider;
     }
 
     public void Dispose()

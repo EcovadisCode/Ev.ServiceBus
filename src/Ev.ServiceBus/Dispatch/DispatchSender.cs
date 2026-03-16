@@ -42,6 +42,8 @@ public class DispatchSender : IDispatchSender
     /// <inheritdoc />
     public async Task SendDispatch(object messagePayload, CancellationToken token = default)
     {
+        if (IsDisabled()) return;
+
         var dispatch = new Abstractions.Dispatch(messagePayload);
 
         await SendDispatch(dispatch, token);
@@ -50,6 +52,8 @@ public class DispatchSender : IDispatchSender
     /// <inheritdoc />
     public async Task SendDispatch(Abstractions.Dispatch messagePayload, CancellationToken token = default)
     {
+        if (IsDisabled()) return;
+
         var dispatches = CreateMessagesToSend([messagePayload]);
 
         foreach (var messagePerResource in dispatches)
@@ -74,6 +78,8 @@ public class DispatchSender : IDispatchSender
             throw new ArgumentNullException(nameof(messagePayloads));
         }
 
+        if (IsDisabled()) return;
+
         var dispatches = messagePayloads.Select(o => new Abstractions.Dispatch(o)).ToArray();
         await SendDispatches(dispatches, token);
     }
@@ -85,6 +91,8 @@ public class DispatchSender : IDispatchSender
         {
             throw new ArgumentNullException(nameof(messagePayloads));
         }
+
+        if (IsDisabled()) return;
 
         var dispatches = CreateMessagesToSend(messagePayloads);
         foreach (var messagesPerResource in dispatches)
@@ -139,6 +147,8 @@ public class DispatchSender : IDispatchSender
             throw new ArgumentNullException(nameof(messagePayloads));
         }
 
+        if (IsDisabled()) return;
+
         var dispatches = messagePayloads.Select(o => new Abstractions.Dispatch(o)).ToArray();
         await ScheduleDispatches(dispatches, scheduledEnqueueTime, token);
     }
@@ -150,6 +160,8 @@ public class DispatchSender : IDispatchSender
         {
             throw new ArgumentNullException(nameof(messagePayloads));
         }
+
+        if (IsDisabled()) return;
 
         var dispatches = CreateMessagesToSend(messagePayloads);
         foreach (var messagesPerResource in dispatches)
@@ -279,4 +291,6 @@ public class DispatchSender : IDispatchSender
         }
         return message;
     }
+
+    private bool IsDisabled() => _serviceBusOptions.Settings.Enabled == false;
 }
