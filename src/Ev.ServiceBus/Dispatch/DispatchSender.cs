@@ -261,6 +261,26 @@ public class DispatchSender : IDispatchSender
         }
 
         message.SessionId = dispatch.SessionId;
+        if (dispatch.PartitionKey is not null)
+        {
+            message.PartitionKey = dispatch.PartitionKey;
+        }
+        message.TransactionPartitionKey = dispatch.TransactionPartitionKey;
+        message.ReplyToSessionId = dispatch.ReplyToSessionId;
+        if (dispatch.TimeToLive is not null)
+        {
+            message.TimeToLive = dispatch.TimeToLive.Value;
+        }
+        if (dispatch.Subject is not null)
+        {
+            message.Subject = dispatch.Subject;
+        }
+        message.To = dispatch.To;
+        message.ReplyTo = dispatch.ReplyTo;
+        if (dispatch.ScheduledEnqueueTime is not null)
+        {
+            message.ScheduledEnqueueTime = dispatch.ScheduledEnqueueTime.Value;
+        }
 
         var originalCorrelationId = _messageMetadataAccessor.Metadata?.CorrelationId ?? Guid.NewGuid().ToString();
         message.CorrelationId = dispatch.CorrelationId ?? originalCorrelationId;
