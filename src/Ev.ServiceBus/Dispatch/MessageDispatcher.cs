@@ -67,7 +67,7 @@ public class MessageDispatcher : IMessagePublisher, IMessageDispatcher
     /// <inheritdoc />
     public void Publish<TMessagePayload>(
         TMessagePayload messageDto,
-        Action<IDispatchContext> messageContextConfiguration)
+        Action<Abstractions.Dispatch> messageContextConfiguration)
     {
         if (messageDto == null)
         {
@@ -78,17 +78,9 @@ public class MessageDispatcher : IMessagePublisher, IMessageDispatcher
         {
             throw new ArgumentNullException(nameof(messageContextConfiguration));
         }
+        var dispatch = new Abstractions.Dispatch(messageDto);
+        messageContextConfiguration.Invoke(dispatch);
 
-        var context = new DispatchContext();
-
-        messageContextConfiguration.Invoke(context);
-
-        _dispatchesToSend.Add(new Abstractions.Dispatch(messageDto, context)
-        {
-            SessionId = context.SessionId,
-            CorrelationId = context.CorrelationId,
-            MessageId = context.MessageId,
-            DiagnosticId = context.DiagnosticId ?? Activity.Current?.Id
-        });
+        _dispatchesToSend.Add(dispatch);
     }
 }
