@@ -2,5 +2,6 @@
 
 public interface IMessageMetadataAccessor
 {
-    public IMessageMetadata? Metadata { get; }
+    IMessageMetadata? Metadata { get; }
+    void SetData(MessageContext context);
 }
