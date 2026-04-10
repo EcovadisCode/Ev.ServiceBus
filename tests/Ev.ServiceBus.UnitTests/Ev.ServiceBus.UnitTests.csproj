@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Scrutor" Version="4.2.2" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Ev.ServiceBus.Abstractions\Ev.ServiceBus.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Ev.ServiceBus\Ev.ServiceBus.csproj" />
     <ProjectReference Include="..\Ev.ServiceBus.TestHelpers\Ev.ServiceBus.TestHelpers.csproj" />

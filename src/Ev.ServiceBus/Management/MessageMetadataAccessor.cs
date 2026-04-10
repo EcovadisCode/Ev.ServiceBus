@@ -7,7 +7,7 @@ public class MessageMetadataAccessor : IMessageMetadataAccessor
 {
     public IMessageMetadata? Metadata { get; private set; }
 
-    internal void SetData(MessageContext context)
+    public void SetData(MessageContext context)
     {
         if (context.SessionArgs != null)
         {

@@ -9,7 +9,6 @@ using Ev.ServiceBus.Abstractions.MessageReception;
 using Ev.ServiceBus.Diagnostics;
 using Ev.ServiceBus.Exceptions;
 using Ev.ServiceBus.Isolation;
-using Ev.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +19,7 @@ public class MessageReceptionHandler
     private readonly MethodInfo _callHandlerInfo;
     private readonly IMessagePayloadSerializer _messagePayloadSerializer;
     private readonly ILogger<LoggingExtensions.MessageProcessing> _logger;
-    private readonly MessageMetadataAccessor _messageMetadataAccessor;
+    private readonly IMessageMetadataAccessor _messageMetadataAccessor;
     private readonly IEnumerable<IServiceBusEventListener> _eventListeners;
     private readonly IServiceProvider _provider;
     private readonly IsolationService _isolationService;
@@ -36,7 +35,7 @@ public class MessageReceptionHandler
         _provider = provider;
         _messagePayloadSerializer = messagePayloadSerializer;
         _logger = logger;
-        _messageMetadataAccessor = (MessageMetadataAccessor)messageMetadataAccessor;
+        _messageMetadataAccessor = messageMetadataAccessor;
         _eventListeners = eventListeners;
         _callHandlerInfo = GetType().GetMethod(nameof(CallHandler), BindingFlags.NonPublic | BindingFlags.Instance)!;
         _isolationService = isolationService;
