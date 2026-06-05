@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.7.2
+- Fixed
+  - Suppressed spurious `OperationCanceledException` / `TaskCanceledException` APM error entries during pod graceful shutdown. When the Service Bus receive loop is cancelled with a requested cancellation token, the exception is now logged at `Warning` level instead of `Error`.
+
 ## 5.7.1
 - Changed
   - Updated IMessageMetadataAccessor interface to allow to be decorated

@@ -22,7 +22,7 @@ public class ReceiverWrapper
     private readonly ComposedReceiverOptions _composedOptions;
     private readonly ITransactionManager _transactionManager;
 
-    private Func<ProcessErrorEventArgs, Task>? _onExceptionReceivedHandler;
+    private Func<ProcessErrorEventArgs, Task> _onExceptionReceivedHandler = _ => Task.CompletedTask;
 
     public ReceiverWrapper(ServiceBusClient? client,
         ComposedReceiverOptions options,
@@ -132,6 +132,14 @@ public class ReceiverWrapper
     /// <returns></returns>
     protected async Task OnExceptionOccured(ProcessErrorEventArgs exceptionEvent)
     {
+        if (exceptionEvent.Exception is OperationCanceledException oce && oce.CancellationToken.IsCancellationRequested)
+        {
+            _messageProcessingLogger.LogWarning(
+                "[Ev.ServiceBus] Receive loop cancelled for {ClientType} '{ResourceId}' during shutdown.",
+                _composedOptions.ClientType, _composedOptions.ResourceId);
+            return;
+        }
+
         var processException = exceptionEvent.Exception as FailedToProcessMessageException;
         using (_messageProcessingLogger.ProcessingInProgress(
                    clientType: processException?.ClientType ?? _composedOptions.ClientType.ToString(),
@@ -149,7 +157,7 @@ public class ReceiverWrapper
                 exceptionEvent.EntityPath,
                 processExceptionInnerException);
 
-            await _onExceptionReceivedHandler!(exceptionEvent);
+            await _onExceptionReceivedHandler(exceptionEvent);
         }
     }
 
