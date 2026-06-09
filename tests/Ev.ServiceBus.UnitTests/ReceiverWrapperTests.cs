@@ -31,20 +31,44 @@ public sealed class ReceiverWrapperTests
     }
 
     [Fact]
-    public async Task OnExceptionOccured_WithCancelledToken_DoesNotLogError()
+    public async Task OnExceptionOccured_WithOperationCanceledException_DoesNotLogError()
     {
         var mockLogger = new Mock<ILogger<LoggingExtensions.MessageProcessing>>();
         var wrapper = CreateWrapper(mockLogger.Object);
 
-        using var cts = new CancellationTokenSource();
-        cts.Cancel();
-
+        // Azure SDK raises ProcessErrorAsync with CancellationToken.None during shutdown —
+        // the token on the exception is not the shutdown token, so IsCancellationRequested is false.
         var args = new ProcessErrorEventArgs(
-            new OperationCanceledException("shutdown", cts.Token),
+            new OperationCanceledException("shutdown", CancellationToken.None),
             ServiceBusErrorSource.Receive,
             "test-namespace",
             "test-queue",
-            cts.Token);
+            CancellationToken.None);
+
+        await wrapper.InvokeOnExceptionOccuredAsync(args);
+
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception?>(),
+                It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
+            Times.Never());
+    }
+
+    [Fact]
+    public async Task OnExceptionOccured_WithTaskCanceledException_DoesNotLogError()
+    {
+        var mockLogger = new Mock<ILogger<LoggingExtensions.MessageProcessing>>();
+        var wrapper = CreateWrapper(mockLogger.Object);
+
+        var args = new ProcessErrorEventArgs(
+            new TaskCanceledException(),
+            ServiceBusErrorSource.Receive,
+            "test-namespace",
+            "test-queue",
+            CancellationToken.None);
 
         await wrapper.InvokeOnExceptionOccuredAsync(args);
 

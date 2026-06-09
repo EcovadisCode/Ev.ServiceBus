@@ -132,7 +132,7 @@ public class ReceiverWrapper
     /// <returns></returns>
     protected async Task OnExceptionOccured(ProcessErrorEventArgs exceptionEvent)
     {
-        if (exceptionEvent.Exception is OperationCanceledException oce && oce.CancellationToken.IsCancellationRequested)
+        if (exceptionEvent.Exception is OperationCanceledException)
         {
             _messageProcessingLogger.LogWarning(
                 "[Ev.ServiceBus] Receive loop cancelled for {ClientType} '{ResourceId}' during shutdown.",

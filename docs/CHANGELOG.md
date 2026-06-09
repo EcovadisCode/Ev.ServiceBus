@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.7.3
+- Fixed
+  - Corrected the shutdown `OperationCanceledException` guard introduced in 5.7.2. The previous guard checked `oce.CancellationToken.IsCancellationRequested`, which was always `false` because the Azure ServiceBus SDK raises `ProcessErrorAsync` with `CancellationToken.None` during processor shutdown. The guard now matches any `OperationCanceledException`, which is safe since genuine transport errors surface as `ServiceBusException`.
+
 ## 5.7.2
 - Fixed
   - Suppressed spurious `OperationCanceledException` / `TaskCanceledException` APM error entries during pod graceful shutdown. When the Service Bus receive loop is cancelled with a requested cancellation token, the exception is now logged at `Warning` level instead of `Error`.
