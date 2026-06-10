@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.7.4
+- Fixed
+  - Prevented `OperationCanceledException` during pod graceful shutdown from being recorded as APM errors. Added `ICancellationAwareTransactionManager` — an optional interface that `ITransactionManager` implementations can implement to react to receive-loop cancellations. `ApmTransactionManager` implements it by setting the current Elastic APM transaction outcome to `Success`, overriding the error state set by the Azure SDK's auto-instrumentation. `ReceiverWrapper` calls `OnReceiveCancelled()` via a runtime cast before logging the shutdown warning.
+
 ## 5.7.3
 - Fixed
   - Corrected the shutdown `OperationCanceledException` guard introduced in 5.7.2. The previous guard checked `oce.CancellationToken.IsCancellationRequested`, which was always `false` because the Azure ServiceBus SDK raises `ProcessErrorAsync` with `CancellationToken.None` during processor shutdown. The guard now matches any `OperationCanceledException`, which is safe since genuine transport errors surface as `ServiceBusException`.
