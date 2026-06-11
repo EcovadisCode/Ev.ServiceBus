@@ -12,7 +12,7 @@ namespace Ev.ServiceBus.Apm;
 /// <summary>
 /// Default Transaction uses Diagnostics for Elastic APM
 /// </summary>
-public class ApmTransactionManager : ITransactionManager
+public class ApmTransactionManager : ITransactionManager, ICancellationAwareTransactionManager
 {
     public async Task RunWithInTransaction(MessageExecutionContext executionContext, Func<Task> transaction)
     {
@@ -69,6 +69,12 @@ public class ApmTransactionManager : ITransactionManager
         }
 
         return spanLinks;
+    }
+
+    public void OnReceiveCancelled()
+    {
+        if (IsTraceEnabled())
+            Agent.Tracer.CurrentTransaction.Outcome = Outcome.Success;
     }
 
     private static bool IsTraceEnabled()

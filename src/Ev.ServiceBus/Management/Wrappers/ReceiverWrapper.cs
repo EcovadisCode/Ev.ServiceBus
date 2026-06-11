@@ -134,6 +134,7 @@ public class ReceiverWrapper
     {
         if (exceptionEvent.Exception is OperationCanceledException)
         {
+            (_transactionManager as ICancellationAwareTransactionManager)?.OnReceiveCancelled();
             _messageProcessingLogger.LogWarning(
                 "[Ev.ServiceBus] Receive loop cancelled for {ClientType} '{ResourceId}' during shutdown.",
                 _composedOptions.ClientType, _composedOptions.ResourceId);
