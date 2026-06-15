@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Elastic.Apm;
 using Elastic.Apm.Api;
@@ -14,6 +16,15 @@ namespace Ev.ServiceBus.Apm;
 /// </summary>
 public class ApmTransactionManager : ITransactionManager, ICancellationAwareTransactionManager
 {
+    // Tracks transaction IDs for which the ASB ProcessErrorAsync callback fired an OperationCanceledException
+    // (the standard signal that the receive loop is being stopped, most commonly during pod graceful shutdown).
+    // The error filter below suppresses APM error events for these transactions so that
+    // shutdown-induced TaskCanceledException entries do not appear in APM.
+    // Capped at 1000 entries as a safety net: normal pod shutdown produces ~50 entries; in any
+    // edge case where the processor is stopped and restarted mid-lifecycle the cap prevents unbounded growth.
+    private static readonly ConcurrentDictionary<string, byte> _cancelledTransactionIds = new();
+    private const int CancelledTransactionIdCap = 1000;
+    private static int _filterRegistered; // 0 = not registered, 1 = registered
     public async Task RunWithInTransaction(MessageExecutionContext executionContext, Func<Task> transaction)
     {
         if (IsTraceEnabled())
@@ -73,8 +84,25 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
 
     public void OnReceiveCancelled()
     {
-        if (IsTraceEnabled())
-            Agent.Tracer.CurrentTransaction.Outcome = Outcome.Success;
+        if (!IsTraceEnabled())
+            return;
+
+        var tx = Agent.Tracer.CurrentTransaction;
+        tx.Outcome = Outcome.Success;
+        if (_cancelledTransactionIds.Count < CancelledTransactionIdCap)
+            _cancelledTransactionIds.TryAdd(tx.Id, 0);
+
+        // Register once: suppress error events for cancelled-receive transactions before they are sent to APM.
+        // Elastic APM captures error events at the DiagnosticSource level (before ReceiverWrapper runs),
+        // so setting Outcome = Success alone does not prevent error documents from appearing in APM.
+        // Returning null from the filter drops the error event entirely.
+        if (Interlocked.CompareExchange(ref _filterRegistered, 1, 0) == 0)
+        {
+            Agent.AddFilter((IError error) =>
+                error.TransactionId is not null && _cancelledTransactionIds.ContainsKey(error.TransactionId)
+                    ? null
+                    : error);
+        }
     }
 
     private static bool IsTraceEnabled()
