@@ -105,4 +105,21 @@ public sealed class ApmTransactionManagerTests : IDisposable
 
         Assert.False(result);
     }
+
+    [Fact]
+    public void ShouldSuppressError_WhenCapExceeded_CulpritPathStillSuppresses()
+    {
+        // Simulate the cap-exceeded scenario: OnReceiveCancelled stops tracking IDs once the
+        // dictionary is full. Errors for those untracked transactions must still be suppressed
+        // by the culprit-based path (Case 2).
+        for (var i = 0; i < 1000; i++)
+            ApmTransactionManager.AddCancelledTransactionIdForTests($"capped-tx-{i}");
+
+        var result = ApmTransactionManager.ShouldSuppressError(
+            "untracked-due-to-cap",
+            "System.Threading.Tasks.TaskCanceledException",
+            "Azure.Messaging.ServiceBus.Amqp.AmqpReceiver+<ReceiveMessagesAsyncInternal>d__45");
+
+        Assert.True(result);
+    }
 }

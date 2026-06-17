@@ -115,6 +115,8 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
         var tx = Agent.Tracer.CurrentTransaction;
         if (tx is null) return;
         tx.Outcome = Outcome.Success;
+        // Count check and TryAdd are not atomic — under high concurrency the dictionary may reach
+        // CancelledTransactionIdCap + N entries. The cap is a soft limit; this is intentional.
         if (_cancelledTransactionIds.Count < CancelledTransactionIdCap)
             _cancelledTransactionIds.TryAdd(tx.Id, 0);
         // If Count >= CancelledTransactionIdCap, this ID is not tracked here.
@@ -150,8 +152,8 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
         // runs — the transaction ID is never added to _cancelledTransactionIds.
         // After switching to WebSockets transport, TaskCanceledException originating in
         // AmqpReceiver.ReceiveMessagesAsyncInternal only occurs during pod graceful shutdown.
-        return exceptionType is "System.Threading.Tasks.TaskCanceledException"
-                               or "System.OperationCanceledException" &&
+        return (exceptionType is "System.Threading.Tasks.TaskCanceledException"
+                               or "System.OperationCanceledException") &&
                culprit?.Contains(AmqpReceiverCulprit, StringComparison.Ordinal) == true;
     }
 
