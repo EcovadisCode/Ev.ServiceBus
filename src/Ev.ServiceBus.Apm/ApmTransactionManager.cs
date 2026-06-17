@@ -120,9 +120,25 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
 
         // Returning null from the filter drops the error event before it reaches the APM server.
         Agent.AddFilter((IError error) =>
-            error.TransactionId is not null && _cancelledTransactionIds.ContainsKey(error.TransactionId)
-                ? null
-                : error);
+        {
+            // Case 1: transaction explicitly tracked via OnReceiveCancelled().
+            if (error.TransactionId is not null && _cancelledTransactionIds.ContainsKey(error.TransactionId))
+                return null;
+
+            // Case 2: Elastic APM auto-instrumented "AzureServiceBus RECEIVE" transactions.
+            // The Azure SDK ends its Activity (and therefore the APM transaction) before firing
+            // ProcessErrorAsync, so Agent.Tracer.CurrentTransaction is null by the time
+            // OnReceiveCancelled() runs — the transaction ID is never added to
+            // _cancelledTransactionIds. Identify these by culprit pattern instead.
+            // After switching to WebSockets transport, TaskCanceledException originating in
+            // AmqpReceiver.ReceiveMessagesAsyncInternal only occurs during pod graceful shutdown.
+            if (error.Exception?.Type is "System.Threading.Tasks.TaskCanceledException"
+                                       or "System.OperationCanceledException" &&
+                error.Culprit?.Contains("AmqpReceiver", StringComparison.Ordinal) == true)
+                return null;
+
+            return error;
+        });
     }
 
     private static bool IsTraceEnabled()

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 5.7.5
 - Fixed
   - `ApmTransactionManager` now registers the APM error filter **at construction time** (application startup) instead of lazily inside `OnReceiveCancelled()`. The lazy approach lost a race: during pod graceful shutdown the APM agent flushes its internal buffer concurrently with Service Bus processor teardown, so error events could be sent to APM before `ReceiverWrapper.OnExceptionOccured` ran and had a chance to register the filter. Registering at construction time — before any message processing starts — closes this window. A fallback call in `OnReceiveCancelled()` handles the edge case where the APM agent was not yet configured at construction.
+  - The filter now also suppresses `TaskCanceledException` / `OperationCanceledException` errors whose culprit originates in `AmqpReceiver.ReceiveMessagesAsyncInternal`. These error events are produced by Elastic APM's **auto-instrumented** Azure Service Bus transactions (`"AzureServiceBus RECEIVE from …"`): the Azure SDK ends its underlying `Activity` (and therefore the APM transaction) before calling `ProcessErrorAsync`, so `Agent.Tracer.CurrentTransaction` is already `null` when `OnReceiveCancelled()` runs — the transaction ID is never added to `_cancelledTransactionIds` and the transaction-ID-based filter path cannot suppress them. After switching to WebSockets transport, `TaskCanceledException` from this code path only occurs during pod graceful shutdown.
 
 ## 5.7.4
 - Fixed
