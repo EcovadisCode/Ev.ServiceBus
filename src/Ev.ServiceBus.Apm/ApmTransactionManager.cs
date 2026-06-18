@@ -43,10 +43,9 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
 
     public ApmTransactionManager()
     {
-        // Register the shutdown-cancellation error filter at construction time (application startup),
-        // not lazily on first OnReceiveCancelled(). During pod graceful shutdown the APM agent flushes
-        // its buffer concurrently with Service Bus processor teardown — registering the filter after the
-        // first OperationCanceledException fires loses that race and lets error events escape to APM.
+        // Best-effort registration at construction time. If the Elastic APM hosted service starts
+        // AFTER the Service Bus hosted service (the typical registration order), Agent.IsConfigured
+        // is still false here and registration is deferred to the first RunWithInTransaction call.
         RegisterShutdownErrorFilter();
     }
 
@@ -54,6 +53,11 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
     {
         if (IsTraceEnabled())
         {
+            // Ensure the filter is registered before any message processing completes.
+            // This is the reliable registration point: by the time IsTraceEnabled() returns true,
+            // Agent.IsConfigured is guaranteed true — covering the case where the APM hosted service
+            // started after the Service Bus hosted service and the constructor registration was skipped.
+            RegisterShutdownErrorFilter();
             Agent.Tracer.CurrentTransaction.Name = executionContext.ExecutionName;
             Agent.Tracer.CurrentTransaction.SetLabel(
                 nameof(executionContext.ClientType),
@@ -109,6 +113,12 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
 
     public void OnReceiveCancelled()
     {
+        // Attempt registration before checking IsTraceEnabled — the filter must be in place even
+        // for auto-instrumented "AzureServiceBus RECEIVE" transactions where CurrentTransaction is
+        // null (Case 2). After this point it is too late for the current error batch, but
+        // registering here ensures coverage if RunWithInTransaction was never reached.
+        RegisterShutdownErrorFilter();
+
         if (!IsTraceEnabled())
             return;
 
@@ -121,9 +131,6 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
             _cancelledTransactionIds.TryAdd(tx.Id, 0);
         // If Count >= CancelledTransactionIdCap, this ID is not tracked here.
         // The culprit-based path (Case 2 in ShouldSuppressError) still suppresses the error.
-
-        // Fallback: if the agent was not yet configured when the constructor ran, register now.
-        RegisterShutdownErrorFilter();
     }
 
     private static void RegisterShutdownErrorFilter()
