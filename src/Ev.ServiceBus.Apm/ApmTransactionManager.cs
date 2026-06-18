@@ -31,6 +31,10 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
     // fall through to the culprit-based filter path (Case 2 in ShouldSuppressError). This is an accepted
     // tradeoff — reaching 1000 entries requires ~20 consecutive graceful processor stop/start cycles on
     // the same pod instance, which does not occur in normal Kubernetes rolling-deploy scenarios.
+    // If the cap were reached by non-AmqpReceiver OperationCanceledException paths (i.e. user-code
+    // cancellations unrelated to AMQP shutdown), those excess error events would not be suppressed by
+    // either Case 1 or Case 2 and would reach the APM server. This is acceptable: the conditions
+    // required to reach the cap via that path are not reachable in practice.
     private static readonly ConcurrentDictionary<string, byte> _cancelledTransactionIds = new();
     private const int CancelledTransactionIdCap = 1000;
     private static int _filterRegistered; // 0 = not registered, 1 = registered (Interlocked.CompareExchange requires int)
@@ -150,6 +154,9 @@ public class ApmTransactionManager : ITransactionManager, ICancellationAwareTran
     {
         // Case 1: transaction explicitly tracked via OnReceiveCancelled().
         // TryRemove keeps the dictionary lean — matched IDs are consumed on first use.
+        // No exceptionType guard is applied here: _cancelledTransactionIds is populated exclusively
+        // by OnReceiveCancelled(), which ReceiverWrapper only calls for OperationCanceledException.
+        // Any ID present in this set therefore already originates from a cancellation path.
         if (transactionId is not null && _cancelledTransactionIds.TryRemove(transactionId, out _))
             return true;
 
