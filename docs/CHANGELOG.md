@@ -4,12 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 6.0.0
+## 5.8.0
+- Added
+  - `net10.0` added as an additional target framework across `Ev.ServiceBus`, `Ev.ServiceBus.Abstractions`, `Ev.ServiceBus.Apm`, `Ev.ServiceBus.AsyncApi`, `Ev.ServiceBus.HealthChecks`, `Ev.ServiceBus.Mvc`, and `Ev.ServiceBus.Prometheus`, alongside the existing `net8.0` (and `netstandard2.0`/`netstandard2.1` on the core packages). Non-breaking — existing net8.0 consumers are unaffected.
 - Changed
-  - **Breaking:** `Ev.ServiceBus.Apm`, `Ev.ServiceBus.AsyncApi`, `Ev.ServiceBus.HealthChecks`, `Ev.ServiceBus.Mvc`, and `Ev.ServiceBus.Prometheus` now target `net10.0` instead of `net8.0`. Consumers on net8.0/net9.0 must upgrade to net10.0 to use 6.0.0+, or stay on the 5.x line.
-  - `Ev.ServiceBus` and `Ev.ServiceBus.Abstractions` now multi-target `netstandard2.1;netstandard2.0;net10.0` (`net8.0` replaced by `net10.0`; `netstandard2.0`/`netstandard2.1` kept unchanged for existing non-.NET-10 consumers).
   - `Ev.ServiceBus.Mvc` no longer references the legacy `Microsoft.AspNetCore.Mvc.Abstractions`/`Microsoft.AspNetCore.Mvc.Core` 2.2.x NuGet packages — it now uses a `FrameworkReference` to `Microsoft.AspNetCore.App`, matching the ASP.NET Core shared-framework model used since .NET Core 3.0.
-  - Bumped `Azure.Identity` to 1.17.1 (1.17.0 was deprecated), `Microsoft.Extensions.*` to 10.0.9, `Elastic.Apm` to 1.34.5, `AspNetCore.HealthChecks.AzureServiceBus` to 9.0.0.
+  - Bumped `Azure.Identity` to 1.17.1 (1.17.0 was deprecated), `Elastic.Apm` to 1.34.5, `AspNetCore.HealthChecks.AzureServiceBus` to 9.0.0.
 
 ## 5.7.5
 - Fixed
