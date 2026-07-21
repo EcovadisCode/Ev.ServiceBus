@@ -1,7 +1,7 @@
+using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Xunit;
 
 namespace Ev.ServiceBus.AsyncApi.UnitTests;
@@ -15,7 +15,7 @@ public class DocumentFilterTest
         var client = factory.CreateClient();
         var response = await client.GetAsync("/asyncapi/asyncapi.json");
 
-        response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await response.Content.ReadAsStringAsync();
 
         var actualDoc = JsonDocument.Parse(json);
@@ -295,7 +295,7 @@ public class DocumentFilterTest
         var factory = new ReceiverAppFactory();
         var client = factory.CreateClient();
         var response = await client.GetAsync("/asyncapi/asyncapi.json");
-        response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var json = await response.Content.ReadAsStringAsync();
         var actualDoc = JsonDocument.Parse(json);
