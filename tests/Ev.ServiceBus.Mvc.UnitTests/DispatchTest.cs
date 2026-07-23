@@ -1,11 +1,11 @@
-﻿using System.Threading;
+﻿using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Ev.ServiceBus.Samples.Sender;
 using Ev.ServiceBus.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Logging;
@@ -23,7 +23,7 @@ public class DispatchTest
         var client = factory.CreateClient();
         var response = await client.GetAsync("weatherforecast/pushWeather");
 
-        response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var queue = factory.Services.GetSenderMock("myqueue");
         queue.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessageBatch>(), It.IsAny<CancellationToken>()), Times.Once);
 
@@ -38,7 +38,7 @@ public class DispatchTest
         var client = factory.CreateClient();
         var response = await client.GetAsync("failing/pushWeather");
 
-        response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         var queue = factory.Services.GetSenderMock("myqueue");
         queue.Mock.Verify(o => o.SendMessagesAsync(It.IsAny<ServiceBusMessage[]>(), It.IsAny<CancellationToken>()), Times.Never);
 
