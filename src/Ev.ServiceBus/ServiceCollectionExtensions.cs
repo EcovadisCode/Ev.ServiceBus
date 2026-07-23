@@ -83,10 +83,19 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ReceiverWrapperFactory>();
         services.TryAddSingleton<IClientFactory, ClientFactory>();
 
-        if (services.Any(o => o.ImplementationType == typeof(ServiceBusHost)) == false)
+        if (!HasImplementationType(services, typeof(ServiceBusHost)))
         {
             services.AddHostedService<ServiceBusHost>();
         }
+    }
+
+    private static bool HasImplementationType(IServiceCollection services, Type implementationType)
+    {
+        return services.Any(s =>
+#if NET8_0_OR_GREATER
+                s.ServiceKey is null &&
+#endif
+            s.ImplementationType == implementationType);
     }
 
     /// <summary>
