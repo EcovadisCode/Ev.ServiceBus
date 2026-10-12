@@ -70,7 +70,11 @@ public class MessageReceptionHandler
                     return;
 
                 if (context.CancellationToken.IsCancellationRequested)
+                {
+                    // Returning normally would let the SDK auto-complete (delete) a message that was never processed.
+                    await AbandonMessageAsync(context);
                     return;
+                }
 
                 var @event = _messagePayloadSerializer.DeSerializeBody(context.Message.Body.ToArray(), context.ReceptionRegistration!.PayloadType);
                 var methodInfo = _callHandlerInfo.MakeGenericMethod(context.ReceptionRegistration.PayloadType);
@@ -126,6 +130,19 @@ public class MessageReceptionHandler
                 await listener.OnExecutionSuccess(executionSucceededArgs);
             }
             _logger.MessageExecutionCompleted(sw.ElapsedMilliseconds);
+        }
+    }
+
+    private static async Task AbandonMessageAsync(MessageContext context)
+    {
+        // CancellationToken.None: the context token is already cancelled and would make the abandon itself fail.
+        if (context.SessionArgs != null)
+        {
+            await context.SessionArgs.AbandonMessageAsync(context.Message, cancellationToken: CancellationToken.None);
+        }
+        else if (context.Args != null)
+        {
+            await context.Args.AbandonMessageAsync(context.Message, cancellationToken: CancellationToken.None);
         }
     }
 
