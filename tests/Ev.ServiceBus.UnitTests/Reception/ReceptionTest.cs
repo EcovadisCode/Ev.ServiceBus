@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -191,6 +192,89 @@ public class ReceptionTest
         var tokenSource = new CancellationTokenSource();
         tokenSource.Cancel();
         await SimulateEventReception(client, tokenSource.Token);
+    }
+
+    [Fact]
+    public async Task MessageIsAbandonedAndNotHandledWhenCancellationIsRequested()
+    {
+        var (client, eventStore) = await ComposeSubscribedReception();
+        var receiver = new Mock<ServiceBusReceiver>();
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+
+        await client.TriggerMessageReception(CreateSubscribedMessage(), tokenSource.Token, receiver.Object);
+
+        using (new AssertionScope())
+        {
+            receiver.Verify(
+                r => r.AbandonMessageAsync(
+                    It.IsAny<ServiceBusReceivedMessage>(),
+                    It.IsAny<IDictionary<string, object>>(),
+                    CancellationToken.None),
+                Times.Once);
+            eventStore.Events.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task MessageIsNotAbandonedWhenCancellationIsNotRequested()
+    {
+        var (client, eventStore) = await ComposeSubscribedReception();
+        var receiver = new Mock<ServiceBusReceiver>();
+
+        await client.TriggerMessageReception(CreateSubscribedMessage(), CancellationToken.None, receiver.Object);
+
+        using (new AssertionScope())
+        {
+            receiver.Verify(
+                r => r.AbandonMessageAsync(
+                    It.IsAny<ServiceBusReceivedMessage>(),
+                    It.IsAny<IDictionary<string, object>>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
+            eventStore.Events.Should().ContainSingle(o => o.HandlerType == typeof(SubscribedPayloadHandler));
+        }
+    }
+
+    private static async Task<(ProcessorMock Client, EventStore EventStore)> ComposeSubscribedReception()
+    {
+        var composer = new Composer();
+        var eventStore = new EventStore();
+
+        composer.WithAdditionalServices(
+            services =>
+            {
+                services.RegisterServiceBusReception()
+                    .FromSubscription(
+                        "testTopic",
+                        "testSubscription",
+                        builder =>
+                        {
+                            builder.RegisterReception<SubscribedEvent, SubscribedPayloadHandler>()
+                                .CustomizePayloadTypeId("MyEvent");
+                        });
+
+                services.AddSingleton(eventStore);
+            });
+
+        await composer.Compose();
+        return (composer.ClientFactory.GetProcessorMock("testTopic", "testSubscription"), eventStore);
+    }
+
+    private static ServiceBusMessage CreateSubscribedMessage()
+    {
+        var parser = new TextJsonPayloadSerializer();
+        var result = parser.SerializeBody(new { SomeString = "hello", SomeNumber = 36 });
+        return new ServiceBusMessage(result.Body)
+        {
+            ContentType = result.ContentType,
+            Subject = "An integration event of type 'MyEvent'",
+            ApplicationProperties =
+            {
+                { UserProperties.MessageTypeProperty, "IntegrationEvent" },
+                { UserProperties.PayloadTypeIdProperty, "MyEvent" }
+            }
+        };
     }
 
     [Fact]

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.8.1
+- Fixed
+  - `MessageReceptionHandler` now explicitly abandons the message when cancellation is requested before the handler is invoked (#491328). Previously it returned normally, so the Azure SDK treated the message as successfully handled and, with `AutoCompleteMessages` enabled, completed (deleted) a message that was never processed. This silently lost messages during pod shutdown. The message is now abandoned (using `CancellationToken.None`, as the context token is already cancelled) so the broker redelivers it after the lock is released.
+
 ## 5.8.0
 - Added
   - `net10.0` added as an additional target framework across `Ev.ServiceBus`, `Ev.ServiceBus.Abstractions`, `Ev.ServiceBus.Apm`, `Ev.ServiceBus.AsyncApi`, `Ev.ServiceBus.HealthChecks`, `Ev.ServiceBus.Mvc`, and `Ev.ServiceBus.Prometheus`, alongside the existing `net8.0` (and `netstandard2.0`/`netstandard2.1` on the core packages). Non-breaking — existing net8.0 consumers are unaffected.
